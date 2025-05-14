@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>研究论文分析：大型语言模型在多轮对话中的表现</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        window.MathJax = {
+          tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']]
+          },
+          svg: {
+            fontCache: 'global'
+          }
+        };
+    </script>
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* 自定义样式，补充Tailwind无法直接覆盖的细节 */
+        body {
+            font-family: 'Inter', sans-serif; /* 应用Inter字体 */
+            scroll-behavior: smooth;
+        }
+        /* LaTeX公式的自定义样式 (MathJax会处理大部分) */
+        .mjx-chtml {
+            text-align: left !important; /* 确保公式左对齐 */
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 700; /* 统一标题粗细 */
+        }
+        /* 优化图表容器的最大高度，防止过大 */
+        .chart-container canvas {
+            max-height: 450px; /* 可根据需要调整 */
+            width: 100% !important; /* 确保canvas宽度充满容器 */
+            height: auto !important; /* 高度自适应 */
+        }
+        /* 确保列表标记在容器内 */
+        ul, ol {
+            padding-left: 1.5rem; /* 调整内边距以适应标记 */
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 leading-relaxed">
+
+    <div class="container mx-auto max-w-5xl p-4 sm:p-6 md:p-8 bg-white shadow-2xl rounded-xl my-8">
+
+        <header class="mb-10 text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-sky-700">
+                论文分析：《LLMs Get Lost In Multi-Turn Conversation》
+            </h1>
+            <p class="text-slate-600 mt-2 text-sm sm:text-base">
+                探究大型语言模型在多轮对话中的性能表现与局限性
+            </p>
+        </header>
+
+        <div class="important bg-yellow-100 border-l-8 border-yellow-500 text-yellow-800 p-6 rounded-lg my-8 shadow-md">
+            <p class="font-semibold">核心观点：</p>
+            <p>论文《LLMs Get Lost In Multi-Turn Conversation》由Microsoft Research和Salesforce Research的研究人员共同完成，揭示了一个严峻的问题：当前所有顶级大型语言模型(LLMs)在多轮对话中的表现都远不如单轮对话。</p>
+        </div>
+
+        <section aria-labelledby="section1-title">
+            <h2 id="section1-title" class="text-2xl sm:text-3xl font-bold text-slate-800 mt-10 mb-6 pb-3 border-b-2 border-sky-200">
+                1. 研究背景与核心发现
+            </h2>
+            <p class="mb-4 text-slate-700 text-base">大型语言模型已成为对话界面的主流。理论上，这些模型不仅应该在用户能够完全明确任务需求时提供帮助，还应当通过多轮对话来协助用户定义、探索和完善他们的需求。然而，微软与Salesforce的这项研究通过大规模的模拟实验发现，现有的所有顶级LLMs在多轮对话中的表现都显著下降，六项生成任务中平均下降了39%。</p>
+            <p class="mb-4 text-slate-700 text-base">研究人员分析了超过20万次模拟对话，发现这种性能下降可分解为两个关键组成部分：</p>
+            <ul class="list-disc list-inside mb-4 pl-4 text-slate-700 space-y-1">
+                <li>能力(Aptitude)的轻微下降(-15%)</li>
+                <li>可靠性的显著降低(不可靠性增加了112%)</li>
+            </ul>
+            <p class="mb-4 text-slate-700 text-base font-semibold">用简单的话说，研究发现：<strong>当LLMs在对话中走错方向时，它们会迷失且无法恢复</strong>。</p>
+
+            <div class="chart-container p-3 sm:p-4 my-8 bg-slate-50 rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                <canvas id="performanceDropChart"></canvas>
+            </div>
+        </section>
+
+        <section aria-labelledby="section2-title">
+            <h2 id="section2-title" class="text-2xl sm:text-3xl font-bold text-slate-800 mt-12 mb-6 pb-3 border-b-2 border-sky-200">
+                2. 研究方法与实验设计
+            </h2>
+            <p class="mb-4 text-slate-700 text-base">研究团队开发了一个创新的"分片模拟"(sharded simulation)环境，用于模拟多轮未充分指定的对话。这一方法基于以下步骤：</p>
+
+            <h3 class="text-xl sm:text-2xl font-semibold text-slate-700 mt-8 mb-4">2.1 分片过程(Sharding Process)</h3>
+            <p class="mb-4 text-slate-700 text-base">研究者提出了一个将原始完全指定的指令转换为"分片指令"的半自动过程。每个分片代表原始指令中的一个信息单元。例如，一个完整的数学问题可能被分解为几个分片：问题背景、特定条件、计算要求等。</p>
+            <p class="mb-4 text-slate-700 text-base">分片指令必须满足五个关键属性：</p>
+            <ol class="list-decimal list-inside mb-4 pl-4 text-slate-700 space-y-1">
+                <li><strong>信息保留(Information Preservation)</strong>：不丢失任何原始指令中完成任务所需的信息</li>
+                <li><strong>明确的初始意图(Clear Initial Intent)</strong>：第一个分片定义高级目标</li>
+                <li><strong>顺序不敏感(Order Insensitive)</strong>：除第一个分片外，其他分片的顺序可以改变</li>
+                <li><strong>最大化分片(Maximal Sharding)</strong>：尝试最大化从原始指令中提取的分片数量</li>
+                <li><strong>最小化转换(Minimal Transformation)</strong>：尽可能维持原始指令语言</li>
+            </ol>
+
+            <div class="definition bg-sky-50 border-l-8 border-sky-500 text-sky-800 p-4 sm:p-6 rounded-lg my-8 shadow-md text-sm">
+                <p class="font-semibold mb-2">数学定义：对于给定查询q，其原子内容单元表示为：</p>
+                <p class="mb-2">\[I(q) = [I,(c_1, \cdots, c_m)]\]</p>
+                <p class="mb-2">其中I是查询的主要意图，而$(c_1, \cdots, c_m)$是条件明确指定的一组充分说明。分片过程的目标是构建一组较短的指令分片s：</p>
+                <p>\[q' = [s_1, \cdots s_k] \text{ s.t. } I(q) = I(q')\]</p>
+            </div>
+
+            <h3 class="text-xl sm:text-2xl font-semibold text-slate-700 mt-8 mb-4">2.2 模拟类型</h3>
+            <p class="mb-4 text-slate-700 text-base">研究者利用分片指令模拟了五种类型的对话：</p>
+            <ul class="list-disc list-inside mb-4 pl-4 text-slate-700 space-y-1">
+                <li><strong>FULLY-SPECIFIED(全指定)</strong>：单轮、完全指定的对话，第一轮提供原始指令</li>
+                <li><strong>SHARDED(分片)</strong>：多轮、未充分指定的对话，主要用于评估模型在未充分指定的多轮对话中的表现</li>
+                <li><strong>CONCAT(连接)</strong>：单轮、完全指定的对话，但基于分片指令，分片以项目符号形式连接</li>
+                <li><strong>RECAP(回顾)</strong>：SHARDED对话加上最后的回顾轮，重述所有分片</li>
+                <li><strong>SNOWBALL(滚雪球)</strong>：每轮都重复之前所有分片并添加一个新分片</li>
+            </ul>
+
+            <div class="chart-container p-3 sm:p-4 my-8 bg-slate-50 rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                <canvas id="simulationTypesChart"></canvas>
+            </div>
+
+            <h3 class="text-xl sm:text-2xl font-semibold text-slate-700 mt-8 mb-4">2.3 评估任务与指标</h3>
+            <p class="mb-4 text-slate-700 text-base">研究团队选择了六个多样化的生成任务进行评估：</p>
+            <ol class="list-decimal list-inside mb-4 pl-4 text-slate-700 space-y-1">
+                <li><strong>代码(Code)</strong>：生成Python函数</li>
+                <li><strong>数据库(Database)</strong>：从自然语言生成SQL查询</li>
+                <li><strong>操作(Actions)</strong>：生成API调用</li>
+                <li><strong>数学(Math)</strong>：解决数学应用题</li>
+                <li><strong>数据到文本(Data-to-Text)</strong>：根据表格数据生成描述</li>
+                <li><strong>摘要(Summary)</strong>：生成多文档摘要并引用</li>
+            </ol>
+
+            <p class="mb-4 text-slate-700 text-base">研究定义了三个关键指标：</p>
+            <div class="definition bg-sky-50 border-l-8 border-sky-500 text-sky-800 p-4 sm:p-6 rounded-lg my-8 shadow-md text-sm">
+                <p class="mb-2">1. <strong>平均性能(P)</strong>：一个指令上N次模拟的平均得分</p>
+                <p class="mb-2">\[P = \sum_{i=1}^{N} S_i / N\]</p>
+                
+                <p class="mb-2">2. <strong>能力(A^{90})</strong>：一个指令上得分的第90百分位数，估计最佳情况下的表现</p>
+                <p class="mb-2">\[A^{90} = \text{percentile}_{90}(S)\]</p>
+                
+                <p class="mb-2">3. <strong>不可靠性(U_{10}^{90})</strong>：第90百分位与第10百分位的差值，衡量最佳与最差情况间的差距</p>
+                <p>\[U_{10}^{90} = \text{percentile}_{90}(S) - \text{percentile}_{10}(S)\]</p>
+            </div>
+        </section>
+
+        <section aria-labelledby="section3-title">
+            <h2 id="section3-title" class="text-2xl sm:text-3xl font-bold text-slate-800 mt-12 mb-6 pb-3 border-b-2 border-sky-200">
+                3. 主要研究发现
+            </h2>
+
+            <h3 class="text-xl sm:text-2xl font-semibold text-slate-700 mt-8 mb-4">3.1 性能显著下降</h3>
+            <p class="mb-4 text-slate-700 text-base">所有15个测试的LLMs模型（包括GPT-4.1、Claude 3.7 Sonnet、Gemini 2.5 Pro等顶级模型）在多轮SHARDED设置中的表现都比单轮FULL设置差，平均下降39%。这种下降在所有六项任务中都很明显，表明这是一个普遍问题。</p>
+
+            <div class="chart-container p-3 sm:p-4 my-8 bg-slate-50 rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                <canvas id="modelPerformanceChart"></canvas>
+            </div>
+
+            <h3 class="text-xl sm:text-2xl font-semibold text-slate-700 mt-8 mb-4">3.2 能力与可靠性分析</h3>
+            <p class="mb-4 text-slate-700 text-base">研究发现，在单轮设置中，能力更强的模型往往更可靠（如GPT-4.1和Gemini 2.5 Pro）。然而，在多轮设置中，所有模型都表现出极高的不可靠性，无论其能力如何。具体来说：</p>
+            <ul class="list-disc list-inside mb-4 pl-4 text-slate-700 space-y-1">
+                <li>单轮到多轮的能力下降相对较小，平均为16%</li>
+                <li>不可靠性却显著增加，平均增加了112%（超过两倍）</li>
+            </ul>
+            <p class="mb-4 text-slate-700 text-base">这表明"迷失在对话中"的现象主要是由于模型可靠性的急剧下降，而非能力的降低。</p>
+
+            <div class="chart-container p-3 sm:p-4 my-8 bg-slate-50 rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                <canvas id="aptitudeReliabilityChart"></canvas>
+            </div>
+
+            <h3 class="text-xl sm:text-2xl font-semibold text-slate-700 mt-8 mb-4">3.3 分析模型行为</h3>
+            <p class="mb-4 text-slate-700 text-base">研究者通过分析模拟对话日志，确定了四种导致性能下降的行为：</p>
+            <ol class="list-decimal list-inside mb-4 pl-4 text-slate-700 space-y-1">
+                <li><strong>过早尝试回答</strong>：LLMs倾向于在获得完整信息前就提出解决方案，导致错误假设</li>
+                <li><strong>过度依赖先前回答</strong>：在多轮对话中，模型的答案变得越来越冗长（"膨胀"），因为它们过度依赖之前的（可能不正确的）回答尝试</li>
+                <li><strong>中间轮次遗忘</strong>：模型更可能引用对话的第一轮和最后一轮，而忽略中间轮次的信息</li>
+                <li><strong>回答过于冗长</strong>：更长的回答通常包含更多假设，导致后续轮次的混淆</li>
+            </ol>
+
+            <h3 class="text-xl sm:text-2xl font-semibold text-slate-700 mt-8 mb-4">3.4 渐进分片实验</h3>
+            <p class="mb-4 text-slate-700 text-base">研究者还进行了"渐进分片实验"，将指令分成不同粒度（从1到8个分片）。结果表明，只要对话涉及两轮或更多轮次的未充分指定交互，模型性能就会下降。这表明分片的粒度并不是关键因素，而是多轮对话本身的性质导致了问题。</p>
+
+            <div class="chart-container p-3 sm:p-4 my-8 bg-slate-50 rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                <canvas id="gradualShardingChart"></canvas>
+            </div>
+        </section>
+
+        <section aria-labelledby="section4-title">
+            <h2 id="section4-title" class="text-2xl sm:text-3xl font-bold text-slate-800 mt-12 mb-6 pb-3 border-b-2 border-sky-200">
+                4. 实际意义与建议
+            </h2>
+
+            <h3 class="text-xl sm:text-2xl font-semibold text-slate-700 mt-8 mb-4">4.1 对LLM开发者的建议</h3>
+            <p class="mb-4 text-slate-700 text-base">研究呼吁LLM构建者优先考虑模型在多轮设置中的可靠性，而不仅仅是能力。研究表明，即使将温度参数设置为0（理论上使生成更确定性），在多轮设置中模型仍然表现出高度不可靠性。研究者建议开发者应该：</p>
+            <ul class="list-disc list-inside mb-4 pl-4 text-slate-700 space-y-1">
+                <li>在单轮和多轮设置中实现相似的能力水平</li>
+                <li>降低多轮设置中的不可靠性(U_{10}^{90} < 15)</li>
+                <li>在默认温度(T=1.0)下实现这些目标</li>
+            </ul>
+
+            <h3 class="text-xl sm:text-2xl font-semibold text-slate-700 mt-8 mb-4">4.2 对系统和代理开发者的建议</h3>
+            <p class="mb-4 text-slate-700 text-base">研究还探索了两种代理式干预的效果：RECAP（在对话结束时添加回顾轮）和SNOWBALL（每轮都重复之前的所有信息）。虽然这些方法在一定程度上减轻了性能下降，但性能仍然显著低于单轮设置。这表明，仅仅依靠代理框架可能不足以解决多轮对话中的问题。</p>
+
+            <div class="chart-container p-3 sm:p-4 my-8 bg-slate-50 rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                <canvas id="agentInterventionChart"></canvas>
+            </div>
+
+            <h3 class="text-xl sm:text-2xl font-semibold text-slate-700 mt-8 mb-4">4.3 对用户的实用建议</h3>
+            <p class="mb-4 text-slate-700 text-base">基于研究发现，作者为LLM用户提供了两条实用建议：</p>
+            <ol class="list-decimal list-inside mb-4 pl-4 text-slate-700 space-y-1">
+                <li><strong>如果时间允许，尝试重新开始</strong>：如果与LLM的对话没有达到预期效果，重新开始一个新对话可能会比继续当前对话产生更好的结果</li>
+                <li><strong>整合再重试</strong>：将指令需求整合到单一指令中是提高模型能力和可靠性的有效策略，当用户注意到模型在对话中迷失时，可以要求LLM整合到目前为止的所有内容</li>
+            </ol>
+        </section>
+
+        <section aria-labelledby="section5-title">
+            <h2 id="section5-title" class="text-2xl sm:text-3xl font-bold text-slate-800 mt-12 mb-6 pb-3 border-b-2 border-sky-200">
+                5. 研究局限性
+            </h2>
+            <p class="mb-4 text-slate-700 text-base">研究者承认他们的方法存在几个局限性：</p>
+            <ul class="list-disc list-inside mb-4 pl-4 text-slate-700 space-y-1">
+                <li>完全自动化的模拟可能不能完全代表自然的人机对话</li>
+                <li>研究主要集中在分析性任务上，未涵盖如创意写作等开放性任务</li>
+                <li>所有任务都是英语，未探索多语言或多模态设置</li>
+            </ul>
+        </section>
+
+        <section aria-labelledby="section6-title">
+            <h2 id="section6-title" class="text-2xl sm:text-3xl font-bold text-slate-800 mt-12 mb-6 pb-3 border-b-2 border-sky-200">
+                6. 结论与未来方向
+            </h2>
+            <p class="mb-4 text-slate-700 text-base">这项研究揭示了当前大型语言模型在多轮对话中的重大缺陷。尽管在单轮、完全指定的设置中表现出色，但所有测试的模型在多轮、未充分指定的对话中都显著性能下降。这一发现对LLM开发和使用具有深远的影响，尤其是考虑到未充分指定的指令在实际人机交互中非常普遍。</p>
+            <p class="mb-4 text-slate-700 text-base">研究者呼吁LLM开发社区重新评估评估方法，并更加关注多轮交互的可靠性。同时，研究的分片方法为未来针对多轮对话能力的更广泛评估铺平了道路。</p>
+        </section>
+        
+        <section aria-labelledby="section7-title">
+            <h2 id="section7-title" class="text-2xl sm:text-3xl font-bold text-slate-800 mt-12 mb-6 pb-3 border-b-2 border-sky-200">
+                7. 总结
+            </h2>
+            <p class="mb-4 text-slate-700 text-base">论文《LLMs Get Lost In Multi-Turn Conversation》揭示了当前大型语言模型在多轮对话中的严重局限性。尽管这些模型在单轮、完全指定的任务中表现出色，但在更接近实际用例的多轮、未充分指定的对话中表现明显下降。研究通过广泛的实验证明，这种性能下降不仅影响所有主流LLMs，还主要源于可靠性的急剧降低，而非能力的轻微下降。</p>
+            <p class="mb-4 text-slate-700 text-base">对LLM开发者而言，这项研究强调了重新考虑评估方法的必要性，并呼吁将多轮对话可靠性作为未来模型迭代中与能力同等重要的目标。对用户而言，了解这些局限性可以帮助他们更有效地使用这些模型，在必要时重启对话或整合信息以获得更好的结果。</p>
+            <p class="mb-4 text-slate-700 text-base">随着LLMs继续成为人机交互的主要界面，解决"迷失在对话中"的现象将成为提高这些系统实用性和用户满意度的关键步骤。</p>
+        </section>
+        </div> <footer class="text-center text-sm text-slate-500 mt-12 py-6 border-t border-slate-300">
+        <p>&copy; 2024 研究分析页面。内容基于公开研究成果。</p>
+    </footer>
+
+    <script>
+    // 等待DOM加载完毕后执行图表脚本
+    document.addEventListener('DOMContentLoaded', function () {
+        // 性能下降图表
+        if (document.getElementById('performanceDropChart')) {
+            const performanceDropCtx = document.getElementById('performanceDropChart').getContext('2d');
+            const performanceDropChart = new Chart(performanceDropCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['GPT-4.1', 'Claude 3.7 Sonnet', 'Gemini 2.5 Pro', 'Deepseek-R1', 'o3', 'GPT-4o', 'Llama 4 Scout', 'Command-A', 'Phi-4', 'Llama3.3-70B', 'GPT-4o-mini', 'Claude 3 Haiku', 'OLMo2', 'Llama3.1-8B'],
+                    datasets: [{
+                        label: '单轮对话性能 (FULL)',
+                        data: [97.9, 100.4, 100.1, 103.6, 98.1, 94.5, 91.0, 97.3, 99.0, 93.2, 93.0, 91.6, 86.5, 91.6],
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }, {
+                        label: '多轮对话性能 (SHARDED)',
+                        data: [61.8, 65.9, 64.5, 60.8, 64.1, 57.9, 66.1, 60.4, 61.7, 64.2, 56.2, 52.4, 50.5, 62.5],
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '各模型在单轮对话和多轮对话中的性能比较',
+                            font: {
+                                size: 16,
+                                family: 'Inter, sans-serif'
+                            },
+                            color: '#334155' // slate-700
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    family: 'Inter, sans-serif'
+                                },
+                                color: '#475569' // slate-600
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '平均性能得分',
+                                font: {
+                                    family: 'Inter, sans-serif'
+                                },
+                                color: '#475569' // slate-600
+                            },
+                            ticks: {
+                                color: '#64748b' // slate-500
+                            },
+                            grid: {
+                                color: '#e2e8f0' // slate-200
+                            }
+                        },
+                        x: {
+                             ticks: {
+                                color: '#64748b' // slate-500
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 模拟类型图表
+        if (document.getElementById('simulationTypesChart')) {
+            const simulationTypesCtx = document.getElementById('simulationTypesChart').getContext('2d');
+            const simulationTypesChart = new Chart(simulationTypesCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['代码', '数据库', '操作', '数学', '数据到文本', '摘要'],
+                    datasets: [{
+                        label: 'FULL (单轮完全指定)',
+                        data: [96.6, 88.7, 95.7, 97.4, 72.6, 68.1],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(54, 162, 235, 1)'
+                    }, {
+                        label: 'SHARDED (多轮未指定)',
+                        data: [72.6, 46.0, 68.1, 68.1, 43.8, 46.2],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(255, 99, 132, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'GPT-4.1在不同模拟类型和任务上的性能',
+                            font: {
+                                size: 16,
+                                family: 'Inter, sans-serif'
+                            },
+                             color: '#334155'
+                        },
+                        legend: {
+                             labels: {
+                                font: { family: 'Inter, sans-serif' },
+                                color: '#475569'
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            min: 40,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20,
+                                backdropColor: 'rgba(255, 255, 255, 0.75)', // So text is readable
+                                color: '#475569'
+                            },
+                            pointLabels: {
+                                font: { size: 12, family: 'Inter, sans-serif' },
+                                color: '#334155'
+                            },
+                            grid: {
+                                color: '#e2e8f0'
+                            },
+                            angleLines: {
+                                color: '#cbd5e1' // slate-300
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 模型性能图表
+        if (document.getElementById('modelPerformanceChart')) {
+            const modelPerformanceCtx = document.getElementById('modelPerformanceChart').getContext('2d');
+            const modelPerformanceChart = new Chart(modelPerformanceCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Llama3.1-8B', 'OLMo2', 'Claude 3 Haiku', 'GPT-4o-mini', 'Llama3.3-70B', 'Phi-4', 'Command-A', 'Llama4 Scout', 'o3', 'Claude 3.7 Sonnet', 'Deepseek-R1', 'GPT-4o', 'Gemini 2.5 Flash', 'GPT-4.1', 'Gemini 2.5 Pro'],
+                    datasets: [{
+                        label: '单轮 (FULL)',
+                        data: [49.6, 47.2, 56.9, 64.6, 66.0, 66.9, 69.3, 70.9, 74.2, 73.9, 72.9, 74.6, 79.5, 79.9, 78.9],
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointBackgroundColor: 'rgba(75, 192, 192, 1)'
+                    }, {
+                        label: '多轮 (SHARDED)',
+                        data: [21.7, 14.4, 31.5, 50.3, 51.6, 39.1, 44.9, 46.4, 53.0, 65.6, 70.9, 61.3, 68.3, 72.6, 68.1],
+                        backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointBackgroundColor: 'rgba(255, 159, 64, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '各模型在单轮和多轮设置中的平均性能',
+                            font: { size: 16, family: 'Inter, sans-serif' },
+                            color: '#334155'
+                        },
+                        legend: {
+                             labels: { font: { family: 'Inter, sans-serif' }, color: '#475569' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: '平均性能得分', font: { family: 'Inter, sans-serif' }, color: '#475569' },
+                            ticks: { color: '#64748b' },
+                            grid: { color: '#e2e8f0' }
+                        },
+                        x: {
+                            title: { display: true, text: '模型', font: { family: 'Inter, sans-serif' }, color: '#475569' },
+                            ticks: { color: '#64748b' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 能力与可靠性图表
+        if (document.getElementById('aptitudeReliabilityChart')) {
+            const aptitudeReliabilityCtx = document.getElementById('aptitudeReliabilityChart').getContext('2d');
+            const aptitudeReliabilityChart = new Chart(aptitudeReliabilityCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: '单轮 (FULL)',
+                        data: [
+                            {x: 16, y: 65, model: 'Llama3.1-8B'}, {x: 20, y: 67, model: 'OLMo2'}, {x: 39, y: 68, model: 'Claude 3 Haiku'},
+                            {x: 55, y: 75, model: 'GPT-4o-mini'}, {x: 58, y: 73, model: 'Llama3.3-70B'}, {x: 42, y: 81, model: 'Phi-4'},
+                            {x: 59, y: 76, model: 'Command-A'}, {x: 61, y: 74, model: 'Llama4 Scout'}, {x: 58, y: 79, model: 'o3'},
+                            {x: 60, y: 80, model: 'Claude 3.7 Sonnet'}, {x: 63, y: 78, model: 'Deepseek-R1'}, {x: 59, y: 80, model: 'GPT-4o'},
+                            {x: 63, y: 82, model: 'Gemini 2.5 Flash'}, {x: 68, y: 82, model: 'GPT-4.1'}, {x: 70, y: 83, model: 'Gemini 2.5 Pro'}
+                        ],
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        pointRadius: 7,
+                        pointHoverRadius: 9
+                    }, {
+                        label: '多轮 (SHARDED)',
+                        data: [
+                            {x: 56, y: 59, model: 'Llama3.1-8B'}, {x: 48, y: 50, model: 'OLMo2'}, {x: 45, y: 54, model: 'Claude 3 Haiku'},
+                            {x: 49, y: 62, model: 'GPT-4o-mini'}, {x: 47, y: 65, model: 'Llama3.3-70B'}, {x: 63, y: 70, model: 'Phi-4'},
+                            {x: 44, y: 62, model: 'Command-A'}, {x: 48, y: 65, model: 'Llama4 Scout'}, {x: 50, y: 68, model: 'o3'},
+                            {x: 48, y: 66, model: 'Claude 3.7 Sonnet'}, {x: 51, y: 65, model: 'Deepseek-R1'}, {x: 48, y: 66, model: 'GPT-4o'},
+                            {x: 55, y: 74, model: 'Gemini 2.5 Flash'}, {x: 47, y: 71, model: 'GPT-4.1'}, {x: 50, y: 71, model: 'Gemini 2.5 Pro'}
+                        ],
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        pointRadius: 7,
+                        pointHoverRadius: 9
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '模型能力与不可靠性对比',
+                            font: { size: 16, family: 'Inter, sans-serif' },
+                            color: '#334155'
+                        },
+                        legend: {
+                             labels: { font: { family: 'Inter, sans-serif' }, color: '#475569' }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const modelName = context.raw.model;
+                                    const label = context.dataset.label || '';
+                                    return `${modelName} (${label}): 能力=${context.parsed.y}, 不可靠性=${context.parsed.x}`;
+                                }
+                            },
+                            bodyFont: { family: 'Inter, sans-serif' },
+                            titleFont: { family: 'Inter, sans-serif' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: '不可靠性 (U)', font: { family: 'Inter, sans-serif' }, color: '#475569' },
+                            min: 0, max: 80,
+                            ticks: { color: '#64748b' },
+                            grid: { color: '#e2e8f0' }
+                        },
+                        y: {
+                            title: { display: true, text: '能力 (A)', font: { family: 'Inter, sans-serif' }, color: '#475569' },
+                            min: 45, max: 85,
+                            ticks: { color: '#64748b' },
+                            grid: { color: '#e2e8f0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 渐进分片图表
+        if (document.getElementById('gradualShardingChart')) {
+            const gradualShardingCtx = document.getElementById('gradualShardingChart').getContext('2d');
+            const gradualShardingChart = new Chart(gradualShardingCtx, {
+                type: 'line',
+                data: {
+                    labels: ['1分片', '2分片', '3分片', '4分片', '5分片', '6分片', '7分片', '8分片'],
+                    datasets: [{
+                        label: 'GPT-4o - 性能',
+                        data: [100, 81, 77, 74, 68, 65, 61, 58],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 3,
+                        yAxisID: 'y',
+                        tension: 0.1,
+                        pointRadius: 4,
+                        pointBackgroundColor: 'rgba(54, 162, 235, 1)'
+                    }, {
+                        label: 'GPT-4o - 不可靠性',
+                        data: [19, 38, 45, 65, 74, 77, 81, 87],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 3,
+                        yAxisID: 'y',
+                        tension: 0.1,
+                        pointRadius: 4,
+                        pointBackgroundColor: 'rgba(255, 99, 132, 1)'
+                    }, {
+                        label: 'GPT-4o-mini - 性能',
+                        data: [90, 58, 52, 48, 45, 42, 40, 41],
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 3,
+                        borderDash: [5, 5],
+                        yAxisID: 'y',
+                        tension: 0.1,
+                        pointRadius: 4,
+                        pointBackgroundColor: 'rgba(75, 192, 192, 1)'
+                    }, {
+                        label: 'GPT-4o-mini - 不可靠性',
+                        data: [32, 45, 65, 58, 53, 59, 56, 56],
+                        backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 3,
+                        borderDash: [5, 5],
+                        yAxisID: 'y',
+                        tension: 0.1,
+                        pointRadius: 4,
+                        pointBackgroundColor: 'rgba(255, 159, 64, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '分片数量对模型性能和不可靠性的影响',
+                            font: { size: 16, family: 'Inter, sans-serif' },
+                            color: '#334155'
+                        },
+                        legend: {
+                             labels: { font: { family: 'Inter, sans-serif' }, color: '#475569' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            min: 0,
+                            max: 100,
+                            title: { display: true, text: '得分', font: { family: 'Inter, sans-serif' }, color: '#475569' },
+                            ticks: { color: '#64748b' },
+                            grid: { color: '#e2e8f0' }
+                        },
+                        x: {
+                            title: { display: true, text: '分片数量', font: { family: 'Inter, sans-serif' }, color: '#475569' },
+                            ticks: { color: '#64748b' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 代理干预效果图表
+        if (document.getElementById('agentInterventionChart')) {
+            const agentInterventionCtx = document.getElementById('agentInterventionChart').getContext('2d');
+            const agentInterventionChart = new Chart(agentInterventionCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['代码', '数据库', '操作', '数学'],
+                    datasets: [{
+                        label: 'FULL',
+                        data: [93.0, 90.9, 95.7, 93.0],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(54, 162, 235, 1)'
+                    }, {
+                        label: 'SHARDED',
+                        data: [59.1, 41.4, 61.3, 63.0],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(255, 99, 132, 1)'
+                    }, {
+                        label: 'RECAP',
+                        data: [76.6, 65.6, 69.1, 75.3],
+                        backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                        borderColor: 'rgba(255, 206, 86, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(255, 206, 86, 1)'
+                    }, {
+                        label: 'SNOWBALL',
+                        data: [65.3, 53.2, 59.1, 63.7],
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(75, 192, 192, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'GPT-4o在不同代理干预方法下的性能',
+                            font: { size: 16, family: 'Inter, sans-serif' },
+                            color: '#334155'
+                        },
+                        legend: {
+                             labels: { font: { family: 'Inter, sans-serif' }, color: '#475569' }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            min: 40,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20,
+                                backdropColor: 'rgba(255, 255, 255, 0.75)',
+                                color: '#475569'
+                            },
+                            pointLabels: {
+                                font: { size: 12, family: 'Inter, sans-serif' },
+                                color: '#334155'
+                            },
+                            grid: { color: '#e2e8f0' },
+                            angleLines: { color: '#cbd5e1' }
+                        }
+                    }
+                }
+            });
+        }
+    });
+    </script>
+
+</body>
+</html>
