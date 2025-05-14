@@ -24,7 +24,7 @@ For example:
 
 This extension contributes the following settings:
 
-* `myExtension.enable`: Enable/disable this extension.
+* `myExtension.enable`: Enable/disable this extension.    11
 * `myExtension.thing`: Set to `blah` to do something.
 
 ## Known Issues
