@@ -3,8 +3,6 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { spawn } from 'child_process';
 
-// 全局变量，用于存储从 Webview 或 InputBox 获取的最新命令输入
-// 现在它将存储用户输入的整个命令文本块
 let globalReplaceCommands: string = `// 在此输入或粘贴替换指令，例如:
 // search:《要查找的文本1》
 // replace:《替换为的文本1》
@@ -24,33 +22,27 @@ export function activate(context: vscode.ExtensionContext) {
     );
     console.log('>>>>>> [newcline] NewclineViewProvider registered.');
 
-    // 命令：用于从 VS Code 输入框接收替换命令
     context.subscriptions.push(vscode.commands.registerCommand('newcline.enterReplaceCommands', async () => {
         const commandsInput = await vscode.window.showInputBox({
-            prompt: "输入替换命令文本块 (包含多对 search:《》 replace:《》)",
-            placeHolder: "search:《旧》 replace:《新》\nsearch:《其他》 replace:《别的》",
-            value: globalReplaceCommands,
-            valueSelection: [globalReplaceCommands.length, globalReplaceCommands.length], 
-            ignoreFocusOut: true, 
+            prompt: "输入替换命令 (例如: search:《内容》 replace:《内容》)",
+            placeHolder: "search:《旧》 replace:《新》",
+            value: globalReplaceCommands 
         });
         if (commandsInput !== undefined) {
             globalReplaceCommands = commandsInput;
-            provider.setWebviewCommandInputArea(globalReplaceCommands); // 通知Webview更新其命令输入区
-            vscode.window.showInformationMessage(`替换命令已更新。`);
+            provider.updateWebviewCommandsDisplay(globalReplaceCommands); 
+            vscode.window.showInformationMessage(`替换命令已设置为: ${globalReplaceCommands}`);
         }
     }));
 
-    // 命令：用于触发替换（现在会先显示Diff）
     context.subscriptions.push(vscode.commands.registerCommand('newcline.executeReplaceInWebview', () => {
         provider.triggerExecuteReplaceAndShowDiff(); 
     }));
     
-    // 命令：用于加载活动编辑器内容到Webview
     context.subscriptions.push(vscode.commands.registerCommand('newcline.loadActiveEditorToWebview', () => {
         provider.loadActiveEditorContent();
     }));
 
-    // 命令：用于打开插件的活动栏视图
     context.subscriptions.push(vscode.commands.registerCommand('newcline.startTool', () => {
         vscode.commands.executeCommand('workbench.view.extension.newcline-activitybar'); 
     }));
@@ -66,7 +58,9 @@ class NewclineViewProvider implements vscode.WebviewViewProvider {
     private _extensionUri: vscode.Uri;
     private _context: vscode.ExtensionContext;
     private _currentOriginalCode: string = "// 点击“加载/刷新活动编辑器”按钮来加载内容。\n";
-    private _currentOriginalDocumentUri?: vscode.Uri; 
+    private _currentOriginalDocumentUri?: vscode.Uri; // 新增：存储原始文档的URI
+    private _currentSearchPattern: string = "";
+    private _currentReplacePattern: string = "";
     private _lastPythonResult?: { modified_code: string; log: string[] };
 
 
@@ -78,15 +72,10 @@ class NewclineViewProvider implements vscode.WebviewViewProvider {
         this._context = context;
     }
 
-    public resolveWebviewView(
-        webviewView: vscode.WebviewView, // webviewView 是传入的参数
-        resolveContext: vscode.WebviewViewResolveContext, 
-        _token: vscode.CancellationToken,
-    ) {
-        this._view = webviewView; // 将参数赋值给类成员 this._view
+    public resolveWebviewView( /* ...与之前相同... */ ) {
+        this._view = webviewView;
         console.log('>>>>>> [newcline] resolveWebviewView called for newcline.sidebarView.');
 
-        // 后续使用参数 webviewView 来配置当前正在解析的视图
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [
@@ -103,32 +92,45 @@ class NewclineViewProvider implements vscode.WebviewViewProvider {
         }, null, this._context.subscriptions);
 
         webviewView.onDidChangeVisibility(() => {
-            if (this._view && this._view.visible) { // 确保使用 this._view 检查可见性
+            if (webviewView.visible) {
                 console.log('>>>>>> [newcline] Sidebar webview became visible.');
                 this.loadActiveEditorContent(); 
-                this.setWebviewCommandInputArea(globalReplaceCommands); 
+                this.updateWebviewCommandsDisplay(globalReplaceCommands); 
             }
         });
         
         this.loadActiveEditorContent(); 
         setTimeout(() => {
-            // 在 setTimeout 的回调中，webviewView 参数可能已失效，应使用 this._view
             this._view?.webview.postMessage({ command: 'setCommandInputArea', text: globalReplaceCommands });
         }, 100);
 
 
-        webviewView.webview.onDidReceiveMessage(async (message: any) => { // 给 message 添加 any 类型
+        webviewView.webview.onDidReceiveMessage(async message => { 
             console.log('>>>>>> [newcline] Provider received message from webview:', message);
             switch (message.command) {
                 case 'requestActiveEditorContent':
                     this.loadActiveEditorContent();
                     return;
-                case 'updateGlobalCommands': 
-                    if (typeof message.text === 'string') {
-                        globalReplaceCommands = message.text;
-                        console.log('>>>>>> [newcline] globalReplaceCommands updated from webview.');
-                        this._view?.webview.postMessage({ command: 'showFeedbackInLog', message: '替换指令已更新。' });
+                case 'webviewCommandInput': 
+                    const commandText = message.text.trim();
+                    let feedbackMessage = "";
+                    if (commandText.toLowerCase().startsWith("search:")) {
+                        this._currentSearchPattern = commandText; 
+                        feedbackMessage = `搜索模式已更新: ${commandText}`;
+                    } else if (commandText.toLowerCase().startsWith("replace:")) {
+                        this._currentReplacePattern = commandText;
+                        feedbackMessage = `替换模式已更新: ${commandText}`;
+                    } else if (commandText.toLowerCase() === "execute" || commandText.toLowerCase() === "run" || commandText.toLowerCase() === "diff") {
+                        this.triggerExecuteReplaceAndShowDiff();
+                        feedbackMessage = "正在生成替换预览...";
+                    } else {
+                        feedbackMessage = `未知指令: ${commandText}`;
                     }
+                    if (this._currentSearchPattern || this._currentReplacePattern) {
+                        globalReplaceCommands = `${this._currentSearchPattern}\n${this._currentReplacePattern}`.trim();
+                    }
+                    this.updateWebviewCommandsDisplay(globalReplaceCommands); 
+                    this._view?.webview.postMessage({ command: 'showFeedbackInLog', message: feedbackMessage });
                     return;
                 case 'executeReplaceRequestFromWebview': 
                     this.triggerExecuteReplaceAndShowDiff();
@@ -138,23 +140,20 @@ class NewclineViewProvider implements vscode.WebviewViewProvider {
     }
 
     public loadActiveEditorContent() {
-        if (!this._view) { 
-            console.log(">>>>>> [newcline] loadActiveEditorContent: View not available.");
-            return;
-        }
+        if (!this._view) { return; }
         const editor = vscode.window.activeTextEditor;
         if (editor) {
             this._currentOriginalCode = editor.document.getText();
-            this._currentOriginalDocumentUri = editor.document.uri; 
+            this._currentOriginalDocumentUri = editor.document.uri; // 保存原始文档的URI
             this._lastPythonResult = undefined; 
             this._view.webview.postMessage({
                 command: 'setOriginalCodeAndLog',
                 data: this._currentOriginalCode,
-                log: `活动编辑器内容 (${path.basename(editor.document.fileName)}) 已加载。\n请在下方命令区输入替换指令，然后点击“执行/预览”按钮。`
+                log: `活动编辑器内容 (${path.basename(editor.document.fileName)}) 已加载。\n在下方输入 search/replace 指令，然后执行预览。`
             });
         } else {
             this._currentOriginalCode = "// 没有活动的编辑器。\n";
-            this._currentOriginalDocumentUri = undefined; 
+            this._currentOriginalDocumentUri = undefined; // 清空URI
             this._lastPythonResult = undefined; 
             this._view.webview.postMessage({
                 command: 'showErrorInLog',
@@ -163,16 +162,17 @@ class NewclineViewProvider implements vscode.WebviewViewProvider {
         }
     }
     
-    public setWebviewCommandInputArea(commands: string) { // 新增方法，用于从外部更新Webview的命令输入区
+    public updateWebviewCommandsDisplay(commands: string) {
         if (this._view) {
-            this._view.webview.postMessage({ command: 'setCommandInputArea', text: commands });
+            this._view.webview.postMessage({ command: 'setCommandInputArea', text: commands }); // 更新Webview中的命令输入区
+            this._view.webview.postMessage({ command: 'showFeedbackInLog', message: `替换指令已通过API更新。`});
         }
     }
     
     public triggerExecuteReplaceAndShowDiff() {
-        if (!this._view) { 
-            vscode.window.showErrorMessage("Webview 未准备好执行替换。");
-            return; 
+        if (!this._view) { /* ... */ return; }
+        if (this._currentSearchPattern || this._currentReplacePattern) {
+            globalReplaceCommands = `${this._currentSearchPattern}\n${this._currentReplacePattern}`.trim();
         }
         if (!globalReplaceCommands || globalReplaceCommands.trim() === "" || globalReplaceCommands.startsWith("// 在此输入或粘贴替换指令")) {
             this._view.webview.postMessage({ command: 'showErrorInLog', message: '错误：替换指令未设置或为空。' });
@@ -186,7 +186,7 @@ class NewclineViewProvider implements vscode.WebviewViewProvider {
         this._executePythonAndHandleDiff(globalReplaceCommands, this._currentOriginalCode, this._currentOriginalDocumentUri);
     }
 
-    private async _executePythonAndHandleDiff(commandsToExecute: string, originalCodeContent: string, originalDocUri: vscode.Uri) {
+    private async _executePythonAndHandleDiff(commandsToExecute: string, originalCodeContent: string, originalDocUri: vscode.Uri) { // 接收原始文档URI
         if (!this._view) return;
         const webview = this._view.webview; 
 
@@ -195,13 +195,8 @@ class NewclineViewProvider implements vscode.WebviewViewProvider {
 
         try {
             const pythonScriptPath = vscode.Uri.joinPath(this._context.extensionUri, 'python_scripts', 'new.py').fsPath;
-            if (!fs.existsSync(pythonScriptPath)) { 
-                console.error('>>>>>> [newcline] Python script not found at:', pythonScriptPath);
-                webview.postMessage({ command: 'showErrorInLog', message: `Python 脚本未找到: ${pythonScriptPath}` });
-                return; 
-            }
+            if (!fs.existsSync(pythonScriptPath)) { /* ... */ return; }
             const pythonPath = vscode.workspace.getConfiguration('python').get<string>('defaultInterpreterPath') || 'python3';
-            console.log(`>>>>>> [newcline] Using Python path: ${pythonPath}`);
 
             const pythonProcess = spawn(pythonPath, [
                 pythonScriptPath, '--commands', commandsToExecute, '--original_code', originalCodeContent
@@ -226,71 +221,46 @@ class NewclineViewProvider implements vscode.WebviewViewProvider {
                         
                         webview.postMessage({ command: 'updateResult', data: result }); 
 
-                        const activeEditor = vscode.window.activeTextEditor;
-                        // 确保是对当前活动编辑器的原文进行操作，并且原文未在预览生成后被修改
-                        // 比较 originalDocUri 是否与当前活动编辑器的 URI 相同
-                        if (activeEditor && activeEditor.document.uri.toString() === originalDocUri.toString() && activeEditor.document.getText() === originalCodeContent) {
-                            const modifiedContentDocument = await vscode.workspace.openTextDocument({
-                                content: result.modified_code,
-                                language: activeEditor.document.languageId 
-                            });
-                            const diffTitle = `替换预览: ${path.basename(originalDocUri.fsPath)}`;
-                            await vscode.commands.executeCommand('vscode.diff', originalDocUri, modifiedContentDocument.uri, diffTitle, { preview: true }); 
-                            
-                            const selection = await vscode.window.showInformationMessage(
-                                '已生成替换预览 (新标签页)。是否应用这些更改到原始文件？',
-                                { modal: true }, '应用修改', '放弃更改'
-                            );
+                        // 使用传入的 originalDocUri 进行 Diff
+                        const modifiedContentDocument = await vscode.workspace.openTextDocument({
+                            content: result.modified_code,
+                            language: vscode.window.activeTextEditor?.document.languageId || 'plaintext' // 获取当前活动编辑器的语言ID
+                        });
+                        const diffTitle = `替换预览: ${path.basename(originalDocUri.fsPath)}`;
+                        await vscode.commands.executeCommand('vscode.diff', originalDocUri, modifiedContentDocument.uri, diffTitle, { preview: true }); 
+                        
+                        const selection = await vscode.window.showInformationMessage(
+                            '已生成替换预览 (新标签页)。是否应用这些更改到原始文件？',
+                            { modal: true }, '应用修改', '放弃更改'
+                        );
 
-                            if (selection === '应用修改') {
-                                await this._applyChangesToDocument(originalDocUri, originalCodeContent, result.modified_code);
-                            } else {
-                                webview.postMessage({ command: 'showFeedbackInLog', message: '用户已放弃更改。' });
-                            }
+                        if (selection === '应用修改') {
+                            // 传递原始文档的 URI 和原始内容进行最终确认和修改
+                            await this._applyChangesToDocument(originalDocUri, originalCodeContent, result.modified_code);
                         } else {
-                            let errorMessage = '错误：无法进行Diff预览。';
-                            if (!activeEditor || activeEditor.document.uri.toString() !== originalDocUri.toString()){
-                                errorMessage += '目标文件不再是活动编辑器。';
-                            } else if (activeEditor.document.getText() !== originalCodeContent) {
-                                errorMessage += '活动编辑器内容在预览生成后已被修改。';
-                            }
-                            errorMessage += '结果仅在Webview中显示。';
-                            webview.postMessage({ command: 'showErrorInLog', message: errorMessage });
+                            webview.postMessage({ command: 'showFeedbackInLog', message: '用户已放弃更改。' });
                         }
-                    } catch (e: any) { 
-                        console.error('>>>>>> [newcline] Error parsing Python script output:', e);
-                        webview.postMessage({ command: 'showErrorInLog', message: `解析Python脚本输出错误: ${e.message}. \n原始输出: ${scriptOutput}`});
-                    }
-                } else if (code !== 0) { 
-                    console.error('>>>>>> [newcline] Python script execution failed.');
-                    webview.postMessage({ command: 'showErrorInLog', message: `Python 脚本执行失败 (退出码: ${code}). \n错误: ${scriptError || 'N/A'} \n输出: ${scriptOutput}`});
-                } else { 
-                     console.warn('>>>>>> [newcline] Python script exited successfully but produced no output.');
-                     webview.postMessage({ command: 'showErrorInLog', message: 'Python脚本成功执行但没有返回任何内容。'});
-                }
+                    } catch (e) { /* ... */ }
+                } else if (code !== 0) { /* ... */ } else { /* ... */ }
             });
-            pythonProcess.on('error', (err) => { 
-                console.error('>>>>>> [newcline] Failed to start Python process:', err);
-                webview.postMessage({ command: 'showErrorInLog', message: `启动 Python 进程失败: ${err.message}` });
-            });
-        } catch (error: any) { 
-            console.error('>>>>>> [newcline] Error executing Python script:', error);
-            webview.postMessage({ command: 'showErrorInLog', message: `执行 Python 脚本时出错: ${error.message}` });
-        }
+            pythonProcess.on('error', (err) => { /* ... */ });
+        } catch (error: any) { /* ... */ }
     }
 
     private async _applyChangesToDocument(documentUri: vscode.Uri, originalContentBeforeDiff: string, newContent: string) {
         if (!this._view) return;
         
+        // 尝试重新获取文档，以防万一它在后台被关闭或更改
         let documentToEdit: vscode.TextDocument | undefined;
         try {
             documentToEdit = await vscode.workspace.openTextDocument(documentUri);
-        } catch (e: any) {
+        } catch (e) {
             vscode.window.showErrorMessage(`无法打开原始文件以应用修改: ${documentUri.fsPath}`);
-            this._view.webview.postMessage({ command: 'showErrorInLog', message: `错误: 无法打开原始文件 ${documentUri.fsPath}. ${e.message}` });
+            this._view.webview.postMessage({ command: 'showErrorInLog', message: `错误: 无法打开原始文件 ${documentUri.fsPath}` });
             return;
         }
 
+        // 再次检查原文是否在 Diff 预览后被修改
         if (documentToEdit.getText() !== originalContentBeforeDiff) {
             const decision = await vscode.window.showWarningMessage(
                 '原始文件的内容在生成预览后已被修改。是否仍要覆盖并应用替换？',
@@ -308,18 +278,19 @@ class NewclineViewProvider implements vscode.WebviewViewProvider {
         );
         
         const edit = new vscode.WorkspaceEdit();
-        edit.replace(documentUri, fullRange, newContent); 
+        edit.replace(documentUri, fullRange, newContent); // 使用传入的 documentUri
         
         const success = await vscode.workspace.applyEdit(edit);
         if (success) {
             vscode.window.showInformationMessage('文件修改已应用！');
             this._view.webview.postMessage({ command: 'showFeedbackInLog', message: '文件修改已成功应用。' });
             
+            // 如果被修改的文档仍然是当前活动编辑器，则更新 Webview 中的原文预览
             if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri.toString() === documentUri.toString()) {
                 this._currentOriginalCode = newContent; 
                 this._currentOriginalDocumentUri = documentUri;
                 this._view.webview.postMessage({ command: 'setOriginalCodeAndLog', data: this._currentOriginalCode, log: "文件已修改并重新加载到预览。" });
-            } else { 
+            } else { // 否则，只提示用户文件已修改
                  this._view.webview.postMessage({ command: 'showFeedbackInLog', message: `文件 ${path.basename(documentUri.fsPath)} 已被修改。` });
             }
 
@@ -330,6 +301,7 @@ class NewclineViewProvider implements vscode.WebviewViewProvider {
     }
 
     private _getHtmlForWebview(webview: vscode.Webview): string {
+        // ... (HTML 内容与之前版本相同，确保 Webview JS 能正确发送消息) ...
         const initialCommandText = globalReplaceCommands.replace(/\n/g, '\\n').replace(/'/g, "\\'");
         return `<!DOCTYPE html>
         <html lang="zh-CN">
@@ -394,10 +366,10 @@ class NewclineViewProvider implements vscode.WebviewViewProvider {
                     flex: 0.5; 
                     min-height: 60px;
                 }
-                #commandInputPanel { 
+                #commandInputPanel { /* 命令输入区 */
                     flex-shrink:0; 
-                    min-height: 60px; 
-                    height: 120px; 
+                    min-height: 60px; /* 给一个初始高度 */
+                    height: 120px; /* 可以根据需要调整 */
                 }
                 div.log-area { 
                     min-height: 50px; 
@@ -468,8 +440,7 @@ class NewclineViewProvider implements vscode.WebviewViewProvider {
                     vscode.postMessage({ command: 'updateGlobalCommands', text: batchCommandInputArea.value });
                 });
                 
-                // 使用模板字符串来正确处理 initialCommandText 中的换行和特殊字符
-                batchCommandInputArea.value = \`${initialCommandText}\`;
+                batchCommandInputArea.value = '${initialCommandText}'.replace(/\\\\n/g, '\\n').replace(/\\\\'/g, "\\'");
 
                 loadActiveEditorButton.addEventListener('click', () => {
                     vscode.postMessage({ command: 'requestActiveEditorContent' });

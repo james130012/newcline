@@ -44,11 +44,15 @@
           "id": "newcline.sidebarView",    
           "name": "NewCLine 替换工具",    
           "icon": "$(tools)",           
-          "type": "webview"                                                     
+          "type": "webview"             
+                                        // 注意：当 type 为 webview 时，VS Code 期望一个 WebviewViewProvider
+                                        // 而不是我们之前在 view/title 中添加按钮的方式。
+                                        // 点击活动栏图标会直接尝试解析这个 webview 视图。
         }
       ]
     }
-
+    // "menus" 部分中 "view/title" 的贡献可以暂时移除，
+    // 因为我们的目标是让 Webview 直接填充侧边栏视图，而不是在视图标题栏放按钮。
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

@@ -1,16 +1,15 @@
-# -*- coding: utf-8 -*-
 import argparse
 import re
-import json
-import sys
-import io
+import json # 用于输出JSON
 
-# --- 全局日志列表 ---
+# --- 从你原始脚本中保留的核心函数 ---
+
 cli_log_messages = []
 
 def _cli_log(message):
     """将日志消息收集到列表中，以便最后作为JSON一部分输出。"""
     global cli_log_messages
+    # print(f"LOG: {message}") # 在命令行运行时打印一些即时反馈 (可选)
     cli_log_messages.append(message)
 
 def _clear_cli_log():
@@ -18,14 +17,11 @@ def _clear_cli_log():
     global cli_log_messages
     cli_log_messages = []
 
-# --- 核心文本处理函数 ---
-
 def _normalize_text_block(text_block):
     lines = text_block.splitlines()
     stripped_lines = [line.strip() for line in lines]
     normalized_lines = []
     for line in stripped_lines:
-        # 压缩多个连续空格为一个空格，但保留单词间的单个空格
         normalized_line = re.sub(r'\s+', ' ', line)
         if normalized_line: 
             normalized_lines.append(normalized_line)
@@ -42,7 +38,7 @@ def _reindent_block(text_block_to_reindent, target_indentation):
     
     processed_lines = []
     first_non_blank_line_indent_len = -1
-    for line_content_check in lines:
+    for line_content_check in lines: # 修正了变量名迭代
         if line_content_check.strip():
             first_non_blank_line_indent_len = len(_get_line_indentation(line_content_check))
             break
@@ -52,16 +48,21 @@ def _reindent_block(text_block_to_reindent, target_indentation):
         base_indent_len = first_non_blank_line_indent_len
 
     for line in lines:
-        if not line.strip(): 
+        if not line.strip(): # 处理空行或仅包含空格的行
+            # 如果行本身有内容（即使只是空格），则将其与目标缩进结合
+            # 如果行是完全空的，则结果也是空行
             processed_lines.append(target_indentation + line if line else "") 
             continue
 
+        # 处理带有实际内容的行
         current_line_actual_indent_len = len(_get_line_indentation(line))
         
         line_content_for_reindent = ""
         if current_line_actual_indent_len >= base_indent_len:
+             # 保留相对于块基础缩进的内部缩进
              line_content_for_reindent = line[base_indent_len:]
         else: 
+             # 如果行缩进小于块的基础缩进，则去除其所有前导空格
              line_content_for_reindent = line.lstrip() 
 
         processed_lines.append(target_indentation + line_content_for_reindent)
@@ -146,6 +147,7 @@ def _extract_delimited_content(text, start_offset_in_text, start_delimiter, end_
         return None, start_offset_in_text 
     content_str = text[start_offset_in_text : end_delimiter_pos]
     return content_str, end_delimiter_pos + len(end_delimiter) 
+
 
 def process_code_modifications_cli(commands_str_raw, original_code):
     _clear_cli_log() 
@@ -252,32 +254,13 @@ def process_code_modifications_cli(commands_str_raw, original_code):
 
 
 def main():
-    # 确保标准输出和标准错误输出使用 UTF-8 编码 (主要针对 Windows)
-    # 这一步对于直接写入字节流可能不是严格必需的，但保留它可以作为一种保障
-    # 如果直接写入 sys.stdout.buffer.write(bytes)，则此处的 TextIOWrapper 设置会被绕过
-    if sys.version_info[0] == 3: # 确保只在 Python 3 中执行
-        # 尝试配置 stderr，stdout 将通过 buffer 直接写入
-        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
-
-
     parser = argparse.ArgumentParser(description="代码批量替换命令行工具")
     parser.add_argument("--commands", required=True, help="包含替换命令的字符串，例如: search:《原始》 replace:《替换》")
     parser.add_argument("--original_code", required=True, help="待处理的原始代码字符串")
     
     args = parser.parse_args()
-    
     results = process_code_modifications_cli(args.commands, args.original_code)
-    
-    # 将结果字典转换为 JSON 字符串 (确保是 Unicode 字符串，而不是 ASCII 转义)
-    json_output_str = json.dumps(results, ensure_ascii=False, indent=2)
-    
-    # 将该字符串编码为 UTF-8 字节
-    output_bytes = json_output_str.encode('utf-8')
-    
-    # 直接将 UTF-8 字节写入标准输出的缓冲区
-    # 这通常是在 Windows 上确保子进程输出正确编码给 Node.js 的最可靠方法
-    sys.stdout.buffer.write(output_bytes)
-    sys.stdout.flush() # 确保所有内容都被写出
+    print(json.dumps(results, ensure_ascii=False, indent=2))
 
 if __name__ == "__main__":
     main()

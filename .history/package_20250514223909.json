@@ -32,23 +32,27 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "newcline-activitybar", 
-          "title": "NewCLine 工具",      
-          "icon": "$(replace-all)"     
+          "id": "newcline-activitybar", // 活动栏容器的ID
+          "title": "NewCLine 工具",      // 鼠标悬停在活动栏图标上时显示的名称
+          "icon": "$(replace-all)"     // 活动栏图标 (VS Code 内置图标)
         }
       ]
     },
     "views": {
-      "newcline-activitybar": [ 
+      "newcline-activitybar": [ // 这个键必须与上面 viewsContainers.activitybar.id 匹配
         {
-          "id": "newcline.sidebarView",    
-          "name": "NewCLine 替换工具",    
-          "icon": "$(tools)",           
-          "type": "webview"                                                     
+          "id": "newcline.sidebarView",    // 我们侧边栏视图的唯一 ID
+          "name": "NewCLine 替换工具",    // 在侧边栏中显示的视图名称
+          "icon": "$(tools)",           // (可选) 视图自身的图标
+          "type": "webview"             // 明确这个视图将由一个 WebviewViewProvider 提供
+                                        // 注意：当 type 为 webview 时，VS Code 期望一个 WebviewViewProvider
+                                        // 而不是我们之前在 view/title 中添加按钮的方式。
+                                        // 点击活动栏图标会直接尝试解析这个 webview 视图。
         }
       ]
     }
-
+    // "menus" 部分中 "view/title" 的贡献可以暂时移除，
+    // 因为我们的目标是让 Webview 直接填充侧边栏视图，而不是在视图标题栏放按钮。
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

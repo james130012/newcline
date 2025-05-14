@@ -11,44 +11,57 @@
     "Other"
   ],
   "activationEvents": [
-    "onView:newcline.sidebarView" 
+    "onCommand:newcline.startTool",
+    "onCommand:newcline.enterReplaceCommands",
+    "onCommand:newcline.executeReplaceInWebview",
+    "onView:newcline.activitybarView"
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [ 
+    "commands": [
+      {
+        "command": "newcline.startTool",
+        "title": "NewCLine: 打开替换预览面板",
+        "icon": "$(replace-all)"
+      },
       {
         "command": "newcline.enterReplaceCommands",
         "title": "NewCLine: 输入替换命令"
       },
       {
         "command": "newcline.executeReplaceInWebview",
-        "title": "NewCLine: 执行替换"
-      },
-      {
-        "command": "newcline.loadActiveEditorToWebview",
-        "title": "NewCLine: 加载活动编辑器到预览" 
+        "title": "NewCLine: 在预览中执行替换"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "newcline-activitybar", 
-          "title": "NewCLine 工具",      
-          "icon": "$(replace-all)"     
+          "id": "newcline-activitybar",
+          "title": "NewCLine 工具",
+          "icon": "$(replace-all)"
         }
       ]
     },
     "views": {
-      "newcline-activitybar": [ 
+      "newcline-activitybar": [
         {
-          "id": "newcline.sidebarView",    
-          "name": "NewCLine 替换工具",    
-          "icon": "$(tools)",           
-          "type": "webview"                                                     
+          "id": "newcline.activitybarView",
+          "name": "执行操作",
+          "icon": "$(tools)",
+          "type": "webview",
+          "when": "true"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "newcline.startTool",
+          "when": "view == newcline.activitybarView",
+          "group": "navigation@1"
         }
       ]
     }
-
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

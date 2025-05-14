@@ -44,11 +44,13 @@
           "id": "newcline.sidebarView",    
           "name": "NewCLine 替换工具",    
           "icon": "$(tools)",           
-          "type": "webview"                                                     
+          "type": "webview"             
+                                        
         }
       ]
     }
-
+    // "menus" 部分中 "view/title" 的贡献可以暂时移除，
+    // 因为我们的目标是让 Webview 直接填充侧边栏视图，而不是在视图标题栏放按钮。
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
