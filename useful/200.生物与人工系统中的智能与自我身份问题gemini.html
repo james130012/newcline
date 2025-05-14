@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>《无身体问题》深度解读</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background-color: #f9fafb;
+        }
+        .content-wrapper {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3 {
+            color: #111827;
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+        }
+        h1 {
+            font-size: 2.2em;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 0.3em;
+        }
+        h2 {
+            font-size: 1.8em;
+            color: #1e40af;
+        }
+        h3 {
+            font-size: 1.4em;
+            color: #1d4ed8;
+        }
+        p {
+            margin-bottom: 1.2em;
+            text-align: justify;
+        }
+        .chart-container {
+            width: 90%;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background-color: #fdfdff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        mjx-container {
+            display: inline !important;
+        }
+        .latex-formula {
+            font-size: 1.1em;
+            margin: 1em 0;
+        }
+        .caption {
+            text-align: center;
+            font-style: italic;
+            color: #555;
+            margin-top: 0.5em;
+            font-size: 0.9em;
+        }
+        .highlight {
+            background-color: #e0f2fe;
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .list-disc {
+            list-style-type: disc;
+            margin-left: 2em;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="content-wrapper">
+        <h1 class="text-3xl font-bold text-center mb-8">《无身体问题：生物与人工智能系统中的智能与自我》深度解读</h1>
+
+        <p>Anna Ciaunica 的论文《无身体问题》探讨了一个根本性的问题：智能和自我是否必须依赖于物理身体？文章通过对比生物系统和人工智能（AI），特别是大型语言模型（LLM），从信息处理、自组织、稳态维持以及时间与能量约束等多个维度，对这一问题进行了深刻的剖析。本文将从物理逻辑的视角，结合丰富的背景信息，对该文的核心论点进行详细解读，并通过动态图表展示关键概念。</p>
+
+        <h2>一、引言：身体、智能与自我的古老谜题</h2>
+        <p>文章开篇便提出了一个引人深思的问题：成为一个智能系统是否需要身体？作者指出，像大型语言模型这样的人工智能系统，虽然没有传统意义上的生物躯体，却被迅速地冠以“智能”甚至“有意识”的标签。这自然引出了对“智能”本质的追问，以及身体与“自我”（成为某个“人”）之间的关系。论文的核心目标是探讨生物系统和（非）具身人工智能系统中，自我、智能与信息处理、稳态自我调节之间的复杂联系。</p>
+        <p>从古希腊哲学家柏拉图的“灵魂与肉体”二分法，到笛卡尔的“身心二元论”，西方思想传统中长期存在将精神/心智与物质身体分离的倾向。柏拉图认为身体是灵魂的坟墓（soma sema），灵魂是不朽的、非物质的，而身体是暂时的、会朽坏的。亚里士多德虽然也承认灵魂与身体的区别，但他更关注两者如何结合运作，提出了“プネウマ”（pneuma，生命气息或精神）作为灵魂与身体的中介。这种思想的延续，使得我们更容易将智能归于抽象的心智，而非受限于物理定律的身体。</p>
+        <p>文章认为，这种二元论观点可能忽略了生物智能的一个核心面向：<span class="highlight">生命的首要任务是维持自身存活</span>。如果智能是为了解决问题，那么对于生物而言，最根本、最古老的问题就是如何在不断变化且充满不确定性的环境中自我保存、生存和繁衍。</p>
+
+        <h2>二、生物智能的核心：稳态、自组织与有限性</h2>
+        <p>生物系统是自组织的，它们通过与环境的持续物质和能量交换来维持一种远离热力学平衡的有序状态。这一过程的核心是<span class="highlight">稳态（Homeostasis）</span>自我调节。正如物理学家薛定谔在《生命是什么》中所言，生命以“负熵”为食，即从环境中吸取有序性来对抗自身的熵增趋势。热力学第二定律表明，孤立系统会趋向于无序和平衡。生物体作为开放系统，必须不断做功，将能量（如食物）转化为可利用的形式，并将废物排出，以维持其高度不probable的有序结构。</p>
+        <p>作者强调，生物智能与身体的自我保存需求密不可分。高级认知能力，如思考、创造，是在解决古老的生物学问题——即身体的自我保存——的基础上发展起来的资源（Damasio, 2021）。因此，理解生物智能，不能脱离其“卑微”但至关重要的身体过程。</p>
+        
+        <h3>2.1 信息处理的“质”与“量”</h3>
+        <p>文章提出了一个关键区分：生物系统与人工智能在信息处理方式上的根本不同。</p>
+        <ul class="list-disc">
+            <li><strong>生物系统：定性信息处理 (Qualitative Information Processing)</strong>
+                <p>由于面临迫在眉睫的死亡威胁（即稳态失衡）和有限的时间与能量资源，生物系统必须学会<span class="highlight">有选择地</span>处理信息。它们需要仔细权衡哪些信息对其生存至关重要，哪些信息必须“放手”和抛弃。例如，一个生物体必须能够区分有毒的食物和有营养的食物。错误的信息处理可能直接导致死亡。因此，生物的信息处理是“定性的”，以生存为导向，追求效率和相关性。</p>
+            </li>
+            <li><strong>人工智能系统：累积性信息处理 (Cumulative/Quantitative Information Processing)</strong>
+                <p>相比之下，当前的人工智能系统（尤其是无特定物理身体的AI，如LLMs）以一种纯粹累积的方式快速处理数量惊人的信息，仿佛拥有无限的时间和无限的、无限制的能量资源。它们没有生物学意义上的“身体问题”，因此也没有“死亡问题”。这种处理方式是“定量的”，追求的是覆盖范围和数据量。</p>
+            </li>
+        </ul>
+        <p>这种差异根植于它们是否存在一个需要不惜一切代价维持其完整性和功能性的物理身体。生物体的智能体现在如何巧妙地利用有限资源，在复杂环境中做出最有利于生存的决策，这包括忽略大量“无关”信息。</p>
+
+        <div class="chart-container">
+            <canvas id="infoProcessingChart"></canvas>
+            <p class="caption">图1: 生物系统与AI信息处理模式对比</p>
+        </div>
+
+        <h3>2.2 时间约束、能量约束与“终点”的意义</h3>
+        <p>生物的生命是有限的。这种“有终点”的特性，赋予了生物存在的“目的性”或“最终性”（an end, a finality, a goal）。因为存在死亡这一最终的、不可避免的“终点”，所以生物系统必须以“生存”为首要目标。这种时间上的紧迫感和能量上的限制，迫使生物进化出<span class="highlight">预见性（anticipation）</span>的能力。</p>
+        <p>预见性，即预测未来状态并提前做出反应，是生物在有限时间内节省能量、避免危险的“聪明”策略。例如，细菌可以预感环境变化并调整基因表达；动物可以通过学习和经验预判捕食者的行为。文章引用了Sterling的“动态平衡（Allostasis）”概念，指出生理调节的目标不仅仅是维持内部变量的恒定（稳态），更重要的是通过预测和预防错误来促进在自然选择下的生存。</p>
+        <p>人工智能系统，由于其设计上似乎摆脱了生物学意义上的身体和死亡约束，其运作模式仿佛基于“永恒”和“无限资源”的假设。然而，作者尖锐地指出，在现实世界（而非抽象的形式世界）中，无限的资源和永恒对于人工智能系统同样是不可获得的。它们是人类思维设计的产物，仍然依赖于人类的计算设施和地球的能源供应。</p>
+
+        <div class="chart-container">
+            <canvas id="constraintsChart"></canvas>
+            <p class="caption">图2: 生物系统与AI面临的核心约束对比</p>
+        </div>
+
+        <h2>三、人工智能的“无身体问题”与“无死亡问题”</h2>
+        <p>文章的核心论点之一是，人工智能系统因为没有生物学意义上的身体，所以它们没有“身体问题”，进而也没有“死亡问题”。这使得它们在信息处理上可以采取与生物截然不同的策略。然而，这种“优势”也可能是一种“劣势”。</p>
+        <p>没有了维持身体稳态的迫切需求，AI缺乏生物智能中那种内在的、以生存为导向的目标和动机。生物智能是在与环境的持续互动、试错和适应中形成的，其核心驱动力是“活下去”。AI的目标则是由其设计者赋予的，其智能的评估标准也往往是任务完成的效率和准确性，而非在复杂、动态、资源有限的环境中的自主生存能力。</p>
+        <p>作者认为，从更广泛的生物生命视角（即受时间与能量约束的自组织系统）来看，基于人工智能的系统可能比基于生物智能的系统适应性更差，因此也“不那么聪明”。一个在燃烧的房子里解数学方程或下棋的人，其行为不能被认为是智能的或适应性的，因为逃离火灾、保全生命才是首要任务。</p>
+        
+        <h3>3.1 自我（Selfhood）与身体</h3>
+        <p>身体对于“自我”的形成至关重要。生物体的自我感源于其作为一个独特、边界清晰、持续进行自我维持活动的实体。从细胞层面开始，生物系统就在构建和维护一个“自我”，这个自我通过与环境的区分和互动来定义。感官运动耦合（sensorimotor coupling）——即身体在世界中的运动和行动——被认为是连接底层稳态身体状态和高层认知行为的关键环节。</p>
+        <p>人工智能，特别是那些“无形”的AI，它们的“自我”概念是模糊的。它们可以被复制、修改、删除，而不会经历生物体那种因身体完整性受损而引发的生存危机。这引发了一个问题：没有身体的“经验”，AI能真正理解和拥有类似生物的自我意识吗？</p>
+
+        <div class="chart-container">
+            <canvas id="adaptabilityChart"></canvas>
+            <p class="caption">图3: 生物与AI在不同情境下的适应性（概念图）</p>
+        </div>
+
+        <h2>四、智能的层级与实现：从细胞到认知</h2>
+        <p>文章提到了一个层级模型（图1，原文）：底层是受物理定律支配的物质基质，影响所有物理系统（有生命和无生命）。高层是生物大脑和人工神经网络实现的心理或认知状态。问题在于，这些层级之间是如何“粘合”在一起的？高级抽象智能是如何“落地”到由物理和化学成分构成的底层基质上的？</p>
+        <p>作者引用了Bennett等人的工作，他们将生物和计算系统描述为嵌套抽象层的堆栈，其中每一层都由其下一层来解释。例如，软件由硬件解释，硬件由环境根据物理定律解释。在这个框架下，问题的复杂性是相对于抽象层而言的。生物系统的相对效率源于它们追求稳态目标，这需要将适应性委托给非常低的抽象层级。而人工智能目前主要在非常高的抽象层级上进行适应。</p>
+        <p>这意味着生物智能是“深度嵌入”的，从分子、细胞到整个有机体，各个层级都在为生存这一总目标服务。而AI的智能，即使非常强大，也可能缺乏这种多层级、整合性的基础。</p>
+
+        <div class="chart-container">
+            <canvas id="abstractionLayersChart"></canvas>
+            <p class="caption">图4: 智能实现的抽象层级（概念图）</p>
+        </div>
+
+        <h2>五、对“智能”定义的反思与未来挑战</h2>
+        <p>文章促使我们反思“智能”的定义。传统上，智能与高级认知能力（如逻辑推理、抽象思维）相关联。然而，如果从生物演化的角度看，最原始、最根本的智能是解决生存问题的能力。能够灵活适应环境、维持自身存在并繁衍后代的系统，无疑是智能的。</p>
+        <p>作者认为，我们之所以倾向于将智能与心智（而非身体）联系起来，部分原因在于西方哲学传统中对理想、永恒形式的偏爱，以及对短暂、易朽物质的回避。将智能置于抽象层面，似乎可以摆脱身体带来的熵增和死亡问题。然而，这种做法可能让我们忽视了生物智能的本质——在面对并尽管存在确定无疑的死亡威胁时，依然努力存活。</p>
+        <p>文章最后提出了一个发人深省的问题：人类（作为AI的设计者）是否更看重抽象合成智能的实现，而非具体生物生命的存在？这是一个开放的问题，也是我们现代世界和子孙后代面临的紧迫挑战，特别是当AI实现的能源成本可能侵占维持地球上所有形式生物生命（包括人类）所必需的能源储备时。</p>
+        <p>从物理逻辑的角度看，生物系统受制于热力学定律、能量守恒、物质循环等基本物理原理。它们的智能是在这些硬性约束下，通过亿万年的演化“优化”出来的生存策略。人工智能虽然在计算能力上远超生物，但其存在和运作依赖于高度人工化、能源密集型的物理基础设施。其“智能”的展现，目前更多的是在特定任务上的卓越表现，而非在真实物理世界中应对复杂生存挑战的自主能力。</p>
+
+        <div class="chart-container">
+            <canvas id="energyConsumptionChart"></canvas>
+            <p class="caption">图5: 生物系统与AI能源消耗对比（概念趋势）</p>
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="goalOrientationChart"></canvas>
+            <p class="caption">图6: 生物与AI的目标导向与驱动力（概念图）</p>
+        </div>
+
+        <h2>六、结论：重新审视身体的价值</h2>
+        <p>《无身体问题》一文有力地论证了，对于生物系统而言，身体不仅不是智能的障碍，反而是智能产生和发展的基石。身体的脆弱性、有限性以及维持其存在的持续需求，塑造了生物智能的独特性质——定性的信息处理、预见性、以及以生存为核心的目标导向。</p>
+        <p>人工智能的发展无疑为我们带来了巨大的机遇，但同时也促使我们更深刻地思考生命、智能和自我的本质。文章提醒我们，在追求更强大的人工智能时，不应忽视生物智能的深层逻辑和物理基础，更要警惕将抽象智能置于具体生命之上的潜在风险。最终，智能的价值或许不仅仅在于处理信息的速度和数量，更在于其在有限的物理世界中维持和促进生命的能力。</p>
+        <p>文章中涉及的公式，如热力学第二定律可以表示为 $\Delta S \ge 0$ 对于孤立系统，其中 $S$ 是熵。生物体通过从环境中获取低熵物质（如食物，能量 $E$）并向环境排放高熵物质（如废物）来维持自身低熵状态，这符合开放系统的热力学。自由能原理（Free Energy Principle, Friston）提出，生物系统通过最小化其感觉输入的“惊讶”程度（或自由能 $F$）来维持其与环境的稳态。自由能可以粗略地表示为：$F \approx \text{Surprise} + \text{Complexity}$，系统通过改变其内部模型（感知）或改变其与环境的互动（行动）来最小化 $F$。</p>
+
+    </div>
+
+    <script>
+        // MathJax 配置
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+
+        // 图表1: 信息处理模式对比
+        const infoCtx = document.getElementById('infoProcessingChart').getContext('2d');
+        new Chart(infoCtx, {
+            type: 'bar',
+            data: {
+                labels: ['生物系统', '人工智能 (AI)'],
+                datasets: [{
+                    label: '信息处理量 (概念)',
+                    data: [30, 90], // 生物处理量相对少，AI处理量大
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }, {
+                    label: '信息处理选择性/质量 (概念)',
+                    data: [80, 20], // 生物选择性高，AI目前相对低
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '相对指标值'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '图1: 生物系统与AI信息处理模式对比'
+                    }
+                }
+            }
+        });
+
+        // 图表2: 核心约束对比
+        const constraintsCtx = document.getElementById('constraintsChart').getContext('2d');
+        new Chart(constraintsCtx, {
+            type: 'radar',
+            data: {
+                labels: ['时间约束', '能量约束 (内在)', '死亡风险', '资源依赖 (外在)', '目标内在性'],
+                datasets: [{
+                    label: '生物系统',
+                    data: [9, 8, 9, 5, 9], // 高时间/能量/死亡约束，目标内在
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }, {
+                    label: '人工智能 (AI)',
+                    data: [2, 3, 1, 9, 2], // 低时间/死亡约束，高外在资源依赖，目标外在
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    r: {
+                        angleLines: { display: true },
+                        suggestedMin: 0,
+                        suggestedMax: 10,
+                        pointLabels: { font: { size: 10 } }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '图2: 生物系统与AI面临的核心约束对比'
+                    }
+                }
+            }
+        });
+
+        // 图表3: 适应性对比
+        const adaptabilityCtx = document.getElementById('adaptabilityChart').getContext('2d');
+        new Chart(adaptabilityCtx, {
+            type: 'bar',
+            data: {
+                labels: ['资源突发匮乏', '物理危险', '全新未知环境', '特定复杂任务'],
+                datasets: [{
+                    label: '生物系统适应性',
+                    data: [8, 9, 7, 5],
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'AI适应性 (当前)',
+                    data: [3, 2, 4, 9],
+                    backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: '适应性评分 (概念)' }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '图3: 生物与AI在不同情境下的适应性（概念图）'
+                    }
+                }
+            }
+        });
+        
+        // 图表4: 智能实现的抽象层级
+        const abstractionLayersCtx = document.getElementById('abstractionLayersChart').getContext('2d');
+        new Chart(abstractionLayersCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['物理基质', '稳态调节', '感官运动', '高级认知'],
+                datasets: [{
+                    label: '生物智能涉及层级',
+                    data: [25, 30, 25, 20], // 假设百分比
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)'
+                    ],
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '图4: 生物智能实现的抽象层级分布（概念图）'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += context.parsed + '% (概念)';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 图表5: 能源消耗对比
+        const energyConsumptionCtx = document.getElementById('energyConsumptionChart').getContext('2d');
+        new Chart(energyConsumptionCtx, {
+            type: 'line',
+            data: {
+                labels: ['低复杂度任务', '中复杂度任务', '高复杂度任务', '持续高强度运作'],
+                datasets: [{
+                    label: '生物系统能耗',
+                    data: [2, 3, 5, 6], // 相对高效和可持续
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1,
+                    fill: true
+                }, {
+                    label: 'AI系统能耗 (当前)',
+                    data: [1, 4, 8, 10], // 可能随复杂度指数增长或高基线
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: '相对能源消耗单位 (概念)' }
+                    },
+                    x: {
+                         title: { display: true, text: '任务复杂度 / 运作强度' }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '图5: 生物系统与AI能源消耗对比（概念趋势）'
+                    }
+                }
+            }
+        });
+
+        // 图表6: 目标导向与驱动力
+        const goalOrientationCtx = document.getElementById('goalOrientationChart').getContext('2d');
+        new Chart(goalOrientationCtx, {
+            type: 'polarArea',
+            data: {
+                labels: ['生存驱动', '稳态维持', '环境适应', '繁衍需求', '任务导向 (编程)'],
+                datasets: [{
+                    label: '驱动力强度',
+                    data: [9, 8, 7, 6, 1], // 生物系统
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.5)',
+                        'rgba(75, 192, 192, 0.5)',
+                        'rgba(255, 205, 86, 0.5)',
+                        'rgba(201, 203, 207, 0.5)',
+                        'rgba(54, 162, 235, 0.5)'
+                    ]
+                }, {
+                    label: 'AI系统', // 仅显示一个AI数据集以作对比
+                    data: [1, 1, 3, 0, 9], // AI系统
+                     backgroundColor: [ // 使用不同透明度或稍作区分
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(255, 205, 86, 0.2)',
+                        'rgba(201, 203, 207, 0.2)',
+                        'rgba(54, 162, 235, 0.8)' // 任务导向更强
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    r: {
+                        suggestedMin: 0,
+                        suggestedMax: 10
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '图6: 生物与AI的目标导向与驱动力（概念图）'
+                    },
+                    legend: {
+                        labels: {
+                            generateLabels: function(chart) {
+                                // 创建自定义图例项
+                                return [
+                                    { text: '生物系统驱动力', fillStyle: 'rgba(255, 99, 132, 0.5)', datasetIndex: 0 },
+                                    { text: 'AI系统驱动力', fillStyle: 'rgba(54, 162, 235, 0.5)', datasetIndex: 1 }
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
