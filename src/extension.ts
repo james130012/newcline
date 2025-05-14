@@ -20,7 +20,6 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.ViewColumn.One,
             {
                 enableScripts: true,
-                // 为了安全，最好指定本地资源的根路径
                 localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'python_scripts')]
             }
         );
@@ -35,9 +34,8 @@ export function activate(context: vscode.ExtensionContext) {
             context.subscriptions
         );
 
-        // 处理从 Webview 发送过来的消息
         panel.webview.onDidReceiveMessage(
-            async message => { // 将此回调设为 async 以便使用 await
+            async message => {
                 console.log('>>>>>> [newcline] Received message from webview:', message);
                 switch (message.command) {
                     case 'alert':
@@ -52,17 +50,12 @@ export function activate(context: vscode.ExtensionContext) {
                         }
                         return;
                     case 'executeReplace':
-                        // 获取从 Webview 发送过来的命令和原始代码
                         const commands = message.commands;
                         const originalCode = message.originalCode;
 
-                        // 调用 Python 脚本
                         try {
-                            // 假设你的 Python 脚本 (例如 new.py 或 code_modifier_cli.py)
-                            // 位于插件目录下的 python_scripts 文件夹中
                             const pythonScriptPath = vscode.Uri.joinPath(context.extensionUri, 'python_scripts', 'new.py').fsPath;
                             
-                            // 检查脚本文件是否存在
                             if (!fs.existsSync(pythonScriptPath)) {
                                 console.error('>>>>>> [newcline] Python script not found at:', pythonScriptPath);
                                 vscode.window.showErrorMessage(`Python 脚本未找到: ${pythonScriptPath}`);
@@ -73,15 +66,11 @@ export function activate(context: vscode.ExtensionContext) {
                                 return;
                             }
 
-                            // 获取 Python 解释器路径 (用户可能配置了特定的 Python 环境)
-                            // 你也可以硬编码一个 Python 解释器名称，如 'python' 或 'python3'
-                            // 但从配置中获取更灵活
                             const pythonPath = vscode.workspace.getConfiguration('python').get<string>('defaultInterpreterPath') || 'python3';
                             console.log(`>>>>>> [newcline] Using Python path: ${pythonPath}`);
                             console.log(`>>>>>> [newcline] Executing script: ${pythonScriptPath}`);
-                            console.log(`>>>>>> [newcline] With commands: ${commands}`);
-                            console.log(`>>>>>> [newcline] With original code: ${originalCode.substring(0,100)}...`);
-
+                            // console.log(`>>>>>> [newcline] With commands: ${commands}`); // 避免日志过长
+                            // console.log(`>>>>>> [newcline] With original code: ${originalCode.substring(0,100)}...`);
 
                             const pythonProcess = spawn(pythonPath, [
                                 pythonScriptPath,
@@ -94,26 +83,31 @@ export function activate(context: vscode.ExtensionContext) {
                             let scriptOutput = '';
                             let scriptError = '';
 
+                            // 明确指定 stdout 和 stderr 的编码为 utf8
+                            pythonProcess.stdout.setEncoding('utf8');
+                            pythonProcess.stderr.setEncoding('utf8');
+
                             pythonProcess.stdout.on('data', (data) => {
-                                scriptOutput += data.toString();
+                                scriptOutput += data; // data 已经是字符串了
+                                console.log('>>>>>> [newcline] Python stdout chunk:', data); // 打印每个数据块，看是否已经是乱码
                             });
 
                             pythonProcess.stderr.on('data', (data) => {
-                                scriptError += data.toString();
-                                console.error(`>>>>>> [newcline] Python stderr: ${data}`);
+                                scriptError += data; // data 已经是字符串了
+                                console.error(`>>>>>> [newcline] Python stderr chunk: ${data}`);
                             });
 
                             pythonProcess.on('close', (code) => {
                                 console.log(`>>>>>> [newcline] Python script exited with code ${code}`);
+                                console.log('>>>>>> [newcline] Full Python stdout before parsing:', scriptOutput); // 打印完整的原始输出
+
                                 if (code === 0) {
                                     try {
-                                        // Python 脚本应该输出 JSON 字符串
                                         const result = JSON.parse(scriptOutput);
-                                        // 将结果发送回 Webview
+                                        console.log('>>>>>> [newcline] Parsed Python result:', result); // 打印解析后的JSON对象
                                         panel.webview.postMessage({ command: 'updateResult', data: result });
                                     } catch (e) {
                                         console.error('>>>>>> [newcline] Error parsing Python script output:', e);
-                                        console.error('>>>>>> [newcline] Python script raw output:', scriptOutput);
                                         panel.webview.postMessage({
                                             command: 'showError',
                                             message: `解析Python脚本输出错误: ${e}. \n原始输出: ${scriptOutput}`
@@ -154,22 +148,30 @@ export function activate(context: vscode.ExtensionContext) {
     console.log('>>>>>> [newcline] activate() function finished.');
 }
 
-// 这个函数用来获取 Webview 的 HTML 内容 (与之前版本相同)
+// 这个函数用来获取 Webview 的 HTML 内容 (与之前版本相同，包含字体和CSP更新)
 function getWebviewContent(context: vscode.ExtensionContext, webview: vscode.Webview): string {
+    // const nonce = getNonce(); // 注释掉或删除这一行，因为我们目前不使用 nonce
+
     return `<!DOCTYPE html>
     <html lang="zh-CN">
     <head>
         <meta charset="UTF-8">
+        <meta http-equiv="Content-Security-Policy" 
+              content="default-src 'none';
+                       style-src ${webview.cspSource} 'unsafe-inline';
+                       script-src ${webview.cspSource} 'unsafe-inline';
+                       font-src ${webview.cspSource} data:;
+                       img-src ${webview.cspSource} https: data:;">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>NewCLine 代码替换工具</title>
         <style>
             body {
-                font-family: var(--vscode-font-family);
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", 'PingFang SC', 'Microsoft YaHei', 'SimHei', var(--vscode-font-family);
                 color: var(--vscode-editor-foreground);
                 background-color: var(--vscode-editor-background);
                 padding: 20px;
             }
-            textarea {
+            textarea, div#logTextDisplay {
                 width: 95%;
                 min-height: 100px;
                 margin-bottom: 10px;
@@ -177,8 +179,8 @@ function getWebviewContent(context: vscode.ExtensionContext, webview: vscode.Web
                 border: 1px solid var(--vscode-input-border);
                 background-color: var(--vscode-input-background);
                 color: var(--vscode-input-foreground);
-                font-family: var(--vscode-editor-font-family);
-                resize: vertical; /* 允许用户垂直调整大小 */
+                font-family: Consolas, "Courier New", Courier, "Lucida Console", Monaco, "PingFang SC", "Microsoft YaHei", "SimHei", var(--vscode-editor-font-family), monospace;
+                resize: vertical;
             }
             button {
                 padding: 8px 15px;
@@ -187,7 +189,7 @@ function getWebviewContent(context: vscode.ExtensionContext, webview: vscode.Web
                 color: var(--vscode-button-foreground);
                 cursor: pointer;
                 margin-right: 10px;
-                margin-bottom: 10px; /* 增加按钮底部间距 */
+                margin-bottom: 10px;
             }
             button:hover {
                 background-color: var(--vscode-button-hoverBackground);
@@ -204,16 +206,15 @@ function getWebviewContent(context: vscode.ExtensionContext, webview: vscode.Web
                 margin-bottom: 5px;
                 font-weight: bold;
             }
-            #logTextDisplay { /* 修改ID以匹配HTML */
+            #logTextDisplay {
                 background-color: var(--vscode-textCodeBlock-background);
                 border: 1px solid var(--vscode-input-border);
-                padding: 8px; /* 增加内边距 */
+                padding: 8px;
                 min-height: 80px;
-                white-space: pre-wrap; /* 保留换行和空格 */
-                overflow-y: auto;     /* 当内容过多时显示滚动条 */
-                font-family: var(--vscode-editor-font-family); /* 使用编辑器字体 */
-                font-size: var(--vscode-editor-font-size);   /* 使用编辑器字号 */
-                line-height: var(--vscode-editor-line-height); /* 使用编辑器行高 */
+                white-space: pre-wrap;
+                overflow-y: auto;
+                font-size: var(--vscode-editor-font-size);
+                line-height: var(--vscode-editor-line-height);
             }
         </style>
     </head>
@@ -292,8 +293,6 @@ function getWebviewContent(context: vscode.ExtensionContext, webview: vscode.Web
                         break;
                     case 'showError':
                         logTextDisplay.textContent += "错误: " + message.message + "\\n";
-                        // 可以选择让扩展后端弹出一个VS Code的错误消息框
-                        // vscode.postMessage({ command: 'alert', text: "发生错误: " + message.message });
                         break;
                 }
             });
@@ -302,7 +301,17 @@ function getWebviewContent(context: vscode.ExtensionContext, webview: vscode.Web
     </html>`;
 }
 
-// 当你的扩展被停用时，这个方法会被调用
+/*
+function getNonce() {
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 32; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+}
+*/
+
 export function deactivate() {
     console.log('>>>>>> [newcline] deactivate() function called.');
 }
