@@ -4,18 +4,20 @@
   "description": "一个用于批量查找和替换代码片段的工具",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.100.0"
+    "vscode": "^1.100.0" // 注意：这里我保留了你提供的 VS Code 版本要求，实际开发中你可能需要根据你测试的最新稳定版调整
   },
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
-  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:newcline.startTool" // 更新激活事件以匹配我们的新命令
+  ],
+  "main": "./out/extension.js", // 确保 TypeScript 编译输出路径与此一致
   "contributes": {
     "commands": [
       {
-        "command": "newcline.helloWorld",
-        "title": "Hello World"
+        "command": "newcline.startTool", // 定义我们的新命令 ID
+        "title": "启动NewCLine代码替换工具" // 定义命令在命令面板中显示的名称
       }
     ]
   },
@@ -24,17 +26,17 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src",
+    "lint": "eslint src --ext ts", // 通常 linting 会指定 .ts 文件扩展名
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.100.0",
+    "@types/vscode": "^1.100.0", // 同样，根据你的 VS Code 版本调整
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
-    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/eslint-plugin": "^8.31.1", // 这些版本号是你原来就有的，我保留了
     "@typescript-eslint/parser": "^8.31.1",
     "eslint": "^9.25.1",
-    "typescript": "^5.8.3",
+    "typescript": "^5.8.3", // 确保你的 TypeScript 版本与项目兼容
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.5.2"
   }
