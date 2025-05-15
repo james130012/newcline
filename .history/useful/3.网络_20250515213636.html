@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>Sheaf Neural Networks 物理逻辑解读动画</title>
+  <script src="https://unpkg.com/katex@0.16.9/dist/katex.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/katex@0.16.9/dist/katex.min.css">
+  <style>
+    body { font-family: "微软雅黑", sans-serif; margin: 20px; background: #fcfcfc; color: #333;}
+    .animation { margin: 24px 0; padding:16px; border-radius:10px; box-shadow:0 1px 7px #ddd; background:#fff;}
+    button { margin: 4px 4px 8px 0; padding: 3px 10px; background: #4682b4; color: #fff; border: none; border-radius:4px; cursor: pointer;}
+    .anim-canvas { min-height: 60px; background: #f8f9fa; border-radius: 8px; margin-top: 6px; }
+    .katex { font-size: 1.1em; }
+  </style>
+</head>
+<body>
+<h2>Sheaf Neural Networks 物理逻辑视角动画解读</h2>
+<p>本文用物理和结构思维，解析Sheaf Neural Networks（束神经网络）的核心科学逻辑，分别从定义、动力学、因果、分层、模拟、对比等角度，用动画与交互展现原理与优越性。</p>
+
+<!-- 动画1：概念引入 - 束的物理类比 -->
+<div class="animation">
+  <b>动画1：束(Shafe)的物理类比</b>
+  <button onclick="showAnim1()">播放</button>
+  <div id="anim1" class="anim-canvas"></div>
+</div>
+<script>
+function showAnim1(){
+  document.getElementById('anim1').innerHTML = "想象每个节点是物理空间的点，每条边是一根弹簧，但弹簧参数按边自定，就像空间各方向刚度不同。束把'信息'关联上弹簧，让物理世界的“应力-应变”扩展为异构关系网络。";
+}
+</script>
+
+<!-- 动画2：流程 - 数据如何在束上流动 -->
+<div class="animation">
+  <b>动画2：数据流动过程</b>
+  <button onclick="showAnim2()">流程演示</button>
+  <div id="anim2" class="anim-canvas"></div>
+</div>
+<script>
+function showAnim2(){
+  document.getElementById('anim2').innerHTML = "①输入(每节点数据)<br>②计算束限制映射<br>③边约束下节点相互作用（扩散）<br>④更新节点特征<br>⑤重复多个层级<br>⑥输出目标（如分类标签）";
+}
+</script>
+
+<!-- 动画3：公式渲染 - Sheaf Laplacian -->
+<div class="animation">
+  <b>动画3：束拉普拉斯算子公式</b>
+  <button onclick="renderAnim3()">查看公式</button>
+  <div id="anim3" class="anim-canvas"></div>
+</div>
+<script>
+function renderAnim3() {
+  document.getElementById('anim3').innerHTML = "";
+  katex.render(String.raw`
+  L_F = \delta^T \delta
+  `, document.getElementById('anim3'));
+}
+</script>
+
+<!-- 动画4：空间结构 - 束与普通图的差别 -->
+<div class="animation">
+  <b>动画4：空间结构对比</b>
+  <button onclick="showAnim4()">比较动画</button>
+  <div id="anim4" class="anim-canvas"></div>
+</div>
+<script>
+function showAnim4(){
+  document.getElementById('anim4').innerHTML = 
+  "<b>传统图</b>：所有边是[1维、对称]。<br><b>束</b>：边可变换维数/方向/符号，支持异构、非对称、带符号的复杂物理关系。";
+}
+</script>
+
+<!-- 动画5：动力学 - 扩散演化模拟 -->
+<div class="animation">
+  <b>动画5：束扩散动力学</b>
+  <button onclick="showAnim5()">扩散模拟</button>
+  <div id="anim5" class="anim-canvas"></div>
+</div>
+<script>
+function showAnim5(){
+  document.getElementById('anim5').innerHTML = 
+  "节点特征依赖邻居但每步受边上线性变换影响，如非均匀各向异性介质的扩散。最终状态由所有束约束共同决定，反映全球一致性。";
+}
+</script>
+
+<!-- 动画6：因果链 - 束影响推理因果流 -->
+<div class="animation">
+  <b>动画6：因果链动画</b>
+  <button onclick="showAnim6()">因果关系</button>
+  <div id="anim6" class="anim-canvas"></div>
+</div>
+<script>
+function showAnim6(){
+  document.getElementById('anim6').innerHTML = 
+  "信号变化 → 受边变换影响→ 影响对应节点特征→ 反作用于其他边→ 直至达成全局一致或输出 <br>显示结构性、异构性对因果推理链的放大作用。";
+}
+</script>
+
+<!-- 动画7：分层解析 - 神经网络结构层次 -->
+<div class="animation">
+  <b>动画7：分层结构</b>
+  <button onclick="showAnim7()">显示层次</button>
+  <div id="anim7" class="anim-canvas"></div>
+</div>
+<script>
+function showAnim7(){
+  document.getElementById('anim7').innerHTML = 
+  "输入特征层 → 束扩散与变换层 → 激活层 → 多层堆叠 → 最终解读层（如分类）——每阶处理都保留物理约束和节点间关系。";
+}
+</script>
+
+<!-- 动画8：数据与假设验证 - 噪声与准确率对比 -->
+<div class="animation">
+  <b>动画8：数据实验与假设验证</b>
+  <button onclick="showAnim8()">结果演示</button>
+  <div id="anim8" class="anim-canvas"></div>
+</div>
+<script>
+function showAnim8(){
+  document.getElementById('anim8').innerHTML = 
+  "对比实验表明：在有方向性/异号边/异构数据下，束神经网络准确率大幅超越普通GCN。各层噪声变化下，束NN表现更鲁棒。";
+}
+</script>
+
+<!-- 动画9：网络对比 - GCN与SheafNN结构 -->
+<div class="animation">
+  <b>动画9：GCN与SheafNN结构图</b>
+  <button onclick="showAnim9()">结构对比</button>
+  <div id="anim9" class="anim-canvas"></div>
+</div>
+<script>
+function showAnim9(){
+  document.getElementById('anim9').innerHTML = 
+  "<b>GCN：</b>仅用邻接矩阵/拉普拉斯扩散<br><b>SheafNN：</b>每个边自带高维变换和符号，扩散算子更灵活，能适配分布异构的物理网络";
+}
+</script>
+
+<!-- 动画10：探索与模拟 - 束结构学习前景 -->
+<div class="animation">
+  <b>动画10：未来探索与模拟动画</b>
+  <button onclick="showAnim10()">探索前景</button>
+  <div id="anim10" class="anim-canvas"></div>
+</div>
+<script>
+function showAnim10(){
+  document.getElementById('anim10').innerHTML = 
+  "可将束结构作为可学习参数直接优化，让网络数据驱动自身的“结构等距”或“传导权重”动态演化，大幅丰富物理建模能力。";
+}
+</script>
+
+<hr>
+<b>小结：</b>
+<div style="font-size:1.03em">
+SheafNN本质为物理“异构-约束-扩散”的AI泛化，兼容更丰富网络动力学，是图神经网络理论自然延申。以异构空间动力学为核心方案，为处理非均匀、带符号或方向的物理/社会网络问题展现出突出的理论和实际优势。
+</div>
+</body>
+</html>
