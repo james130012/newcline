@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlphaEvolve 数学发现深度解读</title>
+    <link rel="stylesheet" href="https://unpkg.com/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://unpkg.com/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://unpkg.com/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            line-height: 1.8; 
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa; 
+            color: #212529; 
+        }
+        .container { 
+            max-width: 1000px; 
+            margin: 20px auto; 
+            background: #ffffff; 
+            padding: 25px 30px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+        }
+        h1, h2, h3 { 
+            color: #0056b3; /* Deep blue for headings */
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+        }
+        h1 { 
+            text-align: center; 
+            font-size: 2.2em;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 0.5em;
+        }
+        h2 {
+            font-size: 1.8em;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 0.4em;
+        }
+        h3 {
+            font-size: 1.4em;
+            color: #007bff; /* Brighter blue for sub-headings */
+        }
+        .problem-category { 
+            margin-bottom: 35px; 
+            padding-bottom: 25px; 
+        }
+        .problem-category:not(:last-child) {
+            border-bottom: 1px dashed #ced4da;
+        }
+        .problem-item { 
+            margin-bottom: 25px; 
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 5px;
+        }
+        .formula-display { 
+            background: #e9ecef; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin-bottom: 12px; 
+            text-align: center; 
+            font-size: 1.15em; 
+            overflow-x: auto;
+        }
+        .improvement { 
+            font-weight: bold; 
+            color: #28a745; /* Green for improvement */
+        }
+        .sota-comparison {
+            font-style: italic;
+            color: #555;
+        }
+        .chart-container { 
+            margin: 25px auto; 
+            padding: 15px;
+            text-align: center; 
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        canvas { 
+            border: 1px solid #ced4da; 
+            border-radius: 5px; 
+            background-color: #ffffff; 
+        }
+        p { 
+            text-align: justify; 
+            margin-bottom: 1em;
+            font-size: 1.05em;
+        }
+        .katex-display { 
+            overflow-x: auto; 
+            overflow-y: hidden; 
+            padding: 8px 0;
+        }
+        .caption {
+            font-size: 0.9em;
+            color: #6c757d;
+            text-align: center;
+            margin-top: 5px;
+        }
+        .introduction, .conclusion {
+            background-color: #e6f7ff; /* Light blue background for intro/conclusion */
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 5px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AlphaEvolve 在数学领域的突破性发现解读</h1>
+
+        <div class="introduction">
+            <p>人工智能（AI）在科学发现中的作用日益增强，Google DeepMind 开发的 AlphaEvolve 编码代理便是一个杰出代表。AlphaEvolve 通过协调大型语言模型（LLM）并采用进化策略，能够自主地修改和优化代码，从而解决开放性的科学难题和算法挑战。本文将深入解读 AlphaEvolve 论文中的图5，该图展示了其在数学分析、几何学和组合数学三个核心领域发现的超越当前最优水平（SOTA）的数学构造。我们将从物理直觉和逻辑推理的视角，结合丰富的背景信息，阐释这些发现的意义，并通过交互式图表直观展示其改进。</p>
+        </div>
+
+        <div class="problem-category">
+            <h2>数学分析 (Analysis)</h2>
+            <p>在数学分析领域，AlphaEvolve 专注于改进与函数性质相关的不等式和界限。这些问题往往涉及函数的卷积、傅里叶变换以及它们所蕴含的内在特性，如不确定性原理。精确的界限对于理论理解和实际应用都至关重要。</p>
+
+            <div class="problem-item">
+                <h3>自相关不等式 I (Autocorrelation Inequality I)</h3>
+                <p>第一个自相关不等式涉及函数与其自身卷积（自相关）的最大值。对于定义在实数轴 $\mathbb{R}$ 上的函数 $f$，其自相关定义为 $f*f(t) = \int_{\mathbb{R}}f(t-x)f(x)dx$。问题是找到最大的常数 $C_1$，使得以下不等式成立：</p>
+                <div class="formula-display">
+                    $$ \max_{-1/2\le t\le1/2} (f*f)(t) \ge C_{1}\left(\int_{-1/4}^{1/4}f(x)dx\right)^{2} $$
+                </div>
+                <p>此问题与加法组合学中的 Sidon 集大小相关。先前已知的 $C_1$ 上界约为 $1.5098$。AlphaEvolve 通过发现一个新的包含600个等距区间的阶跃函数，成功将此上界改进为 <span class="improvement">1.5053</span>。更小的上界意味着对 $C_1$ 的估计更为精确。</p>
+                <div class="chart-container">
+                    <canvas id="chartC1" width="450" height="300"></canvas>
+                    <p class="caption">图表1: $C_1$ 上界改进示意图 (数值越小越优)</p>
+                </div>
+            </div>
+
+            <div class="problem-item">
+                <h3>自相关不等式 II (Autocorrelation Inequality II)</h3>
+                <p>第二个自相关不等式关联了函数自相关的不同范数（$L_1, L_2, L_\infty$）。问题是找到最小的常数 $C_2$，使得对于所有非负函数 $f: \mathbb{R} \to \mathbb{R}_{\ge 0}$，以下不等式成立：</p>
+                <div class="formula-display">
+                    $$ \|f*f\|_{2}^{2} \le C_{2}\|f*f\|_{1}\|f*f\|_{\infty} $$
+                </div>
+                <p>其中 $\| \cdot \|_p$ 表示 $L_p$ 范数。先前已知的 $C_2$ 下界约为 $0.8892$。AlphaEvolve 发现了一个在 $[-1/4, 1/4]$ 上具有50个等间距区间的阶跃函数，将此下界提升至 <span class="improvement">0.8962</span>。更大的下界意味着对 $C_2$ 的约束更强。</p>
+                <div class="chart-container">
+                    <canvas id="chartC2" width="450" height="300"></canvas>
+                    <p class="caption">图表2: $C_2$ 下界改进示意图 (数值越大越优)</p>
+                </div>
+            </div>
+
+            <div class="problem-item">
+                <h3>自相关不等式 III (Autocorrelation Inequality III)</h3>
+                <p>第三个自相关不等式与第一个类似，但考虑的是自相关函数绝对值的最大值。问题是找到最大的常数 $C_3$，使得对于任意函数 $f: \mathbb{R} \to \mathbb{R}$：</p>
+                <div class="formula-display">
+                     $$ \max_{-1/2\le t\le1/2} |(f*f)(t)| \ge C_{3}\left(\int_{-1/4}^{1/4}f(x)dx\right)^{2} $$
+                </div>
+                <p class="sota-comparison">由于允许函数取负值，通常 $C_3 \le C_1$。先前通过阶跃函数得到的 $C_3$ 上界为 $1.4581$。AlphaEvolve 发现了一个在 $[-1/4, 1/4]$ 上具有400个等距区间的阶跃函数，将此上界改进为 <span class="improvement">1.4557</span>。</p>
+                </div>
+
+            <div class="problem-item">
+                <h3>不确定性原理相关不等式 (An Uncertainty Principle Inequality)</h3>
+                <p>不确定性原理是物理学和信号处理中的基本概念，它表明一个函数及其傅里叶变换不能同时被高度“局部化”。定义 $A(f) = \inf\{r>0 : f(x)=0 \text{ for all } |x| \ge r\}$（函数的支撑集半径，对于非紧支撑函数则为有效宽度）。问题是找到最大的常数 $C_4$ 使得：</p>
+                <div class="formula-display">
+                    $$ A(f)A(\hat{f}) \ge C_4 $$
+                </div>
+                <p>其中 $\hat{f}$ 是 $f$ 的傅里叶变换。此不等式量化了函数在时域和频域展布之间的权衡。AlphaEvolve 通过优化特定测试函数（由 Hermite 多项式线性组合构造）的系数，找到了一个新的构造，其 $A(f)A(\hat{f})$ 的值约为 <span class="improvement">0.3521</span>，优于先前已知的约 $0.3523$ 的结果，从而为 $C_4$ 提供了一个更紧的上界。</p>
+                <div class="chart-container">
+                    <canvas id="chartC4" width="450" height="300"></canvas>
+                    <p class="caption">图表3: 不确定性原理相关常数 $C_4$ 的上界改进示意图 (数值越小越优)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="problem-category">
+            <h2>几何学 (Geometry)</h2>
+            <p>几何学中的挑战通常涉及寻找最优的形状排列、堆积或覆盖方式。这些问题不仅具有理论上的美感，还在材料科学、通信和物流等领域有实际应用。AlphaEvolve 在解决这类问题时，通过进化算法生成和评估描述几何构造的程序。</p>
+
+            <div class="problem-item">
+                <h3>六边形堆积 (Hexagon Packing)</h3>
+                <p>此问题旨在将给定数量的单位正六边形（边长为1）无重叠地装入一个尽可能小的正六边形容器中。目标是最小化外部容器六边形的边长。对于 $N=12$ 个单位六边形的情况，先前已知的最小外边长为 $4.000$。AlphaEvolve 发现了一种新的排列方式，将所需外边长减小到 <span class="improvement">3.942</span>，实现了更紧密的堆积。</p>
+                <div class="formula-display">
+                    六边形外边长 (Hexagon outer edge for N=12): $4.000 \rightarrow 3.942$
+                </div>
+                <div class="chart-container">
+                    <canvas id="chartHexagon" width="350" height="350"></canvas>
+                    <p class="caption">图表4: 六边形堆积优化示意图 (外边长减小)</p>
+                </div>
+            </div>
+
+            <div class="problem-item">
+                <h3>点集的最大最小距离比 (Max distance / min distance for point sets)</h3>
+                <p>这个问题要求在一个特定空间（如单位正方形或更高维立方体）内放置 $N$ 个点，使得点对之间的最大距离与最小距离之比尽可能小。这等价于在保持最小间距的同时，限制点集的最大延展。AlphaEvolve 在一个特定设置下（图中未指明维度和N，但论文附录B.8提及二维16点和三维14点均有改进），将此比率从 <span class="improvement">12.890</span> 改进为 <span class="improvement">12.889</span>。</p>
+                 </div>
+
+            <div class="problem-item">
+                <h3>圆堆积与半径和最大化 (Circle Packing - Sum of Radii)</h3>
+                <p>此问题是在一个给定的容器（如图中为单位正方形）内放置 $N$ 个互不相交的圆，目标是最大化这些圆的半径之和。这与最大化填充密度密切相关。对于 $N=26$ 个圆的情况，AlphaEvolve 将已知的最大半径总和从 <span class="improvement">2.6340</span> 提升至 <span class="improvement">2.6358</span>。</p>
+                <div class="formula-display">
+                    半径之和 (Sum of radii for N=26 in unit square): $2.6340 \rightarrow 2.6358$
+                </div>
+                <div class="chart-container">
+                    <canvas id="chartRadiiSum" width="350" height="350"></canvas>
+                    <p class="caption">图表5: 圆堆积半径和最大化示意图</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="problem-category">
+            <h2>组合数学 (Combinatorics)</h2>
+            <p>组合数学研究离散结构的计数、存在性和构造。AlphaEvolve 在这一领域也展现了其发现新颖组合对象的能力，例如在埃尔德什最小重叠问题和有限集的和差问题中取得进展。</p>
+
+            <div class="problem-item">
+                <h3>埃尔德什最小重叠问题 (Erdős Minimal Overlap Problem)</h3>
+                <p>该问题源于保罗·埃尔德什，涉及两个函数 $f, g: [-1,1] \to [0,1]$ 且 $f(x)+g(x)=1$，$\int_{-1}^1 f(x)dx=1$。目标是研究量 $\sup_{x\in[-2,2]}\int_{-1}^{1}f(t)g(x+t)dt$ 的下界 $C_5$。这个问题与集合的重叠性质有关。AlphaEvolve 通过构造新的函数，将 $C_5$ 的已知上界从 <span class="improvement">0.380926</span> 改进为 <span class="improvement">0.380924</span>。</p>
+                 <div class="formula-display">
+                    $$ \sup_{x\in[-2,2]}\int_{-1}^{1}f(t)g(x+t)dt \ge C_5 $$
+                    AlphaEvolve 改进了 $C_5$ 的上界: $0.380926 \rightarrow 0.380924$
+                </div>
+                <div class="chart-container">
+                    <canvas id="chartC5" width="450" height="300"></canvas>
+                    <p class="caption">图表6: $C_5$ 上界改进示意图 (数值越小越优)</p>
+                </div>
+            </div>
+
+            <div class="problem-item">
+                <h3>有限集的和差问题 (Sum-Difference Problem for Finite Sets)</h3>
+                <p>对于一个有限数集 $A$，其和集定义为 $A+A = \{a_1+a_2 : a_1, a_2 \in A\}$，差集定义为 $A-A = \{a_1-a_2 : a_1, a_2 \in A\}$。一个经典的问题是比较和集与差集的大小。某些特定问题会研究诸如 $|A+B| \ge c|A|$ 和 $|A-B| \ge c|A|$ 这样的不等式中的常数 $c$。AlphaEvolve 在这类问题中，将某个相关常数的下界从 <span class="improvement">1.1446</span> 提升至 <span class="improvement">1.1584</span>，这意味着对于特定类型的集合，其和集或差集比先前认为的要“更大”。</p>
+                 </div>
+        </div>
+
+        <div class="conclusion">
+            <p>AlphaEvolve 通过其创新的进化编码方法，在多个具有挑战性的数学问题上取得了超越SOTA的成果。图5所展示的这些例子，仅仅是其能力的一瞥。这些发现不仅推动了特定数学分支的边界，更重要的是，它们展示了AI作为人类研究者强大协作者的巨大潜力。AlphaEvolve能够探索广阔的、人类难以系统性搜索的解空间，发现新颖的、有时甚至是反直觉的数学构造。这种人机协作的模式，有望在未来加速科学发现的进程，解决更多困扰科学界多年的难题。AlphaEvolve的成功也突显了自动化评估机制在引导复杂搜索过程中的关键作用，以及将问题表述为代码演化任务的普适性和强大威力。</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false}
+                ],
+                throwOnError: false
+            });
+
+            // 绘制图表
+            // 通用条形图绘制函数
+            function drawBarChart(canvasId, titleText, oldValue, newValue, yAxisLabel = '值', higherIsBetter = false) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                
+                const barWidth = 70;
+                const spacing = 50; // Spacing between elements
+                const chartPadding = { top: 50, bottom: 50, left: 60, right: 20 };
+                const chartAreaWidth = canvas.width - chartPadding.left - chartPadding.right;
+                const chartAreaHeight = canvas.height - chartPadding.top - chartPadding.bottom;
+
+                const displayOldValue = oldValue;
+                const displayNewValue = newValue;
+                
+                const dataMax = Math.max(displayOldValue, displayNewValue) * 1.2;
+                const dataMin = 0; // Assuming non-negative values for these charts
+
+                const scaleY = chartAreaHeight / (dataMax - dataMin);
+
+                let currentOldHeight = 0;
+                let currentNewHeight = 0;
+                const targetOldHeight = (displayOldValue - dataMin) * scaleY;
+                const targetNewHeight = (displayNewValue - dataMin) * scaleY;
+                const animationSpeed = 0.05;
+
+                const xOld = chartPadding.left + (chartAreaWidth / 2 - barWidth - spacing / 2);
+                const xNew = chartPadding.left + (chartAreaWidth / 2 + spacing / 2);
+
+                function animate() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    // Title
+                    ctx.fillStyle = '#333';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(titleText, canvas.width / 2, chartPadding.top / 2 + 5);
+
+                    // Y-axis label
+                    ctx.save();
+                    ctx.translate(chartPadding.left / 3, chartPadding.top + chartAreaHeight / 2);
+                    ctx.rotate(-Math.PI / 2);
+                    ctx.fillText(yAxisLabel, 0, 0);
+                    ctx.restore();
+                    
+                    // Draw Y-axis ticks and labels
+                    const numTicks = 5;
+                    for (let i = 0; i <= numTicks; i++) {
+                        const value = dataMin + (dataMax - dataMin) * i / numTicks;
+                        const yPos = chartPadding.top + chartAreaHeight - (value - dataMin) * scaleY;
+                        ctx.fillText(value.toFixed(Math.max(2, countDecimals(displayOldValue), countDecimals(displayNewValue))), chartPadding.left - 10, yPos + 3);
+                        ctx.beginPath();
+                        ctx.moveTo(chartPadding.left - 5, yPos);
+                        ctx.lineTo(chartPadding.left, yPos);
+                        ctx.stroke();
+                    }
+
+
+                    // Animate old value bar
+                    currentOldHeight += (targetOldHeight - currentOldHeight) * animationSpeed;
+                    ctx.fillStyle = '#007bff'; // Blue for old
+                    ctx.fillRect(xOld, chartPadding.top + chartAreaHeight - currentOldHeight, barWidth, currentOldHeight);
+                    ctx.fillStyle = '#333';
+                    ctx.font = '12px Arial';
+                    ctx.fillText(displayOldValue.toFixed(4), xOld + barWidth / 2, chartPadding.top + chartAreaHeight - currentOldHeight - 8);
+                    ctx.fillText('SOTA 前', xOld + barWidth / 2, chartPadding.top + chartAreaHeight + 15);
+
+                    // Animate new value bar
+                    currentNewHeight += (targetNewHeight - currentNewHeight) * animationSpeed;
+                    ctx.fillStyle = '#28a745'; // Green for new/improved
+                    ctx.fillRect(xNew, chartPadding.top + chartAreaHeight - currentNewHeight, barWidth, currentNewHeight);
+                    ctx.fillText(displayNewValue.toFixed(4), xNew + barWidth / 2, chartPadding.top + chartAreaHeight - currentNewHeight - 8);
+                    ctx.fillText('AlphaEvolve', xNew + barWidth / 2, chartPadding.top + chartAreaHeight + 15);
+                    
+                    // Arrow for improvement direction
+                    const arrowY = chartPadding.top + chartAreaHeight / 2;
+                    const arrowXStart = xOld + barWidth + 5;
+                    const arrowXEnd = xNew - 5;
+                    ctx.beginPath();
+                    ctx.moveTo(arrowXStart, arrowY);
+                    ctx.lineTo(arrowXEnd, arrowY);
+                    if ( (higherIsBetter && displayNewValue > displayOldValue) || (!higherIsBetter && displayNewValue < displayOldValue) ) {
+                         ctx.lineTo(arrowXEnd - 10, arrowY - 5);
+                         ctx.moveTo(arrowXEnd, arrowY);
+                         ctx.lineTo(arrowXEnd - 10, arrowY + 5);
+                         ctx.strokeStyle = '#28a745'; // Green arrow for improvement
+                    } else if (displayNewValue !== displayOldValue) {
+                         ctx.lineTo(arrowXStart + 10, arrowY - 5);
+                         ctx.moveTo(arrowXStart, arrowY);
+                         ctx.lineTo(arrowXStart + 10, arrowY + 5);
+                         ctx.strokeStyle = '#dc3545'; // Red arrow for regression (if applicable)
+                    }
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.lineWidth = 1; // Reset line width
+                    ctx.strokeStyle = '#333'; // Reset stroke style
+
+
+                    if (Math.abs(currentOldHeight - targetOldHeight) < 0.01 && Math.abs(currentNewHeight - targetNewHeight) < 0.01) {
+                        // Final precise draw if needed, or just stop
+                        return; 
+                    }
+                    requestAnimationFrame(animate);
+                }
+                animate();
+            }
+            
+            function countDecimals(value) {
+                if (Math.floor(value) === value) return 0;
+                return value.toString().split(".")[1].length || 0;
+            }
+
+            drawBarChart('chartC1', '自相关不等式 I ($C_1$) 上界', 1.5098, 1.5053, '常数值', false);
+            drawBarChart('chartC2', '自相关不等式 II ($C_2$) 下界', 0.8892, 0.8962, '常数值', true);
+            drawBarChart('chartC4', '不确定性原理 ($A(f)A(\\hat{f})$) 上界', 0.3523, 0.3521, '乘积值', false);
+            drawBarChart('chartC5', '埃尔德什最小重叠 ($C_5$) 上界', 0.380926, 0.380924, '常数值', false);
+
+            // 六边形堆积图
+            function drawHexagonChart(canvasId) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+
+                const oldEdgeFactor = 4.000;
+                const newEdgeFactor = 3.942;
+                
+                let baseSize = Math.min(centerX, centerY) * 0.8; // Base size for drawing
+                let oldSize = baseSize; 
+                let targetSize = (newEdgeFactor / oldEdgeFactor) * baseSize;
+                let currentSize = oldSize;
+                const animationSpeed = 0.02;
+
+                function drawHexagon(size, color, lineWidth = 2, filled = false, label = "") {
+                    ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        ctx.lineTo(centerX + size * Math.cos(Math.PI / 180 * (60 * i + 30)),
+                                   centerY + size * Math.sin(Math.PI / 180 * (60 * i + 30)));
+                    }
+                    ctx.closePath();
+                    if (filled) {
+                        ctx.fillStyle = color;
+                        ctx.fill();
+                    } else {
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = lineWidth;
+                        ctx.stroke();
+                    }
+                    if (label) {
+                        ctx.fillStyle = '#333';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(label, centerX, centerY + size + 15);
+                    }
+                }
+                
+                // Simplified inner hexagons
+                const numInnerHex = 7; 
+                const innerHexSizeFactor = 0.3; // Relative to container
+
+                function drawInnerHexagons(containerDisplaySize) {
+                    const actualInnerHexSize = containerDisplaySize * innerHexSizeFactor;
+                     // Simplified positions for a few inner hex
+                    const positions = [
+                        {x: 0, y: 0}, 
+                        {x: actualInnerHexSize * 1.732, y: 0}, {x: -actualInnerHexSize * 1.732, y: 0},
+                        {x: actualInnerHexSize * 0.866, y: actualInnerHexSize * 1.5}, {x: -actualInnerHexSize * 0.866, y: actualInnerHexSize * 1.5},
+                        // Add more if needed for N=12, this is illustrative
+                    ];
+                    for(let i=0; i < Math.min(positions.length, numInnerHex) ; i++) {
+                         if (Math.sqrt(positions[i].x*positions[i].x + positions[i].y*positions[i].y) + actualInnerHexSize < containerDisplaySize * 0.95) {
+                            ctx.save();
+                            ctx.translate(centerX + positions[i].x, centerY + positions[i].y);
+                            drawHexagon(actualInnerHexSize, 'rgba(0, 123, 255, 0.5)', 1, true); 
+                            ctx.restore();
+                         }
+                    }
+                }
+
+
+                function animate() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const currentEdgeDisplayValue = (currentSize / baseSize * oldEdgeFactor);
+
+                    ctx.fillStyle = '#333';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('六边形外边长优化 (N=12)', canvas.width / 2, 30);
+                    ctx.font = '14px Arial';
+                    ctx.fillText('边长: ' + currentEdgeDisplayValue.toFixed(3), canvas.width / 2, 55);
+
+                    // Draw shrinking outer hexagon
+                    drawHexagon(currentSize, '#dc3545', 3); // Red for old/shrinking
+
+                    // Draw inner hexagons scaled to current outer size
+                    drawInnerHexagons(currentSize);
+
+                    if (currentSize > targetSize) {
+                        currentSize -= (currentSize - targetSize) * animationSpeed;
+                        if (currentSize < targetSize) currentSize = targetSize;
+                    }
+
+                    if (Math.abs(currentSize - targetSize) < 0.1) {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.font = 'bold 16px Arial';
+                        ctx.fillText('六边形外边长优化 (N=12)', canvas.width / 2, 30);
+                        ctx.font = '14px Arial';
+                        ctx.fillText('边长: ' + newEdgeFactor.toFixed(3) + " (优化后)", canvas.width / 2, 55);
+                        drawHexagon(targetSize, '#28a745', 3, false); // Green for new
+                        drawInnerHexagons(targetSize);
+                        return; 
+                    }
+                    requestAnimationFrame(animate);
+                }
+                animate();
+            }
+            drawHexagonChart('chartHexagon');
+
+            // 圆堆积与半径和最大化
+            function drawRadiiSumChart(canvasId) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const squareContainerSize = Math.min(canvas.width, canvas.height) * 0.7;
+                const squareX = (canvas.width - squareContainerSize) / 2;
+                const squareY = (canvas.height - squareContainerSize) / 2 + 20; // offset for title
+
+                const oldSum = 2.6340;
+                const newSum = 2.6358;
+                let currentVisualSum = oldSum; // This will drive the animation (e.g. size of circles)
+                const animationSpeed = 0.01; 
+
+                const numCirclesPerRow = 5; // For N=26, 5x5=25 is a close visual representation
+                const numCirclesTotal = numCirclesPerRow * numCirclesPerRow;
+
+                function drawCircles(visualSum) {
+                    // Base average radius on the newSum for max size, then scale by visualSum
+                    let baseAvgRadius = (newSum / numCirclesTotal); 
+                    // Scale factor to make circles fit visually and not be too tiny
+                    // This scaling is illustrative
+                    let displayRadius = (visualSum / newSum) * (squareContainerSize / (numCirclesPerRow * 2.2)); 
+
+                    ctx.fillStyle = 'rgba(0, 123, 255, 0.6)'; 
+                    for (let i = 0; i < numCirclesPerRow; i++) {
+                        for (let j = 0; j < numCirclesPerRow; j++) {
+                            const cx = squareX + (i + 0.5) * (squareContainerSize / numCirclesPerRow);
+                            const cy = squareY + (j + 0.5) * (squareContainerSize / numCirclesPerRow);
+                            ctx.beginPath();
+                            ctx.arc(cx, cy, displayRadius, 0, 2 * Math.PI);
+                            ctx.fill();
+                        }
+                    }
+                     // Add one more circle if N=26
+                    if (numCirclesTotal < 26) {
+                         const cx = squareX + (0.5) * (squareContainerSize / numCirclesPerRow) + displayRadius * 0.5;
+                         const cy = squareY + (numCirclesPerRow - 0.5) * (squareContainerSize / numCirclesPerRow) - displayRadius * 0.5;
+                         ctx.beginPath();
+                         ctx.arc(cx, cy, displayRadius * 0.8, 0, 2 * Math.PI); // Slightly smaller to fit
+                         ctx.fill();
+                    }
+                }
+
+                function animate() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.fillStyle = '#333';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('圆堆积半径和 (N=26)', canvas.width / 2, 30);
+                    ctx.font = '14px Arial';
+                    ctx.fillText('总半径和: ' + currentVisualSum.toFixed(4), canvas.width / 2, 55);
+                    
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(squareX, squareY, squareContainerSize, squareContainerSize);
+
+                    drawCircles(currentVisualSum);
+
+                    if (currentVisualSum < newSum) {
+                        currentVisualSum += (newSum - currentVisualSum) * animationSpeed;
+                        if (currentVisualSum > newSum) currentVisualSum = newSum;
+                    }
+                    
+                    if (Math.abs(currentVisualSum - newSum) < 0.0001) {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.fillStyle = '#333';
+                        ctx.font = 'bold 16px Arial';
+                        ctx.fillText('圆堆积半径和 (N=26)', canvas.width / 2, 30);
+                        ctx.font = '14px Arial';
+                        ctx.fillText('总半径和: ' + newSum.toFixed(4) + " (优化后)", canvas.width / 2, 55);
+                        ctx.strokeStyle = '#333';
+                        ctx.strokeRect(squareX, squareY, squareContainerSize, squareContainerSize);
+                        drawCircles(newSum);
+                        // Visual cue for improvement
+                        ctx.fillStyle = '#28a745';
+                        ctx.beginPath();
+                        ctx.arc(squareX + squareContainerSize - 20, squareY + 20, 10, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.fillStyle = 'white';
+                        ctx.fillText("+", squareX + squareContainerSize - 20, squareY + 20 + 4);
+
+                        return; 
+                    }
+                    requestAnimationFrame(animate);
+                }
+                animate();
+            }
+            drawRadiiSumChart('chartRadiiSum');
+
+        });
+    </script>
+</body>
+</html>
+
