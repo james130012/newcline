@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sheaf Neural Networks 物理逻辑解读</title>
+    <link rel="stylesheet" href="https://unpkg.com/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://unpkg.com/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmImUQKNfw" crossorigin="anonymous"></script>
+    <script defer src="https://unpkg.com/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <style>
+        body { font-family: 'Arial', 'SimSun', sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; color: #333; line-height: 1.6; }
+        .container { max-width: 900px; margin: auto; background-color: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h1 { text-align: center; color: #1a5276; }
+        p, li { font-size: 16px; color: #555; }
+        .katex-display { text-align: left !important; }
+        .animation-container {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            text-align: center;
+        }
+        .animation-placeholder {
+            width: 100%;
+            height: 150px;
+            background-color: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #777;
+            font-style: italic;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            position: relative; /* For positioning elements inside */
+        }
+        button {
+            background-color: #3498db; color: white; border: none; padding: 10px 15px;
+            border-radius: 5px; cursor: pointer; font-size: 14px; margin: 5px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover { background-color: #2980b9; }
+        .node { width: 30px; height: 30px; background-color: #5dade2; border-radius: 50%; display: inline-block; margin: 5px; line-height: 30px; color: white; text-align: center; }
+        .edge { height: 2px; background-color: #7f8c8d; margin: 0 auto; }
+        .signed-edge-pos { height: 3px; background-color: green; }
+        .signed-edge-neg { height: 3px; background-color: red; }
+        .data-box { border: 1px solid #ccc; padding: 5px; margin-top:5px; font-size:0.9em; background: #fff; }
+        .hidden { display: none; }
+        /* Animation specific styles */
+        #gcn-limitation-viz .node-a, #gcn-limitation-viz .node-b, #gcn-limitation-viz .node-c { transition: transform 0.5s; }
+        #sheaf-structure-viz svg { width: 200px; height: 100px; }
+        #sheaf-structure-viz circle { fill: #3498db; stroke: #2980b9; stroke-width: 2px; cursor: pointer; }
+        #sheaf-structure-viz line { stroke: #7f8c8d; stroke-width: 2px; }
+        #sheaf-structure-viz text { font-size: 10px; fill: white; text-anchor: middle; dominant-baseline: central; }
+        #consistency-check-viz .node-small { width: 20px; height: 20px; background-color: #5dade2; border-radius: 50%; display: inline-block; margin: 2px; line-height: 20px; color: white; text-align: center; font-size: 12px;}
+        #consistency-check-viz input { width: 50px; margin: 0 5px; }
+        #sheafnn-layer-viz .flow-step { border: 1px dashed #aaa; padding: 8px; margin: 5px 0; background-color: #f0f0f0; transition: background-color 0.3s; }
+        #sheafnn-layer-viz .active-step { background-color: #d4e6f1; }
+        #results-comparison-viz .bar-chart { display: flex; justify-content: space-around; align-items: flex-end; height: 120px; border-bottom: 2px solid #333; margin-top: 10px;}
+        #results-comparison-viz .bar { width: 30px; background-color: #3498db; margin: 0 10px; text-align: center; color: white; font-size: 10px; transition: height 0.5s ease-out; }
+        #results-comparison-viz .bar.gcn { background-color: #e74c3c; }
+        #causal-chain-viz .step-diagram { border:1px solid #ccc; padding:10px; margin-top:5px; display:none; }
+        #causal-chain-viz .active-diagram { display:block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sheaf Neural Networks 物理逻辑解读</h1>
+
+        <h2>引言：超越传统图卷积</h2>
+        <p>图神经网络（GNN）在处理关系数据方面取得了巨大成功，其中图卷积网络（GCN）是最为经典的模型之一。然而，传统GCN在节点间关系复杂（如非对称、异构或带符号）时，其表达能力受限。Hansen与Gebhart提出的“层神经网络”（Sheaf Neural Networks, SheafNNs）通过引入<strong>细胞层 (Cellular Sheaf)</strong> 理论，推广了GCN中的扩散操作，旨在更精确地捕捉和利用图中丰富的局部关系结构。</p>
+
+        <h2>1. GCN的局限性：为何需要新视角？</h2>
+        <p>标准GCN通常依赖图拉普拉斯或邻接矩阵进行信息传播，这可以看作是一种“朴素”的邻域平均。当图中边的含义不仅仅是“连接”，例如，在有向图、带符号图或节点/边拥有不同类型属性时，这种简单平均可能无法有效区分和利用这些细微差别。</p>
+        <div class="animation-container">
+            <h3>动画1: GCN在复杂图上的挑战 (概念动画)</h3>
+            <div id="gcn-limitation-viz" class="animation-placeholder" style="height:120px;">
+                <div style="display: flex; align-items: center; justify-content: center;">
+                    <div class="node node-a" style="background-color: #f1c40f;">A</div>
+                    <div style="width: 50px; position: relative; text-align: center;">
+                        <div class="edge" style="width: 100%;"></div>
+                        <span id="gcn-edge-sign" style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: 18px; color: black;"></span>
+                    </div>
+                    <div class="node node-b" style="background-color: #3498db;">B</div>
+                    <div style="width: 50px; position: relative; text-align: center;">
+                         <div class="edge" style="width: 100%;"></div>
+                    </div>
+                    <div class="node node-c" style="background-color: #e74c3c;">C</div>
+                </div>
+                <p id="gcn-info" style="font-size:14px; margin-top:10px;">GCN聚合邻居信息。但如果A-B是正向关系，A-C是负向关系呢？</p>
+            </div>
+            <button onclick="toggleGcnLimitation()">模拟带符号边</button>
+            <button onclick="resetGcnLimitation()">重置</button>
+        </div>
+
+        <h2>2. 核心理论：细胞层 (Cellular Sheaves)</h2>
+        <p>细胞层是一种源于代数拓扑的数学结构。在图上，一个细胞层 <span class="latex">F</span> 为每个节点 <span class="latex">v</span> 分配一个向量空间 <span class="latex">F(v)</span>（称为“茎”，stalk），为每条边 <span class="latex">e</span> 分配一个向量空间 <span class="latex">F(e)</span>。关键在于，它还为每个节点-边关联 <span class="latex">(v,e)</span>（其中 <span class="latex">v</span> 是 <span class="latex">e</span> 的一个端点）定义了线性映射 <span class="latex">F_{v \le e}: F(v) \to F(e)</span>，称为“限制性映射”。这些映射规定了节点数据如何在边上保持一致性。</p>
+        <p>对于边 <span class="latex">e=(u,v)</span>，节点 <span class="latex">u</span> 上的数据 <span class="latex">x_u \in F(u)</span> 和节点 <span class="latex">v</span> 上的数据 <span class="latex">x_v \in F(v)</span>，如果在边 <span class="latex">e</span> 上是一致的，意味着它们在 <span class="latex">F(e)</span> 中的“投影”相关联。更精确地，若定义了边的方向 <span class="latex">e: u \to v</span>，一致性（或更一般地，关系）由限制性映射定义。</p>
+        <div class="animation-container">
+            <h3>动画2: 细胞层结构 (空间结构动画)</h3>
+            <div id="sheaf-structure-viz" class="animation-placeholder" style="height:150px;">
+                <svg viewBox="0 0 200 100">
+                    <line x1="50" y1="50" x2="150" y2="50" id="edge-uv"></line>
+                    <circle cx="50" cy="50" r="15" id="node-u"><title>节点 U</title></circle>
+                    <text x="50" y="50" fill="white">U</text>
+                    <circle cx="150" cy="50" r="15" id="node-v"><title>节点 V</title></circle>
+                    <text x="150" y="50" fill="white">V</text>
+                </svg>
+                <div id="sheaf-info-box" class="data-box hidden"></div>
+            </div>
+            <button onclick="showSheafInfo('u')">节点U信息</button>
+            <button onclick="showSheafInfo('v')">节点V信息</button>
+            <button onclick="showSheafInfo('e')">边UV信息</button>
+        </div>
+
+        <div class="animation-container">
+            <h3>动画3: 数据一致性检查 (流程动画)</h3>
+            <div id="consistency-check-viz" class="animation-placeholder" style="height: auto; padding-bottom:20px;">
+                <p>假设边 e = u → v, F(u)=R, F(v)=R, F(e)=R。</p>
+                <p>限制性映射: <span class="latex">F_{u \le e}(x_u) = a \cdot x_u</span>, <span class="latex">F_{v \le e}(x_v) = b \cdot x_v</span></p>
+                <span><div class="node-small">u</div> x<sub>u</sub>: <input type="number" id="data-u" value="2"></span> (a=1) <br/>
+                <span><div class="node-small">v</div> x<sub>v</sub>: <input type="number" id="data-v" value="2"></span> (b=1) <br/>
+                <p>数据在边e上一致，如果 <span class="latex">F_{u \le e}(x_u) = F_{v \le e}(x_v)</span></p>
+                <p id="consistency-result" style="font-weight:bold;"></p>
+            </div>
+            <button onclick="checkConsistency()">检查一致性</button>
+        </div>
+        
+        <h2>3. 层拉普拉斯与层扩散算子</h2>
+        <p>基于细胞层，可以定义<strong>上边缘算子 (coboundary operator)</strong> <span class="latex">\delta: C^0(G;F) \to C^1(G;F)</span>，其中 <span class="latex">C^0(G;F)</span> 是节点上的信号空间，<span class="latex">C^1(G;F)</span> 是边上的信号空间。对于有向边 <span class="latex">e = u \to v</span>，<span class="latex">(\delta x)_e = F_{v \le e}x_v - F_{u \le e}x_u</span> (论文中实际定义可能略有不同，但核心思想是比较两端数据)。</p>
+        <p><strong>层拉普拉斯 (Sheaf Laplacian)</strong> 定义为 <span class="latex">L_F = \delta^T \delta</span>。这是一个半正定算子，其零空间对应于图的“全局截面”，即在所有边上都一致的信号。层拉普拉斯推广了图拉普拉斯，并能编码更复杂的节点间关系。</p>
+        <p>基于 <span class="latex">L_F</span> 可以构建<strong>层扩散算子 (Sheaf Diffusion Operator)</strong> <span class="latex">D_F</span>，例如 <span class="latex">D_F = I - \alpha L_F</span> 或其归一化版本。这些算子在图上传播信息时会“尊重”由层结构定义的局部约束。</p>
+        <div class="animation-container">
+            <h3>动画4: 层拉普拉斯概念 (概念/公式动画)</h3>
+            <div id="laplacian-concept-viz" class="animation-placeholder" style="text-align:left; padding:10px;">
+                <p>1. 节点信号 <span class="latex">x \in C^0(G;F)</span>.</p>
+                <p>2. 上边缘算子 <span class="latex">\delta</span> 作用于 <span class="latex">x</span>, 得到边信号 <span class="latex">\delta x \in C^1(G;F)</span>. <br/>
+                   <span class="latex">(\delta x)_e</span> 衡量边 <span class="latex">e</span> 两端节点信号经限制性映射后的差异。</p>
+                <p>3. <span class="latex">\delta^T</span> ( <span class="latex">\delta</span> 的伴随算子) 将边信号映射回节点信号。</p>
+                <p>4. 层拉普拉斯: <span class="latex">L_F x = \delta^T (\delta x)</span>. <br/>
+                   它衡量了每个节点信号与其邻域信号（在层结构下）的差异程度。</p>
+            </div>
+            <button onclick="alert('此动画为概念性展示，帮助理解层拉普拉斯的构造流程。')">播放解释</button>
+        </div>
+
+        <div class="animation-container">
+            <h3>动画5: 层扩散 vs. 标准图扩散 (对比动画)</h3>
+            <div id="diffusion-comparison-viz" class="animation-placeholder" style="display:flex; justify-content:space-around; height:180px;">
+                <div style="width:45%;">
+                    <p>标准GCN扩散 (例: 平均)</p>
+                    <div id="std-diffusion-nodes" style="display:flex; justify-content:center; align-items:center;">
+                        <div class="node" id="std-node1" style="background-color:red;">10</div>
+                        <div class="edge" style="width:20px;"></div>
+                        <div class="node" id="std-node2" style="background-color:blue;">0</div>
+                    </div>
+                    <p id="std-diffusion-result" style="margin-top:10px;">结果: ?</p>
+                </div>
+                <div style="width:45%;">
+                    <p>层扩散 (例: 带符号影响)</p>
+                     <div id="sheaf-diffusion-nodes" style="display:flex; justify-content:center; align-items:center;">
+                        <div class="node" id="sheaf-node1" style="background-color:red;">10</div>
+                        <div class="edge signed-edge-neg" style="width:20px;">(-)</div>
+                        <div class="node" id="sheaf-node2" style="background-color:blue;">0</div>
+                    </div>
+                    <p id="sheaf-diffusion-result" style="margin-top:10px;">结果: ?</p>
+                </div>
+            </div>
+            <button onclick="runDiffusionComparison()">开始扩散模拟</button>
+        </div>
+
+        <h2>4. 层神经网络 (Sheaf Neural Networks)</h2>
+        <p>SheafNN的核心思想是用层扩散算子 <span class="latex">D_F</span> 替换GCN中的标准图扩散算子。一个SheafNN层对节点特征 <span class="latex">X</span> (维度 <span class="latex">N_{nodes} \times k \times N_{feat}^{in}</span>，其中 <span class="latex">k</span> 是每个节点stalk的维度) 的操作可以表示为：</p>
+        <p><span class="latex">\text{SheafConv}(A, B)(X) = \rho (D_F (I \otimes B) X A)</span></p>
+        <ul>
+            <li><span class="latex">A</span>: 可学习的权重矩阵，用于特征变换 (<span class="latex">N_{feat}^{in} \to N_{feat}^{out}</span>)。</li>
+            <li><span class="latex">B</span>: 可学习的 <span class="latex">k \times k</span> 矩阵，用于在每个节点的stalk内部进行特征变换。</li>
+            <li><span class="latex">I \otimes B</span>: Kronecker积，将 <span class="latex">B</span> 应用于每个节点的 <span class="latex">k</span> 维特征块。</li>
+            <li><span class="latex">D_F</span>: 层扩散算子，执行图结构感知的邻域信息聚合。</li>
+            <li><span class="latex">\rho</span>: 逐点的非线性激活函数 (如ReLU)。</li>
+        </ul>
+        <div class="animation-container">
+            <h3>动画6: SheafNN层计算流程 (流程/网络动画)</h3>
+            <div id="sheafnn-layer-viz" class="animation-placeholder" style="height:auto; text-align:left; padding:15px;">
+                <div class="flow-step" id="flow-step-1">1. 输入特征 <span class="latex">X</span></div>
+                <div class="flow-step" id="flow-step-2">2. 节点内部变换: <span class="latex">(I \otimes B)X</span></div>
+                <div class="flow-step" id="flow-step-3">3. 特征维度变换: <span class="latex">((I \otimes B)X)A</span></div>
+                <div class="flow-step" id="flow-step-4">4. 层扩散: <span class="latex">D_F ((I \otimes B)X A)</span></div>
+                <div class="flow-step" id="flow-step-5">5. 非线性激活: <span class="latex">\rho (D_F (I \otimes B)X A)</span></div>
+                <p id="sheafnn-layer-status" style="margin-top:10px; font-weight:bold;">点击按钮逐步演示。</p>
+            </div>
+            <button onclick="animateSheafNNLayer(1)">第1步</button>
+            <button onclick="animateSheafNNLayer(2)">第2步</button>
+            <button onclick="animateSheafNNLayer(3)">第3步</button>
+            <button onclick="animateSheafNNLayer(4)">第4步</button>
+            <button onclick="animateSheafNNLayer(5)">第5步</button>
+            <button onclick="animateSheafNNLayer(0)">重置</button>
+        </div>
+
+        <h2>5. 实验验证：带符号图上的节点分类</h2>
+        <p>论文通过在合成的带符号图上进行半监督节点分类任务来验证SheafNN的有效性。在带符号图中，边可以是正向（表示相似或吸引）或负向（表示相异或排斥）。标准GCN难以处理这类图，因为其扩散机制通常不区分符号。</p>
+        <p>SheafNN通过在细胞层的限制性映射中编码边的符号和权重（例如，对于边 <span class="latex">(u,v)</span> 权重为 <span class="latex">W_{uv}</span>，限制性映射可包含 <span class="latex">\pm \sqrt{|W_{uv}|}</span>），从而自然地处理了带符号关系。</p>
+        <div class="animation-container">
+            <h3>动画7: 带符号图的层构造 (数据/设置动画)</h3>
+            <div id="signed-graph-sheaf-viz" class="animation-placeholder" style="height:150px; display:flex; flex-direction:column; align-items:center;">
+                <p>图: Node1 --(+w1)--> Node2 --(-w2)--> Node3</p>
+                <div style="display:flex; align-items:center;">
+                    <div class="node" id="sgs-node1">N1</div>
+                    <div style="text-align:center; width:60px;">
+                        <div class="signed-edge-pos" style="width:100%;"></div>
+                        <span id="sgs-edge1-info">(+w1)</span>
+                    </div>
+                    <div class="node" id="sgs-node2">N2</div>
+                    <div style="text-align:center; width:60px;">
+                        <div class="signed-edge-neg" style="width:100%;"></div>
+                        <span id="sgs-edge2-info">(-w2)</span>
+                    </div>
+                    <div class="node" id="sgs-node3">N3</div>
+                </div>
+                <p id="sgs-sheaf-info" style="margin-top:10px; font-size:14px;">鼠标悬浮到边上查看限制性映射的例子。</p>
+            </div>
+            <button onclick="alert('此为示意。对正边，限制映射同号；对负边，限制映射反号。')">解释</button>
+        </div>
+
+        <div class="animation-container">
+            <h3>动画8: 性能对比 (SheafNN vs GCN) (数据可视化/对比动画)</h3>
+            <div id="results-comparison-viz">
+                <p>模拟准确率 (越高越好)</p>
+                <div class="bar-chart">
+                    <div style="display:flex; flex-direction:column; align-items:center;">
+                        <div class="bar" id="bar-sheafnn" style="height: 10px;">SNN</div>
+                        <span>SheafNN</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:center;">
+                        <div class="bar gcn" id="bar-gcn" style="height: 10px;">GCN</div>
+                        <span>GCN</span>
+                    </div>
+                </div>
+                <p id="results-scenario-info" style="font-size:14px; margin-top:5px;">选择场景查看模拟结果</p>
+            </div>
+            <button onclick="updateResultsComparison('low_noise')">低噪声</button>
+            <button onclick="updateResultsComparison('high_noise')">高噪声</button>
+        </div>
+        
+        <p>实验结果（论文图1）表明，在不同噪声水平的线性和非线性特征下，SheafNN的性能均显著优于传统GCN。GCN在带符号图上的准确率较低，接近随机猜测，而SheafNN能够有效利用符号信息。</p>
+
+        <div class="animation-container">
+            <h3>动画9: 为何SheafNN在带符号图上更优 (因果链动画)</h3>
+            <div id="causal-chain-viz" style="text-align:left;">
+                <div id="causal-step-1" class="step-diagram active-diagram">
+                    <strong>第1步: 遇到带符号边 (例如负边)</strong><br/>
+                    标准GCN: 扩散时可能错误地将相斥节点的信息聚合，导致“信息污染”。 (例: 正负信号平均后抵消或产生误导)
+                </div>
+                <div id="causal-step-2" class="step-diagram">
+                    <strong>第2步: SheafNN的处理</strong><br/>
+                    通过层结构，SheafNN的限制性映射可以编码符号信息 (例如，对负边应用一个反转操作或特定的变换)。
+                </div>
+                <div id="causal-step-3" class="step-diagram">
+                    <strong>第3步: 结果</strong><br/>
+                    SheafNN的扩散算子 <span class="latex">D_F</span> “感知”并正确处理了这些符号关系，使得信息传播更符合图的真实语义，从而提高模型性能。
+                </div>
+            </div>
+            <button onclick="nextCausalStep()">下一步</button>
+        </div>
+
+        <h2>6. 总结与展望</h2>
+        <p>SheafNN为图神经网络提供了一个更具普适性和表达力的框架。通过将节点间的局部关系明确地建模到细胞层的代数结构中，SheafNN能够处理比传统GCN更广泛和复杂的图数据类型。</p>
+        <div class="animation-container">
+            <h3>动画10: 未来研究方向 (探索与模拟动画)</h3>
+            <ul id="future-directions-list" style="list-style-type: none; padding-left: 0; text-align:left;">
+                <!-- Items will be added by JS -->
+            </ul>
+            <button onclick="showFutureDirections()">展开未来方向</button>
+        </div>
+        <p>未来的研究方向包括：为更广泛的现实世界问题设计和发现合适的层结构，研究从数据中学习层结构的方法，以及探索细胞层理论中更高级的概念（如层态射、层近似）在GNN中的应用。这为理解和设计更强大的图学习模型开辟了新的道路。</p>
+
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false},
+                    {left: "\\(", right: "\\)", display: false},
+                    {left: "\\[", right: "\\]", display: true},
+                    {left: "<span class=\"latex\">", right: "</span>", display: false}
+                ]
+            });
+
+            // Animation 7: Signed graph sheaf visualization
+            const sgsEdge1 = document.getElementById('sgs-edge1-info');
+            const sgsEdge2 = document.getElementById('sgs-edge2-info');
+            if(sgsEdge1) sgsEdge1.parentElement.onmouseover = () => { document.getElementById('sgs-sheaf-info').textContent = 'N1->N2 (+w1): F_N1<e(x) = x*sqrt(w1), F_N2<e(y) = y*sqrt(w1)'; };
+            if(sgsEdge2) sgsEdge2.parentElement.onmouseover = () => { document.getElementById('sgs-sheaf-info').textContent = 'N2->N3 (-w2): F_N2<e(x) = x*sqrt(w2), F_N3<e(y) = -y*sqrt(w2)'; };
+            if(sgsEdge1) sgsEdge1.parentElement.onmouseout = () => { document.getElementById('sgs-sheaf-info').textContent = '鼠标悬浮到边上查看限制性映射的例子。'; };
+            if(sgsEdge2) sgsEdge2.parentElement.onmouseout = () => { document.getElementById('sgs-sheaf-info').textContent = '鼠标悬浮到边上查看限制性映射的例子。'; };
+
+        });
+
+        // Animation 1: GCN Limitation
+        let gcnLimitationSigned = false;
+        function toggleGcnLimitation() {
+            const edgeSign = document.getElementById('gcn-edge-sign');
+            const nodeA = document.querySelector('#gcn-limitation-viz .node-a');
+            const info = document.getElementById('gcn-info');
+            gcnLimitationSigned = !gcnLimitationSigned;
+            if (gcnLimitationSigned) {
+                if(edgeSign) edgeSign.textContent = '+'; // A-B positive
+                 // A-C implicitly different (e.g. negative if B and C are different classes)
+                if(nodeA) nodeA.style.transform = 'scale(1.1)';
+                if(info) info.textContent = '如果A-B是“吸引”，A-C是“排斥”，简单平均可能混淆信号。';
+            } else {
+                resetGcnLimitation();
+            }
+        }
+        function resetGcnLimitation() {
+            gcnLimitationSigned = false;
+            const edgeSign = document.getElementById('gcn-edge-sign');
+            const nodeA = document.querySelector('#gcn-limitation-viz .node-a');
+            const info = document.getElementById('gcn-info');
+            if(edgeSign) edgeSign.textContent = '';
+            if(nodeA) nodeA.style.transform = 'scale(1)';
+            if(info) info.textContent = 'GCN聚合邻居信息。但如果A-B是正向关系，A-C是负向关系呢？';
+        }
+
+        // Animation 2: Cellular Sheaf Structure
+        function showSheafInfo(item) {
+            const infoBox = document.getElementById('sheaf-info-box');
+            infoBox.classList.remove('hidden');
+            let content = '';
+            if (item === 'u') {
+                content = '节点 U: 关联一个向量空间 F(U) (茎 stalk)';
+            } else if (item === 'v') {
+                content = '节点 V: 关联一个向量空间 F(V) (茎 stalk)';
+            } else if (item === 'e') {
+                content = '边 UV: 关联向量空间 F(UV) 和限制性映射 F_U<UV: F(U)→F(UV), F_V<UV: F(V)→F(UV)';
+            }
+            infoBox.innerHTML = content;
+            renderMathInElement(infoBox);
+        }
+        // Add click listeners to SVG elements for Animation 2
+        const nodeU_svg = document.getElementById('node-u');
+        const nodeV_svg = document.getElementById('node-v');
+        const edgeUV_svg = document.getElementById('edge-uv');
+
+        if(nodeU_svg) nodeU_svg.addEventListener('click', () => showSheafInfo('u'));
+        if(nodeV_svg) nodeV_svg.addEventListener('click', () => showSheafInfo('v'));
+        if(edgeUV_svg) edgeUV_svg.addEventListener('click', () => showSheafInfo('e'));
+
+
+        // Animation 3: Data Consistency Check
+        function checkConsistency() {
+            const x_u = parseFloat(document.getElementById('data-u').value);
+            const x_v = parseFloat(document.getElementById('data-v').value);
+            // Assuming a=1, b=1 for simplicity as per text "F_u<e(x_u) = x_u", "F_v<e(x_v) = x_v"
+            // The problem text actually states F_u<e(x_u) = a*x_u and F_v<e(x_v) = b*x_v
+            // Let's assume a=1, b=1 as typical for simple sheaves, or user is expected to understand the general form.
+            // For the animation, we'll take a=1, b=1.
+            const f_u_xu = 1 * x_u; 
+            const f_v_xv = 1 * x_v;
+            const resultText = document.getElementById('consistency-result');
+            if (f_u_xu === f_v_xv) {
+                resultText.textContent = `一致: ${f_u_xu.toFixed(2)} = ${f_v_xv.toFixed(2)}`;
+                resultText.style.color = 'green';
+            } else {
+                resultText.textContent = `不一致: ${f_u_xu.toFixed(2)} != ${f_v_xv.toFixed(2)}`;
+                resultText.style.color = 'red';
+            }
+        }
+        
+        // Animation 5: Diffusion Comparison
+        function runDiffusionComparison() {
+            // Standard GCN (simple average)
+            const stdNode1Val = 10; const stdNode2Val = 0;
+            const stdResult = (stdNode1Val + stdNode2Val) / 2;
+            document.getElementById('std-node1').style.backgroundColor = `rgb(${255 - stdResult*10}, ${stdResult*10}, 100)`;
+            document.getElementById('std-node2').style.backgroundColor = `rgb(${255 - stdResult*10}, ${stdResult*10}, 100)`;
+            document.getElementById('std-diffusion-result').textContent = `结果 (N1): ${stdResult.toFixed(1)}, (N2): ${stdResult.toFixed(1)}`;
+
+            // Sheaf Diffusion (negative edge means repulsion or transformation)
+            // Simplistic: N1 influences N2 negatively. N2's new value might be -N1_val, or N1 keeps its value, N2 gets -N1.
+            // Let's assume N1 diffuses to N2, N2 value changes as if repelled by N1 value.
+            // If F_N1<e(x1) = x1, F_N2<e(x2) = -x2 (stalks are R, restriction for N2 on negative edge flips sign)
+            // For diffusion L = D-A, D_F might be I - L_F.
+            // Simpler: if N1 is 10, N2 is 0, negative edge. N2 becomes more "opposite" to N1.
+            // Or N1's influence is inverted: N2_new = N2_old - N1_old = 0 - 10 = -10.
+            const sheafNode1Val = 10; const sheafNode2Val = 0;
+            const sheafResultN2 = sheafNode2Val - sheafNode1Val; // Highly simplified "repulsion"
+            document.getElementById('sheaf-node1').style.backgroundColor = `rgb(255,0,0)`; // Stays red
+            document.getElementById('sheaf-node2').style.backgroundColor = `rgb(0,0,255)`; // Becomes more blue (more negative)
+            document.getElementById('sheaf-diffusion-result').textContent = `结果 (N1): ${sheafNode1Val.toFixed(1)}, (N2): ${sheafResultN2.toFixed(1)} (示意)`;
+        }
+
+        // Animation 6: SheafNN Layer
+        let currentSheafNNStep = 0;
+        const sheafNNSteps = document.querySelectorAll('#sheafnn-layer-viz .flow-step');
+        function animateSheafNNLayer(step) {
+            currentSheafNNStep = step;
+            sheafNNSteps.forEach((s, idx) => {
+                s.classList.remove('active-step');
+                if (idx + 1 === currentSheafNNStep) {
+                    s.classList.add('active-step');
+                }
+            });
+            const status = document.getElementById('sheafnn-layer-status');
+            if (step === 0) { status.textContent = '点击按钮逐步演示。'; currentSheafNNStep = 0;}
+            else { status.textContent = `当前执行: 第 ${currentSheafNNStep} 步`; }
+        }
+        
+        // Animation 8: Results Comparison
+        function updateResultsComparison(scenario) {
+            const barSheafNN = document.getElementById('bar-sheafnn');
+            const barGCN = document.getElementById('bar-gcn');
+            const scenarioInfo = document.getElementById('results-scenario-info');
+            if (scenario === 'low_noise') {
+                barSheafNN.style.height = '100px'; // e.g. 90% accuracy
+                barGCN.style.height = '40px';   // e.g. 55% accuracy
+                barSheafNN.textContent = 'SNN (90%)';
+                barGCN.textContent = 'GCN (55%)';
+                scenarioInfo.textContent = '场景: 低噪声 (SheafNN表现优异)';
+            } else if (scenario === 'high_noise') {
+                barSheafNN.style.height = '75px';  // e.g. 70% accuracy
+                barGCN.style.height = '30px';   // e.g. 50% (chance)
+                barSheafNN.textContent = 'SNN (70%)';
+                barGCN.textContent = 'GCN (50%)';
+                scenarioInfo.textContent = '场景: 高噪声 (SheafNN仍保持优势)';
+            }
+             // Trigger reflow for CSS transition if height was 0 initially
+            barSheafNN.offsetHeight; 
+            barGCN.offsetHeight;
+        }
+        // Initialize results comparison
+        updateResultsComparison('low_noise');
+
+
+        // Animation 9: Causal Chain
+        let currentCausalStep = 1;
+        const totalCausalSteps = 3;
+        function nextCausalStep() {
+            document.getElementById(`causal-step-${currentCausalStep}`).classList.remove('active-diagram');
+            currentCausalStep++;
+            if (currentCausalStep > totalCausalSteps) {
+                currentCausalStep = 1;
+            }
+            document.getElementById(`causal-step-${currentCausalStep}`).classList.add('active-diagram');
+        }
+
+        // Animation 10: Future Directions
+        const futureDirections = [
+            "为现实问题设计合适的层结构",
+            "从数据中学习层结构",
+            "探索层态射、层近似等高级概念的应用",
+            "开发更高效的层算子计算方法",
+            "结合注意力机制与层结构"
+        ];
+        let futureDirectionsShown = false;
+        function showFutureDirections() {
+            const list = document.getElementById('future-directions-list');
+            if (futureDirectionsShown) { // Toggle: hide if shown
+                list.innerHTML = '';
+                futureDirectionsShown = false;
+                return;
+            }
+            list.innerHTML = ''; // Clear previous
+            futureDirections.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.textContent = `探索点 ${index + 1}: ${item}`;
+                li.style.opacity = '0';
+                li.style.transform = 'translateY(10px)';
+                li.style.transition = `opacity 0.5s ${index * 0.2}s ease, transform 0.5s ${index * 0.2}s ease`;
+                list.appendChild(li);
+                // Trigger animation
+                setTimeout(() => {
+                    li.style.opacity = '1';
+                    li.style.transform = 'translateY(0)';
+                }, 50);
+            });
+            futureDirectionsShown = true;
+        }
+
+    </script>
+</body>
+</html>

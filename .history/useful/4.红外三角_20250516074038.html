@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>引力与天体CFT中的红外惊奇解读</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Light gray background */
+            color: #333; /* Dark gray text */
+        }
+        .animation-container {
+            background-color: white;
+            border-radius: 12px; /* Rounded corners */
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Soft shadow */
+            min-height: 250px; /* Minimum height for visual consistency */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease-in-out;
+        }
+        .animation-box {
+            width: 100%;
+            height: 150px; /* Fixed height for animation area */
+            border: 1px solid #e2e8f0; /* Light border */
+            border-radius: 8px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden; /* Clip animations within the box */
+        }
+        .control-button {
+            background-color: #4A90E2; /* Primary blue */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        .control-button:hover {
+            background-color: #357ABD; /* Darker blue on hover */
+        }
+        h2 {
+            color: #1a202c; /* Very dark gray for headings */
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        p {
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        .concept {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+            text-align: center;
+            position: absolute; /* For positioning within animation box */
+            opacity: 0;
+            transition: all 0.5s ease-in-out;
+        }
+        /* Specific animation styles */
+        .ir-triangle-as { background-color: #fde68a; color: #713f12; } /* Amber */
+        .ir-triangle-st { background-color: #a7f3d0; color: #047857; } /* Emerald */
+        .ir-triangle-me { background-color: #bfdbfe; color: #1e40af; } /* Blue */
+        .arrow {
+            position: absolute;
+            width: 0; height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out 0.5s;
+        }
+        .dim-reduction-bulk {
+            width: 100px; height: 100px; background-color: #60A5FA; /* Blue */
+            display: flex; align-items: center; justify-content: center; color: white;
+            font-size: 2em; border-radius: 10px;
+            transition: transform 1s ease-in-out, width 1s ease-in-out, height 1s ease-in-out;
+        }
+        .dim-reduction-boundary {
+            width: 100px; height: 20px; background-color: #34D399; /* Green */
+            display: flex; align-items: center; justify-content: center; color: white;
+            font-size: 1em; border-radius: 5px; opacity: 0;
+            transition: opacity 1s ease-in-out 1s;
+        }
+        .data-bar {
+            height: 20px; background-color: #FBBF24; /* Amber */
+            margin: 5px 0; border-radius: 4px;
+            width: 0; transition: width 1s ease-out;
+        }
+        .timeline-event {
+            position: absolute;
+            bottom: 20px; width: 10px; height: 10px;
+            background-color: #EF4444; /* Red */
+            border-radius: 50%;
+            opacity: 0;
+            transition: all 0.5s ease-in-out;
+        }
+        .timeline-line {
+            position: absolute;
+            bottom: 24px; left: 10%; width: 80%; height: 2px;
+            background-color: #9CA3AF; /* Gray */
+        }
+        .penrose-diamond {
+            width: 120px; height: 200px;
+            border: 2px solid #333;
+            transform: rotate(45deg);
+            position: relative;
+        }
+        .penrose-label {
+            position: absolute; transform: rotate(-45deg); font-size: 0.8em;
+        }
+        .causal-node {
+            padding: 5px 10px; border: 1px solid; border-radius: 5px;
+            margin: 5px; opacity: 0; transition: opacity 0.5s ease;
+        }
+        .charge-particle {
+            width: 15px; height: 15px; border-radius: 50%; background-color: #8B5CF6; /* Violet */
+            position: absolute; transition: transform 1s ease;
+        }
+        .symmetry-layer {
+            border: 2px dashed; padding: 5px; margin: 2px;
+            border-radius: 5px; opacity: 0; transform: translateY(20px);
+            transition: all 0.5s ease; text-align: center;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <header class="text-center mb-12">
+        <h1 class="text-3xl md:text-4xl font-bold text-blue-600">引力与天体CFT中的红外惊奇解读</h1>
+        <p class="text-lg text-gray-700 mt-2">从物理逻辑视角探索 Andrea Puhm 的研究</p>
+    </header>
+    <main class="max-w-4xl mx-auto">
+        <section class="mb-8 p-6 bg-white rounded-lg shadow-lg">
+            <h2 class="text-2xl font-semibold mb-3 text-blue-700">引言：红外物理的深远联系</h2>
+            <p>Andrea Puhm在其工作中探讨了引力与规范场论中红外物理学的惊人特性，这些特性揭示了理论的深层结构。核心观点认为，物理系统在低能（红外）极限下的行为，如软定理、渐近对称性和记忆效应，并非孤立现象，而是相互关联的"红外三角"的三个顶点。更有甚者，这些4维时空中的红外现象与一个假想的2维共形场论——天体CFT (Celestial CFT)——之间可能存在全息对偶关系。本文将通过一系列动画和解释，从物理逻辑的视角解读这些核心概念。</p>
+        </section>
+        <div class="animation-container">
+            <h2 class="text-xl font-semibold">1. 概念动画: 红外三角</h2>
+            <p>红外物理学的核心在于三个基本概念的深刻联系：渐近对称性、软定理和记忆效应。它们共同构成了一个"红外三角"，揭示了引力与规范理论在低能极限下的内在统一性。</p>
+            <div class="animation-box" id="anim1-box">
+                <div id="asym-sym" class="concept ir-triangle-as" style="top: 10%; left: 40%;">渐近对称性</div>
+                <div id="soft-thm" class="concept ir-triangle-st" style="top: 70%; left: 15%;">软定理</div>
+                <div id="mem-eff" class="concept ir-triangle-me" style="top: 70%; left: 65%;">记忆效应</div>
+                <div id="arrow1" class="arrow" style="border-right: 30px solid #f59e0b; top: 35%; left: 40%;"></div> <div id="arrow2" class="arrow" style="border-left: 30px solid #10b981; top: 35%; left: 50%;"></div> <div id="arrow3" class="arrow" style="border-bottom: 30px solid #60a5fa; top: 55%; left: 45%;"></div> </div>
+            <button class="control-button" onclick="playAnim1()">播放红外三角动画</button>
+        </div>
+        <div class="animation-container">
+            <h2 class="text-xl font-semibold">2. 流程动画: 4D → 2D 全息映射</h2>
+            <p>天体全息提出，4维平直时空中的引力理论（及可能的其他理论）可以通过某种方式映射到一个位于未来（或过去）零无穷远处的2维天球上的共形场论 (CCFT)。这是一种维度约化的思想，类似于AdS/CFT对应。</p>
+            <div class="animation-box" id="anim2-box">
+                <div id="bulk-4d" class="dim-reduction-bulk">4D Bulk</div>
+                <div id="boundary-2d" class="dim-reduction-boundary">2D Celestial Sphere (CFT)</div>
+            </div>
+            <button class="control-button" onclick="playAnim2()">播放4D → 2D映射</button>
+        </div>
+        <div class="animation-container">
+            <h2 class="text-xl font-semibold">3. 数据动画: 软引力子定理的展开</h2>
+            <p>软引力子定理描述了当一个引力子能量 ω → 0 时散射振幅的行为。它有一个展开形式，包括领头的Weinberg项(∼ ω^{-1})、次领头项(∼ ω^0)，甚至在圈图修正下出现对数项(∼ log ω)。</p>
+            <div class="animation-box flex-col items-start p-4" id="anim3-box">
+                <div>S = S_{hard} × [ A/ω + B + C log ω + ... ]</div>
+                <div id="term-omega-1" class="data-bar" style="background-color: #3B82F6;">领头项 (ω^{-1})</div>
+                <div id="term-omega-0" class="data-bar" style="background-color: #10B981;">次领头项 (ω^0)</div>
+                <div id="term-log-omega" class="data-bar" style="background-color: #F59E0B;">对数项 (log ω)</div>
+            </div>
+            <button class="control-button" onclick="playAnim3()">显示软展开项</button>
+        </div>
+        <div class="animation-container">
+            <h2 class="text-xl font-semibold">4. 对比动画: 树图 vs. 圈图效应</h2>
+            <p>在量子场论中，树图计算是经典近似，而圈图则包含量子修正。红外物理在树图层面已很丰富，但圈图修正（如长程力效应）会引入新的特性，例如软定理中的对数项，并可能影响对称性的实现。</p>
+            <div class="animation-box" id="anim4-box">
+                <div id="tree-level" class="concept" style="background-color: #A7F3D0; color: #047857; left: 10%; top: 40%; transform: scale(0);">树图: ω^n</div>
+                <div id="loop-level" class="concept" style="background-color: #FBCFE8; color: #9D174D; right: 10%; top: 40%; transform: scale(0);">圈图: ω^n (log ω)^m</div>
+            </div>
+            <button class="control-button" onclick="playAnim4()">对比树图与圈图</button>
+        </div>
+        
+        <div class="animation-container">
+            <h2 class="text-xl font-semibold">5. 时间轴动画: 记忆效应的演化</h2>
+            <p>引力波通过后，会在探测器之间留下永久的位移（位移记忆效应）或自旋变化（自旋记忆效应）。长程相互作用还会导致记忆效应的"尾巴"(tail memory effect)，在更晚的时刻显现。</p>
+            <div class="animation-box" id="anim5-box">
+                <div class="timeline-line"></div>
+                <div id="event-gw" class="timeline-event" style="left: 20%;"><span class="text-xs absolute -top-6">GW通过</span></div>
+                <div id="event-disp" class="timeline-event" style="left: 40%;"><span class="text-xs absolute -top-6">位移记忆</span></div>
+                <div id="event-spin" class="timeline-event" style="left: 60%;"><span class="text-xs absolute -top-6">自旋记忆</span></div>
+                <div id="event-tail" class="timeline-event" style="left: 80%;"><span class="text-xs absolute -top-6">尾巴记忆</span></div>
+            </div>
+            <button class="control-button" onclick="playAnim5()">展示记忆效应时间轴</button>
+        </div>
+        <div class="animation-container">
+            <h2 class="text-xl font-semibold">6. 探索与模拟动画: 天球上的算符</h2>
+            <p>在天体CFT中，4D散射粒子被映射为天球上特定位置 (z, \bar{z}) 和共形维度 Δ 的算符。这些算符的代数结构编码了散射信息。点击天球上的点以高亮"算符"。</p>
+            <div class="animation-box" id="anim6-box" style="background-image: radial-gradient(circle, #a5f3fc 20%, #06b6d4 100%); cursor: pointer;">
+                <div class="text-white text-sm">模拟天球 (点击)</div>
+                <div class="absolute w-4 h-4 bg-yellow-300 rounded-full opacity-0" id="celestial-op" style="transition: opacity 0.3s;"></div>
+            </div>
+            <button class="control-button" onclick="playAnim6()">激活天球模拟</button>
+        </div>
+        
+        <div class="animation-container">
+            <h2 class="text-xl font-semibold">7. 因果链动画: 长程力的影响</h2>
+            <p>长程引力（和电磁）相互作用是圈图修正的关键。它们导致软定理中出现对数项，这些对数项又与记忆效应的尾巴部分相关联，形成一条因果链。</p>
+            <div class="animation-box flex-wrap" id="anim7-box">
+                <div id="cause1" class="causal-node bg-red-200 border-red-500">长程力 (圈图)</div>
+                <div id="arrow7-1" class="text-2xl opacity-0 mx-2">→</div>
+                <div id="cause2" class="causal-node bg-yellow-200 border-yellow-500">对数软定理</div>
+                <div id="arrow7-2" class="text-2xl opacity-0 mx-2">→</div>
+                <div id="cause3" class="causal-node bg-green-200 border-green-500">尾巴记忆效应</div>
+            </div>
+            <button class="control-button" onclick="playAnim7()">展示因果链</button>
+        </div>
+        <div class="animation-container">
+            <h2 class="text-xl font-semibold">8. 空间结构动画: Penrose 图与无穷远结构</h2>
+            <p>Penrose图是理解平直时空无穷远结构的有力工具。渐近对称性定义在类光无穷远 (𝓘⁺, 𝓘⁻) 和空间无穷远 (i⁰)。天体CFT则与 i⁺ (未来时间类无穷) 和 i⁻ (过去时间类无穷) 的特定切割有关。</p>
+            <div class="animation-box" id="anim8-box">
+                <div class="penrose-diamond">
+                    <div id="scri-plus" class="penrose-label" style="top: 10px; left: 80px; color: blue; opacity:0;">𝓘⁺</div>
+                    <div id="scri-minus" class="penrose-label" style="bottom: 10px; left: -10px; color: red; opacity:0;">𝓘⁻</div>
+                    <div id="i-plus" class="penrose-label font-bold" style="top: -15px; left: 35px; color: green; opacity:0;">i⁺</div>
+                    <div id="i-minus" class="penrose-label font-bold" style="bottom: -15px; left: 35px; color: purple; opacity:0;">i⁻</div>
+                    <div id="i-zero" class="penrose-label" style="top: 85px; left: -15px; color: orange; opacity:0;">i⁰</div>
+                </div>
+            </div>
+            <button class="control-button" onclick="playAnim8()">显示Penrose图结构</button>
+        </div>
+        <div class="animation-container">
+            <h2 class="text-xl font-semibold">9. 假设验证动画: 对称性与Ward恒等式</h2>
+            <p>物理学中的一个基本逻辑是：对称性对应守恒律（Noether定理）。在量子场论的散射过程中，对称性体现为Ward恒等式。软定理可以被理解为渐近对称性对应的Ward恒等式。</p>
+            <div class="animation-box" id="anim9-box">
+                <div id="symm" class="concept bg-indigo-200 text-indigo-800" style="left: 20%; top: 40%; opacity: 1; transform: scale(0);">对称性 (如BMS)</div>
+                <div id="ward" class="concept bg-pink-200 text-pink-800" style="right: 20%; top: 40%; opacity: 1; transform: scale(0);">Ward恒等式 (软定理)</div>
+                <div id="arrow9" class="absolute text-3xl opacity-0" style="left: 48%; top: 42%;">↔</div>
+            </div>
+            <button class="control-button" onclick="playAnim9()">展示对称性到Ward恒等式</button>
+        </div>
+        
+        <div class="animation-container">
+            <h2 class="text-xl font-semibold">10. 分层解析动画: 无穷维对称性之塔</h2>
+            <p>除了熟知的BMS超平移和超旋转对称性，研究表明天体CFT可能拥有更庞大的无穷维对称性代数，如 w_{1+∞} 代数。这些对称性形成一个层级结构，或称为"对称性之塔"。</p>
+            <div class="animation-box flex-col" id="anim10-box">
+                <div id="layer1" class="symmetry-layer border-blue-500 text-blue-700 w-3/4">Poincaré 对称性</div>
+                <div id="layer2" class="symmetry-layer border-green-500 text-green-700 w-2/3">BMS (超平移)</div>
+                <div id="layer3" class="symmetry-layer border-yellow-500 text-yellow-700 w-1/2">扩展BMS (超旋转)</div>
+                <div id="layer4" class="symmetry-layer border-red-500 text-red-700 w-1/3">w_{1+∞} ?</div>
+            </div>
+            <button class="control-button" onclick="playAnim10()">构建对称性之塔</button>
+        </div>
+        <div class="animation-container">
+            <h2 class="text-xl font-semibold">11. 网络动画: 天体CFT中的概念互联</h2>
+            <p>天体CFT是一个复杂的理论框架，其中各种概念，如天体算符、共形维度、OPE（算符乘积展开）、对称性代数等，相互交织，构成一个精密的网络结构。</p>
+            <div class="animation-box" id="anim11-box" style="position: relative;">
+                <div class="concept" style="background-color: #FFD700; top:10%; left:40%; opacity:0;" id="node11-1">天体算符</div>
+                <div class="concept" style="background-color: #ADD8E6; top:40%; left:10%; opacity:0;" id="node11-2">共形维度 Δ</div>
+                <div class="concept" style="background-color: #90EE90; top:40%; left:70%; opacity:0;" id="node11-3">OPE</div>
+                <div class="concept" style="background-color: #FFA07A; top:70%; left:40%; opacity:0;" id="node11-4">对称性代数</div>
+                </div>
+            <button class="control-button" onclick="playAnim11()">展示CCFT概念网络</button>
+        </div>
+        
+        <div class="animation-container">
+            <h2 class="text-xl font-semibold">12. 守恒动画: 电荷守恒与软定理</h2>
+            <p>渐近对称性相关的守恒荷 Q⁺ 在过去和未来类光无穷远处的匹配 (Q⁺ = Q⁻) 直接对应于软定理。这为软定理提供了基于第一性原理的对称性解释。</p>
+            <div class="animation-box" id="anim12-box" style="flex-direction: row; justify-content: space-around;">
+                <div id="charge-in" class="text-center">
+                    <div class="text-lg font-semibold">Q⁻ (过去)</div>
+                    <div class="charge-particle" style="background-color: #FF6347; left: 20%; top: 40%;"></div>
+                </div>
+                <div id="arrow12" class="text-3xl opacity-0">→</div>
+                <div id="charge-out" class="text-center">
+                    <div class="text-lg font-semibold">Q⁺ (未来)</div>
+                     <div class="charge-particle" style="background-color: #4682B4; right: 20%; top: 40%;"></div>
+                </div>
+                <div id="conservation-text" class="absolute bottom-5 text-lg font-bold opacity-0">Q⁺ = Q⁻ (守恒 ↔ 软定理)</div>
+            </div>
+            <button class="control-button" onclick="playAnim12()">演示电荷守恒</button>
+        </div>
+        <section class="mt-12 p-6 bg-white rounded-lg shadow-lg">
+            <h2 class="text-2xl font-semibold mb-3 text-blue-700">结论：红外物理的未来展望</h2>
+            <p>Puhm等人的研究揭示了引力和规范理论在红外区域的丰富结构远超预期。红外三角、天体全息、无穷维对称性以及长程效应对这些结构的影响，为我们理解基本相互作用的量子本质开辟了新的途径。这些"红外惊奇"不仅深化了我们对现有理论的认识，也为探索量子引力等前沿问题提供了新的视角和工具。未来的研究将致力于进一步厘清这些联系的精确本质，检验天体CFT的有效性，并探索其在解决物理学难题（如黑洞信息佯谬）中的潜力。公式如引力子软因子 S_{-1} = κ/2∑_{i=1}^{N}ε_{μν}p_{i}^{μ}p_{i}^{ν}/(q·p_{i}) 和次领头对数软因子 S_{0}^{(ln ω)} 的精确形式及其对称性起源是当前研究的核心。</p>
+        </section>
+    </main>
+    <footer class="text-center mt-12 py-8 border-t border-gray-300">
+        <p class="text-gray-600">© 2025 红外物理探索者. 本页面内容基于公开学术研究的解读。</p>
+    </footer>
+    <script>
+        // Ensure KaTeX auto-render is called after DOM is ready
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false},
+                    {left: "\\(", right: "\\)", display: false},
+                    {left: "\\[", right: "\\]", display: true}
+                ],
+                throwOnError : false
+            });
+        });
+        // Animation 1: Infrared Triangle
+        function playAnim1() {
+            const as = document.getElementById('asym-sym');
+            const st = document.getElementById('soft-thm');
+            const me = document.getElementById('mem-eff');
+            const arr1 = document.getElementById('arrow1');
+            const arr2 = document.getElementById('arrow2');
+            const arr3 = document.getElementById('arrow3');
+            
+            [as, st, me, arr1, arr2, arr3].forEach(el => {
+                el.style.opacity = 0;
+                // Reset positions/transforms if necessary for re-play
+                if(el.classList.contains('concept')) el.style.transform = 'translateY(20px)';
+            });
+            setTimeout(() => { as.style.opacity = 1; as.style.transform = 'translateY(0)'; }, 100);
+            setTimeout(() => { st.style.opacity = 1; st.style.transform = 'translateY(0)'; }, 600);
+            setTimeout(() => { me.style.opacity = 1; me.style.transform = 'translateY(0)'; }, 1100);
+            setTimeout(() => { arr1.style.opacity = 1; }, 1600); // AS to ST
+            setTimeout(() => { arr2.style.opacity = 1; }, 1600); // AS to ME
+            setTimeout(() => { arr3.style.opacity = 1; }, 2100); // ST to ME
+        }
+        // Animation 2: 4D to 2D Holography
+        function playAnim2() {
+            const bulk = document.getElementById('bulk-4d');
+            const boundary = document.getElementById('boundary-2d');
+            
+            bulk.style.transform = 'scale(1)';
+            bulk.style.width = '100px';
+            bulk.style.height = '100px';
+            boundary.style.opacity = 0;
+            setTimeout(() => {
+                bulk.style.transform = 'scale(0.5) translateX(-50px)';
+                bulk.style.width = '50px';
+                bulk.style.height = '50px'; // Simulating projection/reduction
+            }, 100);
+            setTimeout(() => { boundary.style.opacity = 1; }, 1100);
+        }
+        // Animation 3: Soft Graviton Expansion
+        function playAnim3() {
+            const t1 = document.getElementById('term-omega-1');
+            const t0 = document.getElementById('term-omega-0');
+            const tlog = document.getElementById('term-log-omega');
+            
+            [t1, t0, tlog].forEach(el => el.style.width = '0%');
+            setTimeout(() => { t1.style.width = '80%'; }, 100);
+            setTimeout(() => { t0.style.width = '60%'; }, 600);
+            setTimeout(() => { tlog.style.width = '40%'; }, 1100);
+        }
+        // Animation 4: Tree vs Loop
+        function playAnim4() {
+            const tree = document.getElementById('tree-level');
+            const loop = document.getElementById('loop-level');
+            tree.style.transform = 'scale(0)'; tree.style.opacity = 0;
+            loop.style.transform = 'scale(0)'; loop.style.opacity = 0;
+            setTimeout(() => { tree.style.transform = 'scale(1)'; tree.style.opacity = 1;}, 100);
+            setTimeout(() => { loop.style.transform = 'scale(1)'; loop.style.opacity = 1;}, 600);
+        }
+        // Animation 5: Memory Effect Timeline
+        function playAnim5() {
+            const evGW = document.getElementById('event-gw');
+            const evDisp = document.getElementById('event-disp');
+            const evSpin = document.getElementById('event-spin');
+            const evTail = document.getElementById('event-tail');
+            
+            [evGW, evDisp, evSpin, evTail].forEach(el => {
+                el.style.opacity = 0;
+                el.style.transform = 'scale(0.5)';
+            });
+            setTimeout(() => { evGW.style.opacity = 1; evGW.style.transform = 'scale(1)'; }, 100);
+            setTimeout(() => { evDisp.style.opacity = 1; evDisp.style.transform = 'scale(1)'; }, 600);
+            setTimeout(() => { evSpin.style.opacity = 1; evSpin.style.transform = 'scale(1)'; }, 1100);
+            setTimeout(() => { evTail.style.opacity = 1; evTail.style.transform = 'scale(1)'; }, 1600);
+        }
+        
+        // Animation 6: Celestial Sphere Operators
+        const anim6Box = document.getElementById('anim6-box');
+        const celestialOp = document.getElementById('celestial-op');
+        let anim6Active = false;
+        function playAnim6() {
+            anim6Active = true;
+            anim6Box.style.borderColor = "#38BDF8"; // Highlight activation
+            alert("天球模拟已激活。请在蓝色球体内点击。");
+        }
+        anim6Box.addEventListener('click', (event) => {
+            if (!anim6Active) return;
+            const rect = anim6Box.getBoundingClientRect();
+            const x = event.clientX - rect.left - (celestialOp.offsetWidth / 2);
+            const y = event.clientY - rect.top - (celestialOp.offsetHeight / 2);
+            
+            celestialOp.style.left = x + "px";
+            celestialOp.style.top = y + "px";
+            celestialOp.style.opacity = 1;
+            setTimeout(() => { celestialOp.style.opacity = 0; }, 1000);
+        });
+        // Animation 7: Causal Chain
+        function playAnim7() {
+            const c1 = document.getElementById('cause1');
+            const c2 = document.getElementById('cause2');
+            const c3 = document.getElementById('cause3');
+            const arr71 = document.getElementById('arrow7-1');
+            const arr72 = document.getElementById('arrow7-2');
+            [c1,c2,c3,arr71,arr72].forEach(el => el.style.opacity = 0);
+            
+            setTimeout(() => c1.style.opacity = 1, 100);
+            setTimeout(() => arr71.style.opacity = 1, 600);
+            setTimeout(() => c2.style.opacity = 1, 1100);
+            setTimeout(() => arr72.style.opacity = 1, 1600);
+            setTimeout(() => c3.style.opacity = 1, 2100);
+        }
+        // Animation 8: Penrose Diagram
+        function playAnim8() {
+            const sp = document.getElementById('scri-plus');
+            const sm = document.getElementById('scri-minus');
+            const ip = document.getElementById('i-plus');
+            const im = document.getElementById('i-minus');
+            const iz = document.getElementById('i-zero');
+            
+            [sp,sm,ip,im,iz].forEach(el => el.style.opacity = 0);
+            setTimeout(() => sp.style.opacity = 1, 100);
+            setTimeout(() => sm.style.opacity = 1, 400);
+            setTimeout(() => ip.style.opacity = 1, 700);
+            setTimeout(() => im.style.opacity = 1, 1000);
+            setTimeout(() => iz.style.opacity = 1, 1300);
+        }
+        // Animation 9: Symmetry <-> Ward Identity
+        function playAnim9() {
+            const symm = document.getElementById('symm');
+            const ward = document.getElementById('ward');
+            const arrow9 = document.getElementById('arrow9');
+            symm.style.transform = 'scale(0) translateX(-50px)'; symm.style.opacity = 0;
+            ward.style.transform = 'scale(0) translateX(50px)'; ward.style.opacity = 0;
+            arrow9.style.opacity = 0;
+            setTimeout(() => { symm.style.transform = 'scale(1) translateX(0)'; symm.style.opacity = 1; }, 100);
+            setTimeout(() => { ward.style.transform = 'scale(1) translateX(0)'; ward.style.opacity = 1; }, 600);
+            setTimeout(() => { arrow9.style.opacity = 1; }, 1100);
+        }
+        // Animation 10: Tower of Symmetries
+        function playAnim10() {
+            const l1 = document.getElementById('layer1');
+            const l2 = document.getElementById('layer2');
+            const l3 = document.getElementById('layer3');
+            const l4 = document.getElementById('layer4');
+            
+            [l1,l2,l3,l4].forEach(el => {
+                el.style.opacity = 0;
+                el.style.transform = 'translateY(20px)';
+            });
+            setTimeout(() => { l1.style.opacity = 1; l1.style.transform = 'translateY(0)'; }, 100);
+            setTimeout(() => { l2.style.opacity = 1; l2.style.transform = 'translateY(0)'; }, 500);
+            setTimeout(() => { l3.style.opacity = 1; l3.style.transform = 'translateY(0)'; }, 900);
+            setTimeout(() => { l4.style.opacity = 1; l4.style.transform = 'translateY(0)'; }, 1300);
+        }
+        
+        // Animation 11: CCFT Concept Network
+        function playAnim11() {
+            const n1 = document.getElementById('node11-1');
+            const n2 = document.getElementById('node11-2');
+            const n3 = document.getElementById('node11-3');
+            const n4 = document.getElementById('node11-4');
+            
+            [n1,n2,n3,n4].forEach(el => {
+                el.style.opacity = 0;
+                el.style.transform = 'scale(0.5)';
+            });
+            setTimeout(() => { n1.style.opacity = 1; n1.style.transform = 'scale(1)'; }, 100);
+            setTimeout(() => { n2.style.opacity = 1; n2.style.transform = 'scale(1)'; }, 400);
+            setTimeout(() => { n3.style.opacity = 1; n3.style.transform = 'scale(1)'; }, 700);
+            setTimeout(() => { n4.style.opacity = 1; n4.style.transform = 'scale(1)'; }, 1000);
+            // Drawing lines dynamically is complex; this shows nodes appearing.
+        }
+        // Animation 12: Charge Conservation
+        function playAnim12() {
+            const chargeInParticle = document.querySelector('#charge-in .charge-particle');
+            const chargeOutParticle = document.querySelector('#charge-out .charge-particle');
+            const arrow = document.getElementById('arrow12');
+            const consText = document.getElementById('conservation-text');
+            chargeInParticle.style.transform = 'translateX(0)';
+            chargeOutParticle.style.transform = 'translateX(0)';
+            arrow.style.opacity = 0;
+            consText.style.opacity = 0;
+            setTimeout(() => {
+                chargeInParticle.style.transform = 'translateX(80px) scale(1.2)'; // Move right
+            }, 100);
+            setTimeout(() => {
+                arrow.style.opacity = 1;
+            }, 600);
+             setTimeout(() => {
+                chargeOutParticle.style.transform = 'translateX(-80px) scale(1.2)'; // Move left
+            }, 1100);
+            setTimeout(() => {
+                consText.style.opacity = 1;
+            }, 1600);
+        }
+    </script>
+</body>
+</html>
