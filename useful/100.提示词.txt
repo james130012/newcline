@@ -1,5 +1,5 @@
-我想把我的HTML里面的第一个图用JavaScript Canvas 2D API真的制作，
-动画效果通过 requestAnimationFrame 实现，也可以视情况使用Three.js的JavaScript 3D 库。
+我想把我的HTML里面的图用JavaScript制作，动画效果通过 requestAnimationFrame 实现，
+也可以视情况使用Three.js的JavaScript 3D 库。
 你要给我进行修改原始代码的新代码对，放在一个代码块里面一并给我，要不然我复制的格式不对。
 你要严格对照原代码的相关行代码给出修改代码对，代码对要连贯的。
 要保留了原始格式而不是使用转义符号，换行就是换行，不能使用\n这种，每一个原始空格也要要。
@@ -15,9 +15,10 @@ replace部分《》里的内容是要替换原始代码的新代码。
 深刻阅读一下这篇文章或要求，从物理逻辑的视角，详细做个中文解读（3000字）。
 要从网上尽量收搜丰富的权威信息。要关注里面的重要细节内容。
 核心观点和数据要有五到六个交互式的动态化图表展示
-((用JavaScript Canvas 2D API真的制作，动画效果通过 requestAnimationFrame 
+(用JavaScript Canvas 2D API真的制作，动画效果通过 requestAnimationFrame 
 也可以用JavaScript (Three.js) 代码)实现，越丰富越好。
-里面涉及的公式要用LATEX格式，要调用unpkg.com库源正确渲染，文本行里的公示也要渲染。整个代码用html实现。
+里面涉及的公式要用LATEX格式，要调用unpkg.com库源正确渲染，文本行里的公示也要渲染。
+整个代码用html实现。
 附件为具体的文章:
 要求：
 
