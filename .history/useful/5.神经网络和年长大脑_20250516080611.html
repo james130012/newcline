@@ -531,28 +531,3 @@
 
         // 动画9: 层级处理流程
         function playAnim9() {
-            const elements = ['anim9-level1', 'anim9-arrow1', 'anim9-level2', 'anim9-arrow2', 'anim9-level3'];
-            elements.forEach((id, index) => {
-                setTimeout(() => {
-                    const el = document.getElementById(id);
-                    el.style.opacity = '1';
-                    el.style.transform = 'translateX(0)';
-                }, index * 500);
-            });
-        }
-
-        // 动画10: 时间轴同步展示
-        function playAnim10() {
-            const brainEvents = ['anim10-brain-s1', 'anim10-brain-s2', 'anim10-brain-s3'];
-            const llmEvents = ['anim10-llm-s1', 'anim10-llm-s2', 'anim10-llm-s3'];
-            
-            brainEvents.forEach((id, index) => {
-                setTimeout(() => {
-                    document.getElementById(id).style.opacity = '1';
-                    document.getElementById(llmEvents[index]).style.opacity = '1';
-                }, index * 1000);
-            });
-        }
-    </script>
-</body>
-</html>
