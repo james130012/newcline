@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>语言处理的层级结构动画 - 增强版</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            margin: 0;
+            overflow: hidden;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .animation-container {
+            text-align: center;
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+            max-width: 700px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 2em;
+            font-weight: 600;
+        }
+
+        .animation-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            padding: 30px;
+            border: 3px dashed #bdc3c7;
+            border-radius: 12px;
+            position: relative;
+            background-color: #ecf0f1;
+            transition: background-color 0.5s ease;
+        }
+
+        .hier-level {
+            padding: 18px 30px;
+            margin: 15px 0;
+            border-radius: 30px;
+            color: white;
+            font-weight: bold;
+            opacity: 0;
+            transform: translateX(-80px);
+            transition: opacity 0.9s ease-out, transform 0.9s ease-out, box-shadow 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            min-width: 250px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hier-level::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            border-radius: 35px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .hier-level.active::before {
+            opacity: 1;
+        }
+
+
+        .phoneme-level {
+            background: linear-gradient(45deg, #f39c12, #e67e22); /* Orange gradient */
+        }
+
+        .word-level {
+            background: linear-gradient(45deg, #3498db, #2980b9); /* Blue gradient */
+        }
+
+        .arrow {
+            font-size: 50px;
+            margin: 15px 0;
+            opacity: 0;
+            transition: opacity 0.6s ease-in;
+            color: #7f8c8d;
+            position: relative;
+            z-index: 0;
+        }
+
+        button {
+            padding: 12px 25px;
+            margin-top: 30px;
+            cursor: pointer;
+            background: linear-gradient(45deg, #2ecc71, #27ae60); /* Green gradient */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: 500;
+            transition: background 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #27ae60, #229954);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(46, 204, 113, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(46, 204, 113, 0.3);
+        }
+
+        .explanation {
+            margin-top: 30px;
+            font-size: 1.1em;
+            color: #555;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Animation classes */
+        .fade-in {
+            opacity: 1;
+        }
+
+        .slide-in {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Background animation */
+        @keyframes background-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        body.animating {
+            background: linear-gradient(135deg, #a1c4fd, #c2e9fb, #a1c4fd);
+            background-size: 200% 200%;
+            animation: background-shift 10s infinite ease-in-out;
+        }
+
+        /* Additional visual flair */
+        .animation-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            pointer-events: none;
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0);
+            animation: sparkle-anim 1s ease-out forwards;
+        }
+
+        @keyframes sparkle-anim {
+            0% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0); }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="animation-container">
+        <h1>语言处理的层级结构</h1>
+        <div class="animation-box" id="anim9-box">
+            <div id="anim9-level1" class="hier-level phoneme-level">输入: "猫" (语音信号)</div>
+            <div id="anim9-arrow1" class="arrow">&darr;</div>
+            <div id="anim9-level2" class="hier-level phoneme-level">初级处理 (STG): 音素 /m/, /aʊ/</div>
+            <div id="anim9-arrow2" class="arrow">&darr;</div>
+            <div id="anim9-level3" class="hier-level word-level">高级处理 (联想皮层): 词义 "猫"</div>
+        </div>
+        <button id="anim9-btn">播放动画</button>
+        <p class="explanation">示意：语言信息从底层的语音特征（STG处理）到高层的词汇语义（联想皮层处理）的层级加工过程。</p>
+    </div>
+
+    <script>
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.classList.add('sparkle');
+            sparkle.style.left = `${x}px`;
+            sparkle.style.top = `${y}px`;
+            document.body.appendChild(sparkle);
+
+            sparkle.addEventListener('animationend', () => {
+                sparkle.remove();
+            });
+        }
+
+        function playAnim9() {
+            const level1 = document.getElementById('anim9-level1');
+            const arrow1 = document.getElementById('anim9-arrow1');
+            const level2 = document.getElementById('anim9-level2');
+            const arrow2 = document.getElementById('anim9-arrow2');
+            const level3 = document.getElementById('anim9-level3');
+            const body = document.body;
+            const elements = [level1, arrow1, level2, arrow2, level3];
+
+            // Reset state
+            elements.forEach(el => {
+                if (el) {
+                    el.classList.remove('slide-in', 'fade-in', 'active');
+                    el.style.opacity = 0;
+                    if (el.classList.contains('hier-level')) {
+                         el.style.transform = 'translateX(-80px)';
+                    }
+                }
+            });
+            body.classList.remove('animating');
+
+            // Sequence animation
+            setTimeout(() => {
+                if (level1) {
+                    level1.classList.add('slide-in', 'active');
+                    const rect = level1.getBoundingClientRect();
+                    createSparkle(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                }
+            }, 100);
+
+            setTimeout(() => {
+                if (arrow1) {
+                    arrow1.classList.add('fade-in');
+                }
+            }, 1000);
+
+            setTimeout(() => {
+                 if (level1) level1.classList.remove('active');
+                if (level2) {
+                    level2.classList.add('slide-in', 'active');
+                     const rect = level2.getBoundingClientRect();
+                    createSparkle(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                }
+            }, 1600);
+
+            setTimeout(() => {
+                 if (arrow1) arrow1.classList.remove('fade-in');
+                if (arrow2) {
+                    arrow2.classList.add('fade-in');
+                }
+            }, 2500);
+
+            setTimeout(() => {
+                 if (level2) level2.classList.remove('active');
+                if (level3) {
+                    level3.classList.add('slide-in', 'active');
+                     const rect = level3.getBoundingClientRect();
+                    createSparkle(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                }
+            }, 3200);
+
+             setTimeout(() => {
+                 if (arrow2) arrow2.classList.remove('fade-in');
+             }, 4000);
+
+             setTimeout(() => {
+                 if (level3) level3.classList.remove('active');
+             }, 4500);
+
+
+            setTimeout(() => {
+                body.classList.add('animating');
+            }, 5000); // Start background animation after main sequence
+        }
+
+        document.getElementById('anim9-btn')?.addEventListener('click', playAnim9);
+
+        // Optional: Play animation on page load
+        document.addEventListener('DOMContentLoaded', playAnim9);
+    </script>
+</body>
+</html>

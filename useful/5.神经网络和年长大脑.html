@@ -5,34 +5,68 @@
 <title>神经网络与大脑语言发育</title>
 <style>
 /* 基础样式 */
+:root {
+  --anim-duration: 1s;
+  --anim-easing: ease-in-out;
+}
+
 body {
   font-family: Arial, sans-serif;
   padding: 20px;
+  line-height: 1.6;
 }
+
 .animation-container {
-  margin: 20px 0;
+  margin: 30px 0;
+  border: 1px solid #ddd;
+  padding: 15px;
+  border-radius: 8px;
 }
+
 .animation-box {
-  border: 1px solid #ccc;
-  padding: 10px;
   background-color: #f9f9f9;
+  padding: 15px;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
+
+/* 统一按钮样式 */
+button {
+  padding: 8px 16px;
+  margin: 10px 0;
+  cursor: pointer;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #2980b9;
+}
+
 /* 图表元素 */
 .bar-chart-bar {
   display: inline-block;
   width: 20px;
-  margin: 2px;
+  margin: 0 5px;
   text-align: center;
   position: relative;
-  transition: height 1s ease;
+  transition: height var(--anim-duration) var(--anim-easing);
 }
+
 .bar-label {
   position: absolute;
-  bottom: -15px;
-  left: 0;
+  bottom: -20px;
   width: 100%;
+  text-align: center;
   font-size: 10px;
 }
+
 /* 时间轴样式 */
 .timeline {
   display: flex;
@@ -40,10 +74,12 @@ body {
   align-items: center;
   height: 30px;
 }
+
 .timeline-event {
   opacity: 0;
   transition: opacity 0.5s;
 }
+
 /* 大脑区域样式 */
 .brain-outline {
   position: relative;
@@ -51,6 +87,7 @@ body {
   width: 120px;
   height: 120px;
 }
+
 .brain-region {
   position: absolute;
   width: 20px;
@@ -58,20 +95,24 @@ body {
   border-radius: 50%;
   transition: all 1s ease;
 }
+
 .stg {
   background-color: #f39c12;
   top: 20px;
   left: 40px;
 }
+
 .assoc-cortex {
   background-color: #3498db;
   top: 60px;
   left: 80px;
 }
+
 /* 图例样式 */
 .legend-item {
   margin: 0 10px;
 }
+
 .legend-color {
   display: inline-block;
   width: 10px;
@@ -79,20 +120,24 @@ body {
   border-radius: 50%;
   vertical-align: middle;
 }
+
 /* 层级样式 */
 .hier-level {
   opacity: 0;
   transform: translateX(-20px);
   transition: all 0.5s;
 }
+
 .phoneme-level {
   background-color: #f39c12;
   padding: 5px;
 }
+
 .word-level {
   background-color: #3498db;
   padding: 5px;
 }
+
 /* 动画7样式 */
 .anim7-box-style {
   background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150"><path d="M100 5C60 5 20 35 20 75s40 70 80 70 80-30 80-70S140 5 100 5zm0 130c-33.1 0-60-22.4-60-55s26.9-55 60-55 60 22.4 60 55-26.9 55-60 55z" fill="%23ecf0f1"/><circle cx="70" cy="70" r="10" fill="%23f39c12" id="svg-stg"/><text x="62" y="90" font-size="10">STG</text><circle cx="130" cy="50" r="8" fill="%233498db" id="svg-lifc" opacity="0.3"/><text x="120" y="35" font-size="10">L/IFC</text><circle cx="140" cy="90" r="8" fill="%232ecc71" id="svg-atl" opacity="0.3"/><text x="130" y="110" font-size="10">ATL</text><line id="svg-conn1" x1="80" y1="70" x2="122" y2="55" stroke="%237f8c8d" stroke-width="1" opacity="0"/><line id="svg-conn2" x1="80" y1="75" x2="132" y2="85" stroke="%237f8c8d" stroke-width="1" opacity="0"/></svg>');
@@ -102,7 +147,18 @@ body {
   position: relative;
   height: 150px;
 }
-/* 动画效果 */
+
+/* SVG曲线 */
+svg {
+  display: block;
+  margin: 0 auto;
+}
+
+polyline {
+  transition: opacity var(--anim-duration) var(--anim-easing);
+}
+
+/* 动画关键帧 */
 @keyframes pulse {
   0% {
     transform: scale(1);
@@ -115,57 +171,46 @@ body {
   }
 }
 @keyframes fadeIn {
-  0% {
+  from {
     opacity: 0;
   }
-  100% {
+  to {
     opacity: 1;
   }
 }
 @keyframes slideIn {
-  0% {
+  from {
     transform: translateX(-20px);
     opacity: 0;
   }
-  100% {
+  to {
     transform: translateX(0);
     opacity: 1;
   }
 }
 @keyframes grow {
-  0% {
+  from {
     height: 0;
   }
-  100% {
-    height: var(--final-height);
-  }
-}
-@keyframes draw {
-  0% {
-    stroke-dashoffset: var(--length);
-  }
-  100% {
-    stroke-dashoffset: 0;
+  to {
+    height: var(--final-height, 100px);
   }
 }
 /* 辅助类 */
 .hidden {
-  opacity: 0;
+  visibility: hidden;
 }
-.pulse {
-  animation: pulse 1s infinite;
-}
-.fadeIn {
-  animation: fadeIn 1s forwards;
-}
-.slideIn {
-  animation: slideIn 0.5s forwards;
-}
+
 .grow {
-  animation: grow 1s forwards;
+  animation: grow var(--anim-duration) var(--anim-easing) forwards;
 }
-.draw {
-  animation: draw 2s ease-in-out forwards;
+
+.fadeIn {
+  animation: fadeIn var(--anim-duration) var(--anim-easing) forwards;
+}
+
+.slideIn {
+  animation: slideIn var(--anim-duration) var(--anim-easing) forwards;
 }
 </style>
 </head>
@@ -175,73 +220,73 @@ body {
 <div class="animation-container">
 <h3>动画1: 声波进入大脑</h3>
 <div class="animation-box" id="anim1-box">
-<div id="anim1-sound" class="hidden" style="width: 100px; height: 100px; background-color: #e74c3c; opacity: 0;"></div>
-<div id="anim1-text" class="hidden" style="margin-left: 10px; display: inline-block; vertical-align: middle;"></div>
+<div id="anim1-sound" class="hidden" style="width: 100px; height: 100px; background-color: #e74c3c;"></div>
+<div id="anim1-text" class="hidden" style="margin-left: 10px; display: inline-block; vertical-align: middle;">语音信号</div>
 </div>
-<button id="anim1-btn">播放声波动画</button>
+<button id="anim1-btn" aria-label="播放声波动画">播放声波动画</button>
 <p>示意：语音信号从耳朵传入，激活大脑的STG区域。</p>
 </div>
 <div class="animation-container">
 <h3>动画2: 语言表征强度随年龄增长</h3>
 <div class="animation-box" id="anim2-box" style="display:flex; align-items:flex-end; height:120px;">
-<div id="bar_2_5" style="height:0px; background-color:#f1c40f; width:20px; margin-right:20px;">
+<div id="bar_2_5" class="bar-chart-bar" style="height:0px; background-color:#f1c40f;">
 <span class="bar-label">2-5岁</span>
 </div>
-<div id="bar_6_11" style="height:0px; background-color:#e67e22; width:20px; margin-right:20px;">
+<div id="bar_6_11" class="bar-chart-bar" style="height:0px; background-color:#e67e22;">
 <span class="bar-label">6-11岁</span>
 </div>
-<div id="bar_12_plus" style="height:0px; background-color:#2980b9; width:20px;">
+<div id="bar_12_plus" class="bar-chart-bar" style="height:0px; background-color:#2980b9;">
 <span class="bar-label">12+岁</span>
 </div>
 </div>
-<button id="anim2-btn">展示强度增长</button>
+<button id="anim2-btn" aria-label="展示强度增长">展示强度增长</button>
 <p>示意：语言表征强度随年龄增长而增强，12+岁组最强。</p>
 </div>
 <div class="animation-container">
 <h3>动画3: 语言处理的层级流程</h3>
-<div class="animation-box" id="anim3-box" style="display:flex; flex-direction: column; align-items: center;">
-<div id="anim3-step1" class="hier-level phoneme-level" style="opacity:0; transform: translateX(-20px);">语音输入</div>
+<div class="animation-box" id="anim3-box" style="flex-direction: column; align-items: center;">
+<div id="anim3-step1" class="hier-level phoneme-level">语音输入</div>
 <div id="anim3-arrow1" style="font-size:24px; margin:5px 0; opacity:0;">&darr;</div>
-<div id="anim3-step2" class="hier-level phoneme-level" style="opacity:0; transform: translateX(-20px);">STG处理音素</div>
+<div id="anim3-step2" class="hier-level phoneme-level">STG处理音素</div>
 <div id="anim3-arrow2" style="font-size:24px; margin:5px 0; opacity:0;">&darr;</div>
-<div id="anim3-step3" class="hier-level word-level" style="opacity:0; transform: translateX(-20px);">联想皮层处理词汇</div>
+<div id="anim3-step3" class="hier-level word-level">联想皮层处理词汇</div>
 </div>
-<button id="anim3-btn">展示层级流程</button>
+<button id="anim3-btn" aria-label="展示层级流程">展示层级流程</button>
 <p>示意：语言处理从语音输入到STG音素处理，再到联想皮层的词汇处理。</p>
 </div>
 <div class="animation-container">
 <h3>动画4: 编码与解码模型</h3>
 <div class="animation-box" id="anim4-box">
-<div id="anim4-encoding" class="hidden" style="opacity:0; transition: opacity 1s;">
+<div id="anim4-encoding" class="hidden">
 <h4>编码模型</h4>
 <p>输入语音 → 神经响应</p>
 <p>用于预测大脑如何编码语言信息</p>
 </div>
-<div id="anim4-decoding" class="hidden" style="opacity:0; transition: opacity 1s;">
+<div id="anim4-decoding" class="hidden">
 <h4>解码模型</h4>
 <p>神经响应 → 预测语言</p>
 <p>用于从大脑活动重建语言内容</p>
 </div>
 </div>
-<button id="anim4-encoding-btn">展示编码模型</button>
-<button id="anim4-decoding-btn">展示解码模型</button>
+<button id="anim4-encoding-btn" aria-label="展示编码模型">展示编码模型</button>
+<button id="anim4-decoding-btn" aria-label="展示解码模型">展示解码模型</button>
 <p>示意：编码模型从语言输入预测神经响应，解码模型从神经响应重建语言输入。</p>
 </div>
 <div class="animation-container">
 <h3>动画5: 年龄相关的表征区域</h3>
-<div class="animation-box" id="anim5-box" style="display:flex; justify-content: space-around;">
-<div id="anim5-brain-young" class="brain-outline" style="display:inline-block; margin-right:20px; position:relative;">
-<div class="brain-region stg" id="anim5-young-phonetic" style="opacity:0;"></div>
-<div class="brain-region assoc-cortex" id="anim5-young-word" style="opacity:0; background-color:#aed6f1;"></div>
+<div class="animation-box" id="anim5-box" style="justify-content: space-around;">
+<div id="anim5-brain-young" class="brain-outline" style="margin-right:20px;">
+<div class="brain-region stg" id="anim5-young-phonetic"></div>
+<div class="brain-region assoc-cortex" id="anim5-young-word" style="background-color:#aed6f1;"></div>
 <p style="font-size:12px; margin-top:105px;">2-5岁</p>
 </div>
-<div id="anim5-brain-older" class="brain-outline" style="display:inline-block; position:relative;">
-<div class="brain-region stg" id="anim5-older-phonetic" style="opacity:0;"></div>
-<div class="brain-region assoc-cortex" id="anim5-older-word" style="opacity:0;"></div>
+<div id="anim5-brain-older" class="brain-outline">
+<div class="brain-region stg" id="anim5-older-phonetic"></div>
+<div class="brain-region assoc-cortex" id="anim5-older-word"></div>
 <p style="font-size:12px; margin-top:105px;">12+岁</p>
 </div>
 </div>
-<button id="anim5-btn">对比表征区域</button>
+<button id="anim5-btn" aria-label="对比表征区域">对比表征区域</button>
 <p>示意：幼儿的STG已处理语音，而词汇表征在年长者联想皮层更显著。</p>
 </div>
 <p>在时间动态上，语音特征的神经响应在音素出现前即开始，约150毫秒达到峰值后迅速回落。相比之下，词汇特征的神经响应在词语出现前1秒便开始上升，约350毫秒达到峰值，并持续长达2秒。</p>
@@ -263,15 +308,15 @@ body {
 <span class="legend-item"><span class="legend-color" style="background-color:#2980b9;"></span>词汇特征</span>
 </div>
 </div>
-<button id="anim6-btn">展示时间曲线</button>
+<button id="anim6-btn" aria-label="展示时间曲线">展示时间曲线</button>
 <p>示意：语音特征响应快而短暂，词汇特征响应慢而持久。</p>
 </div>
 <p>从大脑区域来看，语言表征网络随着年龄增长而扩展。年幼组（2-5岁）在STG有清晰的语言表征，但在IPL、L/IFC和ATL的表征相较于年长组则不明显或缺失。这表明语言功能从核心区域逐渐扩展到更广泛的皮层网络。</p>
 <div class="animation-container">
 <h3>动画7: 大脑区域贡献的演变 (网络/空间动画)</h3>
 <div class="animation-box" id="anim7-box" class="anim7-box-style"></div>
-<div id="anim7-status" style="position:absolute; top:5px; left:5px; font-size:14px; background:rgba(255,255,255,0.7); padding:3px;">年龄: 2-5岁</div>
-<button id="anim7-btn">展示区域激活演变</button>
+<div id="anim7-status" style="position:absolute; top:5px; left:5px; font-size:14px; background:rgba(255,255,255,0.7); padding:3px;" aria-live="polite">年龄: 2-5岁</div>
+<button id="anim7-btn" aria-label="展示区域激活演变">展示区域激活演变</button>
 <p>示意：语言网络激活从STG核心区随年龄增长扩展到L/IFC、ATL等区域。</p>
 </div>
 <h2>AI模型的启示：模拟与验证</h2>
@@ -285,36 +330,36 @@ body {
 <div class="animation-box" id="anim8-box" style="display:flex; align-items:flex-end; height:120px;">
 <div style="margin-right:30px;">
 <p style="font-size:12px; margin-bottom:5px;">幼儿组 (2-5岁)</p>
-<div id="bar_young_untrained" class="bar-chart-bar" style="height:0px; background-color:#f1c40f; width:20px;">
+<div id="bar_young_untrained" class="bar-chart-bar" style="height:0px; background-color:#f1c40f;">
 <span class="bar-label" style="font-size:8px;">未训练</span>
 </div>
-<div id="bar_young_trained" class="bar-chart-bar" style="height:0px; background-color:#e67e22; width:20px;">
+<div id="bar_young_trained" class="bar-chart-bar" style="height:0px; background-color:#e67e22;">
 <span class="bar-label" style="font-size:8px;">训练后</span>
 </div>
 </div>
 <div>
 <p style="font-size:12px; margin-bottom:5px;">年长组 (12+岁)</p>
-<div id="bar_old_untrained" class="bar-chart-bar" style="height:0px; background-color:#f1c40f; width:20px;">
+<div id="bar_old_untrained" class="bar-chart-bar" style="height:0px; background-color:#f1c40f;">
 <span class="bar-label" style="font-size:8px;">未训练</span>
 </div>
-<div id="bar_old_trained" class="bar-chart-bar" style="height:0px; background-color:#e67e22; width:20px;">
+<div id="bar_old_trained" class="bar-chart-bar" style="height:0px; background-color:#e67e22;">
 <span class="bar-label" style="font-size:8px;">训练后</span>
 </div>
 </div>
 </div>
-<button id="anim8-btn">展示AI模型对比</button>
+<button id="anim8-btn" aria-label="展示AI模型对比">展示AI模型对比</button>
 <p>示意：训练后的LLM（Llama 3.1）在预测大脑活动方面表现更好，尤其是在年长组中，训练带来的提升（$ \Delta_T R $）更为显著。</p>
 </div>
 <div class="animation-container">
 <h3>动画9: 语言处理的层级结构 (分层解析动画)</h3>
-<div id="anim9-box">
-<div id="anim9-level1" class="hier-level phoneme-level" style="opacity:0;">输入: "猫" (语音信号)</div>
+<div class="animation-box" id="anim9-box">
+<div id="anim9-level1" class="hier-level phoneme-level">输入: "猫" (语音信号)</div>
 <div id="anim9-arrow1" style="font-size:24px; margin:5px 0; opacity:0;">&darr;</div>
-<div id="anim9-level2" class="hier-level phoneme-level" style="opacity:0;">初级处理 (STG): 音素 /m/, /aʊ/</div>
+<div id="anim9-level2" class="hier-level phoneme-level">初级处理 (STG): 音素 /m/, /aʊ/</div>
 <div id="anim9-arrow2" style="font-size:24px; margin:5px 0; opacity:0;">&darr;</div>
-<div id="anim9-level3" class="hier-level word-level" style="opacity:0;">高级处理 (联想皮层): 词义 "猫"</div>
+<div id="anim9-level3" class="hier-level word-level">高级处理 (联想皮层): 词义 "猫"</div>
 </div>
-<button id="anim9-btn">展示层级处理</button>
+<button id="anim9-btn" aria-label="展示层级处理">展示层级处理</button>
 <p>示意：语言信息从底层的语音特征（STG处理）到高层的词汇语义（联想皮层处理）的层级加工过程。</p>
 </div>
 <div class="animation-container">
@@ -338,303 +383,271 @@ body {
 </div>
 </div>
 </div>
-<button id="anim10-btn">展示吻合轨迹</button>
+<button id="anim10-btn" aria-label="展示吻合轨迹">展示吻合轨迹</button>
 <p>示意：LLM的训练过程（尤其像Llama 3.1）所学习到的表征，与人类大脑语言表征的成熟过程存在一定的平行关系。</p>
 </div>
 <h2>结论与意义</h2>
 <p>这项研究不仅详细描绘了语言表征在发育大脑中的成熟路径，从早期主要依赖STG处理语音特征，到后续联想皮层参与更高级的词汇和语义处理，而且证明了现代AI模型是模拟和理解人类语言习得神经基础的一个极具前景的工具。这些发现为我们理解人类独特的语言能力以及开发更类人的AI系统提供了深刻见解。</p>
 <script>
 // 动画工具函数
-const animTools = {
-  // 元素渐显动画
-  fadeIn: (element, delay = 0) => {
+class AnimationTools {
+  static fadeIn(element, delay = 0) {
+    if (!element) return;
     setTimeout(() => {
-      if (element) {
-        element.classList.remove('hidden');
-        element.classList.add('fadeIn');
-      }
+      element.classList.remove('hidden');
+      element.classList.add('fadeIn');
     }, delay);
-  },
-  // 元素滑入动画
-  slideIn: (element, delay = 0) => {
+  }
+
+  static slideIn(element, delay = 0) {
+    if (!element) return;
     setTimeout(() => {
-      if (element) {
-        element.style.opacity = '1';
-        element.style.transform = 'translateX(0)';
-      }
+      element.style.opacity = '1';
+      element.style.transform = 'translateX(0)';
     }, delay);
-  },
-  // 柱状图生长动画
-  barGrow: (element, height, delay = 0) => {
+  }
+
+  static barGrow(element, height, delay = 0) {
+    if (!element) return;
     setTimeout(() => {
-      if (element) {
-        element.style.setProperty('--final-height', height);
-        element.classList.add('grow');
-      }
+      element.style.setProperty('--final-height', height);
+      element.classList.add('grow');
     }, delay);
-  },
-  // 绘制SVG曲线
-  drawSVGPath: (element, points, delay = 0) => {
+  }
+
+  static drawSVGPath(element, points, delay = 0) {
+    if (!element) return;
     setTimeout(() => {
-      if (element) {
-        element.setAttribute('points', points);
+      element.setAttribute('points', points);
+      try {
         const pathLength = element.getTotalLength();
         element.style.strokeDasharray = pathLength;
-        element.style.setProperty('--length', pathLength);
-        element.classList.add('draw');
+        element.style.strokeDashoffset = pathLength;
+        element.style.opacity = '1';
+        element.animate(
+          [{ strokeDashoffset: pathLength }, { strokeDashoffset: 0 }],
+          { duration: 2000, easing: 'ease-in-out', fill: 'forwards' }
+        );
+      } catch (e) {
+        console.warn('SVG path length calculation failed:', e);
         element.style.opacity = '1';
       }
     }, delay);
-  },
-  // 重置元素状态
-  resetElements: (elementIds, defaultProps) => {
+  }
+
+  static resetElements(elementIds, props) {
     elementIds.forEach(id => {
       const el = document.getElementById(id);
       if (el) {
-        Object.entries(defaultProps).forEach(([prop, value]) => {
+        Object.entries(props).forEach(([prop, value]) => {
           el.style[prop] = value;
+          el.classList.remove('grow', 'fadeIn', 'slideIn');
         });
       }
     });
   }
-};
-// 动画1: 声波进入大脑
-function playAnim1() {
-  const sound = document.getElementById('anim1-sound');
-  const text = document.getElementById('anim1-text');
-  if (sound) {
-    sound.classList.remove('hidden');
-    sound.classList.add('fadeIn', 'pulse');
-  }
-  animTools.fadeIn(text, 1000);
 }
-// 动画2: 柱状图生长
-function playAnim2() {
-  const barConfig = [
-    { id: 'bar_2_5', height: '60px', delay: 0 },
-    { id: 'bar_6_11', height: '90px', delay: 300 },
-    { id: 'bar_12_plus', height: '120px', delay: 600 }
-  ];
-  barConfig.forEach(bar => {
-    const el = document.getElementById(bar.id);
-    if (el) {
-      animTools.barGrow(el, bar.height, bar.delay);
-    }
-  });
-}
-// 动画3: 流程步骤渐现
-function playAnim3() {
-  const steps = [
-    { id: 'anim3-step1', delay: 0 },
-    { id: 'anim3-arrow1', delay: 500 },
-    { id: 'anim3-step2', delay: 1000 },
-    { id: 'anim3-arrow2', delay: 1500 },
-    { id: 'anim3-step3', delay: 2000 }
-  ];
-  steps.forEach(step => {
-    const el = document.getElementById(step.id);
-    if (el) {
-      animTools.slideIn(el, step.delay);
-    }
-  });
-}
-// 动画4: 编码/解码模型切换
-function playAnim4(type) {
-  const encoding = document.getElementById('anim4-encoding');
-  const decoding = document.getElementById('anim4-decoding');
-  if (encoding && decoding) {
-    if (type === 'encoding') {
-      encoding.classList.remove('hidden');
-      encoding.classList.add('fadeIn');
-      decoding.classList.add('hidden');
-      decoding.classList.remove('fadeIn');
-    } else {
-      decoding.classList.remove('hidden');
-      decoding.classList.add('fadeIn');
-      encoding.classList.add('hidden');
-      encoding.classList.remove('fadeIn');
-    }
-  }
-}
-// 动画5: 大脑区域激活
-function playAnim5() {
-  const regions = [
-    { id: 'anim5-young-phonetic', props: { opacity: '1' }, delay: 0 },
-    { id: 'anim5-young-word', props: { opacity: '0.5' }, delay: 0 },
-    { id: 'anim5-older-phonetic', props: { opacity: '1' }, delay: 1000 },
-    { id: 'anim5-older-word', props: { opacity: '1' }, delay: 1000 }
-  ];
-  // 首先重置所有区域
-  animTools.resetElements(
-    regions.map(r => r.id),
-    { opacity: '0' }
-  );
-  // 按顺序激活区域
-  setTimeout(() => {
-    regions.forEach(region => {
-      setTimeout(() => {
-        const el = document.getElementById(region.id);
-        if (el) {
-          Object.entries(region.props).forEach(([prop, value]) => {
-            el.style[prop] = value;
-          });
-        }
-      }, region.delay);
+
+const animations = {
+  anim1() {
+    const sound = document.getElementById('anim1-sound');
+    const text = document.getElementById('anim1-text');
+    AnimationTools.fadeIn(sound);
+    AnimationTools.fadeIn(text, 1000);
+    sound?.classList.add('pulse');
+  },
+
+  anim2() {
+    AnimationTools.resetElements(['bar_2_5', 'bar_6_11', 'bar_12_plus'], { height: '0px' });
+    const bars = [
+      { id: 'bar_2_5', height: '60px', delay: 0 },
+      { id: 'bar_6_11', height: '90px', delay: 300 },
+      { id: 'bar_12_plus', height: '120px', delay: 600 }
+    ];
+    bars.forEach(bar => AnimationTools.barGrow(document.getElementById(bar.id), bar.height, bar.delay));
+  },
+
+  anim3() {
+    const steps = [
+      { id: 'anim3-step1', delay: 0 },
+      { id: 'anim3-arrow1', delay: 500 },
+      { id: 'anim3-step2', delay: 1000 },
+      { id: 'anim3-arrow2', delay: 1500 },
+      { id: 'anim3-step3', delay: 2000 }
+    ];
+    AnimationTools.resetElements(steps.map(s => s.id).concat(['anim3-arrow1', 'anim3-arrow2']), { opacity: '0', transform: 'translateX(-20px)' });
+    steps.forEach(step => {
+      const el = document.getElementById(step.id);
+      AnimationTools.slideIn(el, step.delay);
     });
-  }, 100);
-}
-// 动画6: 时间动态曲线绘制优化
-function playAnim6() {
-  const phoneticCurve = document.getElementById('anim6-phonetic-curve');
-  const lexicalCurve = document.getElementById('anim6-lexical-curve');
-  // 重置曲线
-  animTools.resetElements(['anim6-phonetic-curve', 'anim6-lexical-curve'], {
-    opacity: '0',
-    strokeDasharray: '',
-    strokeDashoffset: ''
-  });
-  // 按顺序绘制曲线
-  setTimeout(() => {
-    const phoneticPoints = '40,110 50,90 100,50 120,110';
-    if (phoneticCurve) {
-      animTools.drawSVGPath(phoneticCurve, phoneticPoints, 0);
+    AnimationTools.fadeIn(document.getElementById('anim3-arrow1'), 500);
+    AnimationTools.fadeIn(document.getElementById('anim3-arrow2'), 1500);
+  },
+
+  anim4(type) {
+    const encoding = document.getElementById('anim4-encoding');
+    const decoding = document.getElementById('anim4-decoding');
+    AnimationTools.resetElements(['anim4-encoding', 'anim4-decoding'], { opacity: '0' });
+    if (type === 'encoding') {
+      AnimationTools.fadeIn(encoding);
+    } else {
+      AnimationTools.fadeIn(decoding);
     }
-    const lexicalPoints = '30,110 50,100 150,30 200,70 250,110';
-    if (lexicalCurve) {
-      animTools.drawSVGPath(lexicalCurve, lexicalPoints, 500);
-    }
-  }, 100);
-}
-// 动画7: 区域激活演变
-function playAnim7() {
-  const transitions = [
-    {
-      time: 0,
-      label: '年龄: 2-5岁',
-      regions: [
-        { id: 'svg-stg', props: { opacity: '1' } },
-        { id: 'svg-lifc', props: { opacity: '0.3', transform: 'scale(1)' } },
-        { id: 'svg-atl', props: { opacity: '0.3', transform: 'scale(1)' } },
-        { id: 'svg-conn1', props: { opacity: '0' } },
-        { id: 'svg-conn2', props: { opacity: '0' } }
-      ]
-    },
-    {
-      time: 1000,
-      label: '年龄: 6-11岁',
-      regions: [
-        { id: 'svg-lifc', props: { opacity: '0.7', transform: 'scale(1.1)' } },
-        { id: 'svg-conn1', props: { opacity: '0.5' } }
-      ]
-    },
-    {
-      time: 2000,
-      label: '年龄: 12+岁',
-      regions: [
-        { id: 'svg-lifc', props: { opacity: '1', transform: 'scale(1.2)' } },
-        { id: 'svg-atl', props: { opacity: '1', transform: 'scale(1.2)' } },
-        { id: 'svg-conn1', props: { opacity: '1' } },
-        { id: 'svg-conn2', props: { opacity: '1' } }
-      ]
-    }
-  ];
-  // 设置过渡效果
-  ['svg-lifc', 'svg-atl', 'svg-conn1', 'svg-conn2'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.style.transition = 'opacity 1s, transform 1s';
-    }
-  });
-  // 应用各阶段变化
-  transitions.forEach(stage => {
+  },
+
+  anim5() {
+    const regions = [
+      { id: 'anim5-young-phonetic', props: { opacity: '1' }, delay: 0 },
+      { id: 'anim5-young-word', props: { opacity: '0.5' }, delay: 0 },
+      { id: 'anim5-older-phonetic', props: { opacity: '1' }, delay: 1000 },
+      { id: 'anim5-older-word', props: { opacity: '1' }, delay: 1000 }
+    ];
+    AnimationTools.resetElements(regions.map(r => r.id), { opacity: '0' });
     setTimeout(() => {
-      const status = document.getElementById('anim7-status');
-      if (status) {
-        status.textContent = stage.label;
-      }
-      stage.regions.forEach(region => {
-        const el = document.getElementById(region.id);
-        if (el) {
-          Object.entries(region.props).forEach(([prop, value]) => {
-            el.style[prop] = value;
-          });
-        }
+      regions.forEach(region => {
+        setTimeout(() => {
+          const el = document.getElementById(region.id);
+          if (el) {
+            Object.entries(region.props).forEach(([prop, value]) => {
+              el.style[prop] = value;
+            });
+          }
+        }, region.delay);
       });
-    }, stage.time);
-  });
-}
-// 动画8: AI模型对比柱状图
-function playAnim8() {
-  const barConfig = [
-    { id: 'bar_young_untrained', height: '30px', delay: 0 },
-    { id: 'bar_young_trained', height: '50px', delay: 100 },
-    { id: 'bar_old_untrained', height: '35px', delay: 0 },
-    { id: 'bar_old_trained', height: '90px', delay: 100 }
-  ];
-  barConfig.forEach(bar => {
-    const el = document.getElementById(bar.id);
-    if (el) {
-      animTools.barGrow(el, bar.height, bar.delay);
-    }
-  });
-}
-// 动画9: 层级处理流程
-function playAnim9() {
-  const steps = [
-    { id: 'anim9-level1', delay: 0 },
-    { id: 'anim9-arrow1', delay: 700 },
-    { id: 'anim9-level2', delay: 1400 },
-    { id: 'anim9-arrow2', delay: 2100 },
-    { id: 'anim9-level3', delay: 2800 }
-  ];
-  steps.forEach(step => {
-    const el = document.getElementById(step.id);
-    if (el) {
-      animTools.slideIn(el, step.delay);
-    }
-  });
-}
-// 动画10: 时间轴同步展示
-function playAnim10() {
-  const brainEvents = ['anim10-brain-s1', 'anim10-brain-s2', 'anim10-brain-s3'];
-  const llmEvents = ['anim10-llm-s1', 'anim10-llm-s2', 'anim10-llm-s3'];
-  // Reset opacity
-  animTools.resetElements(brainEvents.concat(llmEvents), { opacity: '0' });
-  brainEvents.forEach((id, index) => {
-    setTimeout(() => {
-      const el1 = document.getElementById(id);
-      const el2 = document.getElementById(llmEvents[index]);
-      if (el1) el1.style.opacity = '1';
-      if (el2) el2.style.opacity = '1';
-    }, index * 1000);
-  });
-}
-// 初始化事件监听器
+    }, 100);
+  },
+
+  anim6() {
+    const phoneticCurve = document.getElementById('anim6-phonetic-curve');
+    const lexicalCurve = document.getElementById('anim6-lexical-curve');
+    AnimationTools.resetElements(['anim6-phonetic-curve', 'anim6-lexical-curve'], { opacity: '0', strokeDasharray: '', strokeDashoffset: '' });
+    const phoneticPoints = '40,110 50,90 100,50 120,110';
+    const lexicalPoints = '30,110 50,100 150,30 200,70 250,110';
+    AnimationTools.drawSVGPath(phoneticCurve, phoneticPoints, 0);
+    AnimationTools.drawSVGPath(lexicalCurve, lexicalPoints, 500);
+  },
+
+  anim7() {
+    const transitions = [
+      {
+        time: 0,
+        label: '年龄: 2-5岁',
+        regions: [
+          { id: 'svg-stg', props: { opacity: '1' } },
+          { id: 'svg-lifc', props: { opacity: '0.3', transform: 'scale(1)' } },
+          { id: 'svg-atl', props: { opacity: '0.3', transform: 'scale(1)' } },
+          { id: 'svg-conn1', props: { opacity: '0' } },
+          { id: 'svg-conn2', props: { opacity: '0' } }
+        ]
+      },
+      {
+        time: 1000,
+        label: '年龄: 6-11岁',
+        regions: [
+          { id: 'svg-lifc', props: { opacity: '0.7', transform: 'scale(1.1)' } },
+          { id: 'svg-conn1', props: { opacity: '0.5' } }
+        ]
+      },
+      {
+        time: 2000,
+        label: '年龄: 12+岁',
+        regions: [
+          { id: 'svg-lifc', props: { opacity: '1', transform: 'scale(1.2)' } },
+          { id: 'svg-atl', props: { opacity: '1', transform: 'scale(1.2)' } },
+          { id: 'svg-conn1', props: { opacity: '1' } },
+          { id: 'svg-conn2', props: { opacity: '1' } }
+        ]
+      }
+    ];
+    const status = document.getElementById('anim7-status');
+    ['svg-lifc', 'svg-atl', 'svg-conn1', 'svg-conn2'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.style.transition = 'opacity 1s, transform 1s';
+      }
+    });
+    transitions.forEach(stage => {
+      setTimeout(() => {
+        if (status) {
+          status.textContent = stage.label;
+        }
+        stage.regions.forEach(region => {
+          const el = document.getElementById(region.id);
+          if (el) {
+            Object.entries(region.props).forEach(([prop, value]) => {
+              el.style[prop] = value;
+            });
+          }
+        });
+      }, stage.time);
+    });
+  },
+
+  anim8() {
+    const barConfig = [
+      { id: 'bar_young_untrained', height: '30px', delay: 0 },
+      { id: 'bar_young_trained', height: '50px', delay: 100 },
+      { id: 'bar_old_untrained', height: '35px', delay: 0 },
+      { id: 'bar_old_trained', height: '90px', delay: 100 }
+    ];
+    AnimationTools.resetElements(barConfig.map(b => b.id), { height: '0px' });
+    barConfig.forEach(bar => {
+      const el = document.getElementById(bar.id);
+      if (el) {
+        animTools.barGrow(el, bar.height, bar.delay);
+      }
+    });
+  },
+
+  anim9() {
+    const steps = [
+      { id: 'anim9-level1', delay: 0 },
+      { id: 'anim9-arrow1', delay: 700 },
+      { id: 'anim9-level2', delay: 1400 },
+      { id: 'anim9-arrow2', delay: 2100 },
+      { id: 'anim9-level3', delay: 2800 }
+    ];
+    AnimationTools.resetElements(steps.map(s => s.id).concat(['anim9-arrow1', 'anim9-arrow2']), { opacity: '0', transform: 'translateX(-20px)' });
+    steps.forEach(step => {
+      const el = document.getElementById(step.id);
+      AnimationTools.slideIn(el, step.delay);
+    });
+    AnimationTools.fadeIn(document.getElementById('anim9-arrow1'), 700);
+    AnimationTools.fadeIn(document.getElementById('anim9-arrow2'), 2100);
+  },
+
+  anim10() {
+    const brainEvents = ['anim10-brain-s1', 'anim10-brain-s2', 'anim10-brain-s3'];
+    const llmEvents = ['anim10-llm-s1', 'anim10-llm-s2', 'anim10-llm-s3'];
+    AnimationTools.resetElements(brainEvents.concat(llmEvents), { opacity: '0' });
+    brainEvents.forEach((id, index) => {
+      setTimeout(() => {
+        const el1 = document.getElementById(id);
+        const el2 = document.getElementById(llmEvents[index]);
+        if (el1) el1.style.opacity = '1';
+        if (el2) el2.style.opacity = '1';
+      }, index * 1000);
+    });
+  }
+};
+
 function initEventListeners() {
-  const animButtons = [
-    { id: 'anim1-btn', handler: playAnim1 },
-    { id: 'anim2-btn', handler: playAnim2 },
-    { id: 'anim3-btn', handler: playAnim3 },
-    { id: 'anim6-btn', handler: playAnim6 },
-    { id: 'anim7-btn', handler: playAnim7 },
-    { id: 'anim8-btn', handler: playAnim8 },
-    { id: 'anim9-btn', handler: playAnim9 },
-    { id: 'anim10-btn', handler: playAnim10 }
-  ];
-  // 编码/解码模型按钮
-  document
-    .getElementById('anim4-encoding-btn')
-    ?.addEventListener('click', () => playAnim4('encoding'));
-  document
-    .getElementById('anim4-decoding-btn')
-    ?.addEventListener('click', () => playAnim4('decoding'));
-  // 其他按钮
-  animButtons.forEach((btn) => {
-    const el = document.getElementById(btn.id);
-    if (el) {
-      el.addEventListener('click', btn.handler);
+  document.querySelectorAll('[id^=anim][id$=-btn]').forEach(button => {
+    const animId = button.id.match(/anim(\d+)/)?.[1];
+    if (animId && animations[`anim${animId}`]) {
+      button.addEventListener('click', () => {
+        animations[`anim${animId}`]();
+        button.setAttribute('aria-pressed', 'true');
+        setTimeout(() => button.setAttribute('aria-pressed', 'false'), 1000);
+      });
     }
   });
+
+  document.getElementById('anim4-encoding-btn')?.addEventListener('click', () => animations.anim4('encoding'));
+  document.getElementById('anim4-decoding-btn')?.addEventListener('click', () => animations.anim4('decoding'));
 }
-// 页面加载后初始化
+
 document.addEventListener('DOMContentLoaded', initEventListeners);
+</script>
+</body>
+</html>
