@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RXTX 算法物理逻辑解读 (Python动画版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #1a202c;
+        }
+        .animation-container {
+            background-color: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            min-height: 220px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between; /* Distribute space for content and button */
+        }
+        .animation-placeholder {
+            width: 100%;
+            height: 150px; 
+            background-color: #e2e8f0;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #4a5568;
+            font-style: italic;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            overflow: auto; /* For content that might overflow */
+        }
+        .play-button {
+            background-color: #4a5568;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: none;
+            font-weight: 600;
+        }
+        .play-button:hover {
+            background-color: #2d3748;
+        }
+        .play-button:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+        }
+        h2 { color: #2c5282; }
+        #pyodide-loading-indicator {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #fefcbf; /* Tailwind yellow-100 */
+            color: #744210; /* Tailwind yellow-800 */
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 10000;
+            font-size: 0.9rem;
+        }
+        /* Simple animation elements styling */
+        .bar { background-color: #4299e1; margin: 0 5px; display: inline-block; transition: height 0.5s ease-out, opacity 0.5s; opacity: 0; height: 10px; width: 30px; vertical-align: bottom;}
+        .timeline-dot-item { opacity: 0; transition: opacity 0.5s ease-in-out; margin: 5px 0; }
+        .matrix-cell { border: 1px solid #ccc; padding: 2px 4px; display: inline-block; min-width: 25px; text-align: center; margin: 1px; background-color: #fff; }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+    <div id="pyodide-loading-indicator" style="display: none;">Pyodide 正在初始化...</div>
+    <div class="container mx-auto max-w-4xl bg-white shadow-xl rounded-lg p-6 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-700">RXTX 算法：物理逻辑重构与计算加速</h1>
+            <p class="text-gray-600 mt-2">基于 Python 动画的交互式解读</p>
+        </header>
+
+        <section class="mb-6">
+            <h2 class="text-2xl font-semibold mb-3 text-blue-600">论文核心思想：计算的“物理”重塑</h2>
+            <p class="text-gray-700 leading-relaxed">
+                论文《$XX^T$ Can Be Faster》提出了一种名为 RXTX 的新算法，用于加速矩阵与其转置的乘积（$XX^T$）这一基础运算。从“物理逻辑”的视角审视，RXTX 的精髓并非简单的加减乘除步骤调整，而是对整个计算任务流的“物理形态”进行了深刻的重构与优化。传统算法在处理此类问题时，其计算路径和子问题分解方式可能存在固有的冗余或非最优的“空间排列”。RXTX 算法通过机器学习搜索与组合优化相结合的手段，如同精密机械设计般，重新规划了数据流动的路径和中间产物的组合方式。
+            </p>
+            <p class="text-gray-700 leading-relaxed mt-2">
+                具体而言，它将核心的 $4 \times 4$ 分块矩阵递归计算结构，从先前依赖16次递归调用和24次通用乘积的“设计图纸”，优化为仅需8次递归调用和26次通用乘积的全新“蓝图”。虽然通用乘积数量略增，但递归深度的显著降低和整体运算量的重新平衡，使得这种“物理结构”上的调整带来了实质性的效率提升——乘法和加法总运算次数均减少约5%。这种优化甚至对小规模矩阵也有效，证明了其普适性。这启示我们，在算法设计中，深入理解计算过程的内在“物理逻辑”，打破常规的“组件”排布，进行创造性的“结构重组”，是通往更高计算效率的关键途径。RXTX 正是这种思想的体现，它不是简单地“修理”旧机器，而是“再造”了一台更高效的新机器。
+            </p>
+        </section>
+
+        <div id="animations-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="animation-container">
+                <h3 class="text-xl font-semibold mb-2 text-blue-600">1. 概念动画: $XX^T$ 的构成</h3>
+                <div id="anim1-placeholder" class="animation-placeholder">点击播放以通过Python生成和展示 $X \cdot X^T$ 的简单示例。</div>
+                <button id="play-anim1" class="play-button">播放动画</button>
+            </div>
+            <div class="animation-container">
+                <h3 class="text-xl font-semibold mb-2 text-blue-600">2. 流程动画: RXTX 递归分解</h3>
+                <div id="anim2-placeholder" class="animation-placeholder">展示RXTX如何将大矩阵分解为 $4 \times 4$ 的子块进行递归处理。</div>
+                <button id="play-anim2" class="play-button">播放动画</button>
+            </div>
+            <div class="animation-container">
+                <h3 class="text-xl font-semibold mb-2 text-blue-600">3. 数据动画: 性能提升</h3>
+                <div id="anim3-placeholder" class="animation-placeholder">通过Python计算并动态展示RXTX带来的运算次数减少百分比。</div>
+                <button id="play-anim3" class="play-button">播放动画</button>
+            </div>
+            <div class="animation-container">
+                <h3 class="text-xl font-semibold mb-2 text-blue-600">4. 对比动画: RXTX vs SotA</h3>
+                <div id="anim4-placeholder" class="animation-placeholder">比较RXTX与先前最优算法(SotA)在递归调用和乘积次数上的差异。</div>
+                <button id="play-anim4" class="play-button">播放动画</button>
+            </div>
+            <div class="animation-container">
+                <h3 class="text-xl font-semibold mb-2 text-blue-600">5. 时间轴动画: 算法演进</h3>
+                <div id="anim5-placeholder" class="animation-placeholder">简述矩阵乘法优化算法的关键里程碑。</div>
+                <button id="play-anim5" class="play-button">播放动画</button>
+            </div>
+            <div class="animation-container">
+                <h3 class="text-xl font-semibold mb-2 text-blue-600">6. 探索模拟: $m_i$ 项计算</h3>
+                <div id="anim6-placeholder" class="animation-placeholder">Python模拟计算一个RXTX中的关键中间项 $m_1$。</div>
+                <button id="play-anim6" class="play-button">播放动画</button>
+            </div>
+             <div class="animation-container">
+                <h3 class="text-xl font-semibold mb-2 text-blue-600">7. 因果链动画: RXTX发现之路</h3>
+                <div id="anim7-placeholder" class="animation-placeholder">ML搜索 + 组合优化 => RXTX算法。</div>
+                <button id="play-anim7" class="play-button">播放动画</button>
+            </div>
+            <div class="animation-container">
+                <h3 class="text-xl font-semibold mb-2 text-blue-600">8. 空间结构: $4 \times 4$ 分块</h3>
+                <div id="anim8-placeholder" class="animation-placeholder">可视化矩阵 $X$ 被划分为16个子块 ($X_1$ 到 $X_{16}$)。</div>
+                <button id="play-anim8" class="play-button">播放动画</button>
+            </div>
+            <div class="animation-container">
+                <h3 class="text-xl font-semibold mb-2 text-blue-600">9. 假设验证: 更快的 $XX^T$</h3>
+                <div id="anim9-placeholder" class="animation-placeholder">假设: $XX^T$ 计算可以更快。验证: RXTX的性能数据。</div>
+                <button id="play-anim9" class="play-button">播放动画</button>
+            </div>
+            <div class="animation-container">
+                <h3 class="text-xl font-semibold mb-2 text-blue-600">10. 分层解析: 计算层次</h3>
+                <div id="anim10-placeholder" class="animation-placeholder">从整体问题到基础运算，解析RXTX的计算结构。</div>
+                <button id="play-anim10" class="play-button">播放动画</button>
+            </div>
+        </div>
+
+        <section class="mt-8">
+            <h2 class="text-2xl font-semibold mb-3 text-blue-600">核心公式 (通用符号)</h2>
+            <div class="bg-gray-50 p-4 rounded-md shadow">
+                <p class="text-gray-700 mb-2">RXTX 算法乘法次数 R(n):</p>
+                <p class="text-center text-lg font-mono">R(n) = (26/41) * M(n) + (15/41) * n^(3/2)</p>
+                <p class="text-gray-700 mt-4 mb-2">先前SotA (基于Strassen) 乘法次数 S(n):</p>
+                <p class="text-center text-lg font-mono">S(n) = (2/3) * M(n) + (1/3) * n^2</p>
+                <p class="text-xs text-gray-500 mt-2">其中 M(n) 是Strassen算法计算一般 n x n 矩阵乘积的乘法次数, 约等于 O(n^log2(7))。</p>
+            </div>
+        </section>
+
+        <footer class="mt-12 text-center text-sm text-gray-500">
+            <p>内容基于论文 "XXT Can Be Faster" (arXiv:2505.09814v1)。动画为概念性演示，由Python (经Pyodide)驱动逻辑。</p>
+            <p>&copy; 2025 AI解读生成。保留所有权利。</p>
+        </footer>
+    </div>
+
+<script>
+    let pyodide = null;
+    let pyodideReady = false;
+    const loadingIndicator = document.getElementById('pyodide-loading-indicator');
+    const allPlayButtons = document.querySelectorAll('.play-button');
+
+    allPlayButtons.forEach(button => button.disabled = true); // Disable buttons initially
+
+    // Python code to be run in Pyodide
+    const pythonCode = `
+import numpy as np
+import time # For simple animation delays if needed
+
+# --- Animation 1: Concept of X * X_transpose ---
+def get_xx_transpose_concept():
+    X = np.array([[1, 2], [3, 4]])
+    X_T = X.T
+    XX_T = X @ X_T
+    return {
+        "X": X.tolist(),
+        "X_T": X_T.tolist(),
+        "XX_T": XX_T.tolist()
+    }
+
+# --- Animation 2: RXTX Recursive Structure ---
+def get_rxtx_decomposition_steps():
+    return [
+        "初始矩阵 X (n x n)",
+        "RXTX 分解为 4x4 的子块 (共16块，每块 n/4 x n/4)",
+        "进行 8 次递归调用 (计算 S_i 项)",
+        "进行 26 次通用矩阵乘积 (计算 M_i 项)",
+        "组合结果得到 C = X * X_transpose"
+    ]
+
+# --- Animation 3: Performance Improvement Data ---
+def get_performance_data():
+    # Simulating data, actual data from paper
+    return {"reduction_percentage": 5.0, "metric": "乘法和加法运算"}
+
+# --- Animation 4: RXTX vs SotA Comparison ---
+def get_rxtx_vs_sota_comparison():
+    return {
+        "sota": {"recursive_calls": 16, "general_products": 24, "label": "SotA (基于2x2分块)"},
+        "rxtx": {"recursive_calls": 8, "general_products": 26, "label": "RXTX (基于4x4分块)"}
+    }
+
+# --- Animation 5: Algorithm Timeline ---
+def get_algorithm_timeline():
+    return [
+        {"year": 1969, "event": "Strassen 算法: 第一个突破 O(n^3) 的矩阵乘法"},
+        {"year": "2016-2021", "event": "Ye & Lim, Arrigoni et al.: 针对特定结构如 XX^T 的优化"},
+        {"year": 2022, "event": "DeepMind AlphaTensor: AI发现矩阵乘法算法"},
+        {"year": 2025, "event": "RXTX 算法: 结合AI搜索与组合优化进一步改进 XX^T"}
+    ]
+
+# --- Animation 6: m_i term calculation (conceptual) ---
+def calculate_example_m1():
+    # Simplified example with 1x1 blocks for clarity
+    X2, X3, X4, X8, X11 = [np.array([[v]]) for v in [2,3,1,5,6]] # Example 1x1 blocks
+    # m1 = (-X2 + X3 - X4 + X8) @ (X8 + X11).T
+    term1 = -X2[0,0] + X3[0,0] - X4[0,0] + X8[0,0]
+    term2 = X8[0,0] + X11[0,0]
+    m1_val = term1 * term2
+    return {
+        "formula": "m1 = (-X2 + X3 - X4 + X8) * (X8 + X11)_transpose",
+        "values": {"X2":2, "X3":3, "X4":1, "X8":5, "X11":6},
+        "result": m1_val
+    }
+
+# --- Animation 7: Discovery Path ---
+def get_discovery_path():
+    return [
+        "问题定义: 加速 XX^T 计算",
+        "方法: 机器学习引导的大邻域搜索 (RL-guided LNS)",
+        "步骤1: RL Agent 提议候选秩1双线性乘积",
+        "步骤2: MILP-A 枚举线性关系",
+        "步骤3: MILP-B 选择最小子集覆盖目标",
+        "成果: RXTX 算法结构"
+    ]
+
+# --- Animation 8: Spatial Structure (4x4 Blocks) ---
+def get_spatial_blocks():
+    blocks = []
+    for i in range(1, 17):
+        blocks.append(f"X_{i}")
+    return blocks # Returns a list of 16 block names
+
+# --- Animation 9: Hypothesis Validation ---
+def get_hypothesis_validation():
+    return {
+        "hypothesis": "假设: XX^T 的计算可以比现有最优方法更快，尤其是在实际运算量层面。",
+        "validation_points": [
+            "RXTX 通过新的4x4分块递归结构实现。",
+            "乘法和加法总数减少约5%。",
+            "渐进常数从 SotA 的 2/3 (~0.666) 降低到 RXTX 的 26/41 (~0.634)。",
+            "实验数据 (Fig.5) 显示平均运行时有9%的提升 (特定环境下)。"
+        ]
+    }
+
+# --- Animation 10: Hierarchical Analysis ---
+def get_computation_hierarchy():
+    return [
+        {"level": 1, "name": "顶层目标: 计算 C = X * X_transpose"},
+        {"level": 2, "name": "RXTX 分解: 4x4 分块递归"},
+        {"level": 3, "name": "中间计算: 26个 m_i 项 (通用乘积) 和 8个 s_i 项 (递归 XX^T)"},
+        {"level": 4, "name": "组合: 通过优化的加法方案 (Algorithm 3) 组合 m_i 和 s_i 得到 C_ij"},
+        {"level": 5, "name": "基础运算: 底层的标量加法和乘法"}
+    ]
+    `;
+
+    async function initializePyodide() {
+        loadingIndicator.style.display = 'block';
+        allPlayButtons.forEach(button => button.disabled = true);
+        try {
+            pyodide = await loadPyodide();
+            loadingIndicator.textContent = '正在加载 NumPy...';
+            await pyodide.loadPackage("numpy");
+            pyodide.runPython(pythonCode);
+            pyodideReady = true;
+            loadingIndicator.style.display = 'none';
+            allPlayButtons.forEach(button => button.disabled = false);
+            console.log("Pyodide and NumPy ready.");
+        } catch (error) {
+            loadingIndicator.textContent = 'Pyodide 初始化失败!';
+            console.error("Pyodide loading error:", error);
+        }
+    }
+    
+    // Call initializePyodide once when the first button is clicked, or on page load
+    // For simplicity, we'll initialize when the first button is clicked.
+    let pyodideInitialized = false;
+    async function ensurePyodideInitialized() {
+        if (!pyodideInitialized) {
+            await initializePyodide();
+            pyodideInitialized = true;
+        }
+        if (!pyodideReady) {
+            alert("Pyodide 初始化未完成或失败，请稍后再试或检查控制台。");
+            return false;
+        }
+        return true;
+    }
+
+    // Helper to display matrix
+    function displayMatrix(matrixData, placeholderId) {
+        const placeholder = document.getElementById(placeholderId);
+        if (!matrixData || !placeholder) return;
+        let html = '<table class="mx-auto">';
+        matrixData.forEach(row => {
+            html += '<tr>';
+            row.forEach(cell => {
+                html += `<td class="matrix-cell">${cell.toFixed(2)}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</table>';
+        placeholder.innerHTML = html;
+    }
+    
+    // Helper for sequential text display
+    async function displayTextSequentially(textArray, placeholderId, delay = 500) {
+        const placeholder = document.getElementById(placeholderId);
+        placeholder.innerHTML = ''; // Clear previous
+        for (const text of textArray) {
+            const p = document.createElement('p');
+            p.textContent = text;
+            p.style.opacity = '0';
+            p.style.transition = 'opacity 0.5s';
+            placeholder.appendChild(p);
+            await new Promise(resolve => setTimeout(resolve, 50)); // Short delay for DOM update
+            p.style.opacity = '1';
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+
+
+    // Animation Handlers
+    document.getElementById('play-anim1').addEventListener('click', async () => {
+        if (!await ensurePyodideInitialized()) return;
+        const data = pyodide.globals.get('get_xx_transpose_concept')().toJs({create_proxies: false});
+        const placeholder = document.getElementById('anim1-placeholder');
+        placeholder.innerHTML = `
+            <p class="mb-1">矩阵 X:</p> <div id="anim1-X"></div>
+            <p class="mt-2 mb-1">矩阵 X_transpose:</p> <div id="anim1-XT"></div>
+            <p class="mt-2 mb-1">结果 X * X_transpose:</p> <div id="anim1-XXT"></div>
+        `;
+        displayMatrix(data.X, 'anim1-X');
+        displayMatrix(data.X_T, 'anim1-XT');
+        displayMatrix(data.XX_T, 'anim1-XXT');
+    });
+
+    document.getElementById('play-anim2').addEventListener('click', async () => {
+        if (!await ensurePyodideInitialized()) return;
+        const steps = pyodide.globals.get('get_rxtx_decomposition_steps')().toJs({create_proxies: false});
+        await displayTextSequentially(steps, 'anim2-placeholder', 700);
+    });
+
+    document.getElementById('play-anim3').addEventListener('click', async () => {
+        if (!await ensurePyodideInitialized()) return;
+        const data = pyodide.globals.get('get_performance_data')().toJs({create_proxies: false});
+        const placeholder = document.getElementById('anim3-placeholder');
+        placeholder.innerHTML = `
+            <p class="text-2xl font-bold text-green-600 animate-pulse">~${data.reduction_percentage}%</p>
+            <p>在 ${data.metric} 上的减少</p>
+        `;
+    });
+    
+    document.getElementById('play-anim4').addEventListener('click', async () => {
+        if (!await ensurePyodideInitialized()) return;
+        const data = pyodide.globals.get('get_rxtx_vs_sota_comparison')().toJs({create_proxies: false});
+        const placeholder = document.getElementById('anim4-placeholder');
+        placeholder.innerHTML = `
+            <div class="text-left w-full">
+                <p class="font-semibold">${data.sota.label}:</p>
+                <div class="flex items-center my-1">
+                    <div class="bar sota-rec" style="width: ${data.sota.recursive_calls * 10}px; height: 20px; background-color: #f56565;"></div>
+                    <span class="ml-2 text-sm">${data.sota.recursive_calls} 递归调用</span>
+                </div>
+                <div class="flex items-center my-1">
+                    <div class="bar sota-prod" style="width: ${data.sota.general_products * 5}px; height: 20px; background-color: #f56565;"></div>
+                    <span class="ml-2 text-sm">${data.sota.general_products} 通用乘积</span>
+                </div>
+                <p class="font-semibold mt-2">${data.rxtx.label}:</p>
+                <div class="flex items-center my-1">
+                    <div class="bar rxtx-rec" style="width: ${data.rxtx.recursive_calls * 10}px; height: 20px; background-color: #68d391;"></div>
+                    <span class="ml-2 text-sm">${data.rxtx.recursive_calls} 递归调用</span>
+                </div>
+                <div class="flex items-center my-1">
+                    <div class="bar rxtx-prod" style="width: ${data.rxtx.general_products * 5}px; height: 20px; background-color: #68d391;"></div>
+                    <span class="ml-2 text-sm">${data.rxtx.general_products} 通用乘积</span>
+                </div>
+            </div>
+        `;
+        // Trigger opacity animation for bars
+        setTimeout(() => {
+            placeholder.querySelectorAll('.bar').forEach(bar => bar.style.opacity = '1');
+        }, 100);
+    });
+
+    document.getElementById('play-anim5').addEventListener('click', async () => {
+        if (!await ensurePyodideInitialized()) return;
+        const timelineEvents = pyodide.globals.get('get_algorithm_timeline')().toJs({create_proxies: false});
+        const placeholder = document.getElementById('anim5-placeholder');
+        placeholder.innerHTML = ''; // Clear
+        placeholder.className = 'animation-placeholder text-left overflow-y-auto';
+        
+        for (const item of timelineEvents) {
+            const div = document.createElement('div');
+            div.className = 'timeline-dot-item p-1 border-l-2 border-blue-500 pl-2';
+            div.innerHTML = `<span class="font-semibold text-blue-700">${item.year}:</span> ${item.event}`;
+            placeholder.appendChild(div);
+            await new Promise(resolve => setTimeout(resolve, 50));
+            div.style.opacity = '1';
+            await new Promise(resolve => setTimeout(resolve, 600));
+        }
+    });
+    
+    document.getElementById('play-anim6').addEventListener('click', async () => {
+        if (!await ensurePyodideInitialized()) return;
+        const data = pyodide.globals.get('calculate_example_m1')().toJs({create_proxies: false});
+        const placeholder = document.getElementById('anim6-placeholder');
+        placeholder.innerHTML = `
+            <p class="text-sm font-mono">${data.formula}</p>
+            <p class="text-xs mt-1">示例值: X2=${data.values.X2}, X3=${data.values.X3}, X4=${data.values.X4}, X8=${data.values.X8}, X11=${data.values.X11}</p>
+            <p class="mt-2 font-semibold">计算结果 m1 = ${data.result}</p>
+        `;
+    });
+
+    document.getElementById('play-anim7').addEventListener('click', async () => {
+        if (!await ensurePyodideInitialized()) return;
+        const steps = pyodide.globals.get('get_discovery_path')().toJs({create_proxies: false});
+        await displayTextSequentially(steps.map((s, i) => `${i+1}. ${s}`), 'anim7-placeholder', 600);
+    });
+
+    document.getElementById('play-anim8').addEventListener('click', async () => {
+        if (!await ensurePyodideInitialized()) return;
+        const blocks = pyodide.globals.get('get_spatial_blocks')().toJs({create_proxies: false});
+        const placeholder = document.getElementById('anim8-placeholder');
+        placeholder.innerHTML = '<div class="grid grid-cols-4 gap-1 p-1 bg-gray-300 rounded w-max mx-auto"></div>';
+        const gridContainer = placeholder.querySelector('div');
+        
+        for (const blockName of blocks) {
+            const cell = document.createElement('div');
+            cell.className = 'matrix-cell bg-blue-200 text-blue-800';
+            cell.textContent = blockName;
+            cell.style.opacity = '0';
+            cell.style.transition = 'opacity 0.3s ease';
+            gridContainer.appendChild(cell);
+            await new Promise(resolve => setTimeout(resolve, 50)); // DOM update
+            cell.style.opacity = '1';
+            await new Promise(resolve => setTimeout(resolve, 100)); // Stagger
+        }
+    });
+    
+    document.getElementById('play-anim9').addEventListener('click', async () => {
+        if (!await ensurePyodideInitialized()) return;
+        const data = pyodide.globals.get('get_hypothesis_validation')().toJs({create_proxies: false});
+        const placeholder = document.getElementById('anim9-placeholder');
+        placeholder.innerHTML = `<p class="font-semibold mb-2">${data.hypothesis}</p><ul id="validation-list" class="list-disc list-inside text-left text-sm"></ul>`;
+        const ul = placeholder.querySelector('#validation-list');
+        await displayTextSequentially(data.validation_points.map(p => `✓ ${p}`), ul, 600, true); // true to append to ul
+    });
+    
+    // Modified displayTextSequentially for list items
+    async function displayTextSequentially(textArray, parentElement, delay = 500, isList = false) {
+        parentElement.innerHTML = ''; // Clear previous
+        for (const text of textArray) {
+            const itemElement = isList ? document.createElement('li') : document.createElement('p');
+            itemElement.textContent = text;
+            itemElement.style.opacity = '0';
+            itemElement.style.transition = 'opacity 0.5s';
+            parentElement.appendChild(itemElement);
+            await new Promise(resolve => setTimeout(resolve, 50));
+            itemElement.style.opacity = '1';
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+
+
+    document.getElementById('play-anim10').addEventListener('click', async () => {
+        if (!await ensurePyodideInitialized()) return;
+        const hierarchy = pyodide.globals.get('get_computation_hierarchy')().toJs({create_proxies: false});
+        const placeholder = document.getElementById('anim10-placeholder');
+        placeholder.innerHTML = ''; // Clear
+        placeholder.className = 'animation-placeholder text-left';
+
+        for (const item of hierarchy) {
+            const div = document.createElement('div');
+            div.className = 'p-1 my-0.5 rounded';
+            div.style.marginLeft = `${(item.level - 1) * 15}px`; // Indent
+            div.style.backgroundColor = `rgba(79, 70, 229, ${1 / item.level})`; // Indigo, fades
+            div.style.color = item.level > 2 ? '#374151' : 'white';
+            div.textContent = `${item.level}. ${item.name}`;
+            div.style.opacity = '0';
+            div.style.transition = 'opacity 0.4s ease-out';
+            placeholder.appendChild(div);
+            await new Promise(resolve => setTimeout(resolve, 50));
+            div.style.opacity = '1';
+            await new Promise(resolve => setTimeout(resolve, 400));
+        }
+    });
+
+</script>
+</body>
+</html>

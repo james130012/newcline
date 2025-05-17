@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RXTX算法XX<sup>T</sup>计算演示</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+            color: #2d3748;
+        }
+        .container {
+            max-width: 4xl;
+            margin: 0 auto;
+            padding: 1.5rem;
+            background: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+            margin-top: 3rem;
+            margin-bottom: 3rem;
+        }
+        .content-section {
+            margin-bottom: 2rem;
+        }
+        .animation-container {
+            margin: 2rem 0;
+            padding: 1rem;
+            background: #f7fafc;
+            border-radius: 0.5rem;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        button {
+            padding: 0.5rem 1rem;
+            margin: 0.5rem;
+            background: #48bb78;
+            color: white;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover {
+            background: #38a169;
+        }
+        .formula {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .text-sm {
+            font-size: 0.875rem;
+        }
+        .text-xs {
+            font-size: 0.75rem;
+        }
+        .text-gray-500 {
+            color: #718096;
+        }
+        .text-gray-400 {
+            color: #a0aec0;
+        }
+        .mt-12 {
+            margin-top: 3rem;
+        }
+        .py-6 {
+            padding-top: 1.5rem;
+            padding-bottom: 1.5rem;
+        }
+        .border-t {
+            border-top: 1px solid #e2e8f0;
+        }
+        .flex {
+            display: flex;
+        }
+        .justify-center {
+            justify-content: center;
+        }
+        .items-center {
+            align-items: center;
+        }
+        .p-4 {
+            padding: 1rem;
+        }
+        .bg-gray-50 {
+            background-color: #f7fafc;
+        }
+        .rounded-md {
+            border-radius: 0.375rem;
+        }
+        .mb-2 {
+            margin-bottom: 0.5rem;
+        }
+        .list-decimal {
+            list-style-type: decimal;
+        }
+        .ml-6 {
+            margin-left: 1.5rem;
+        }
+        .mb-12 {
+            margin-bottom: 3rem;
+        }
+        .mt-3 {
+            margin-top: 0.75rem;
+        }
+        .mt-6 {
+            margin-top: 1.5rem;
+        }
+        .mt-12 {
+            margin-top: 3rem;
+        }
+        .p-6 {
+            padding: 1.5rem;
+        }
+        .p-8 {
+            padding: 2rem;
+        }
+        .text-xl {
+            font-size: 1.25rem;
+        }
+        .text-2xl {
+            font-size: 1.5rem;
+        }
+        .text-3xl {
+            font-size: 1.875rem;
+        }
+        .font-bold {
+            font-weight: 700;
+        }
+        .text-blue-600 {
+            color: #48bb78;
+        }
+        .bg-white {
+            background-color: #ffffff;
+        }
+        .shadow-xl {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .rounded-lg {
+            border-radius: 0.5rem;
+        }
+        .p-10 {
+            padding: 2.5rem;
+        }
+        .max-w-4xl {
+            max-width: 56rem;
+        }
+        .mx-auto {
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .mb-12 {
+            margin-bottom: 3rem;
+        }
+                <li class="mb-2"><strong>RL代理提议：</strong> 强化学习代理首先提出一组可能冗余的秩-1双线性乘积候选项。这些候选项构成了计算XX<sup>T</sup>中各个目标表达式的基础。</li>
+                <li class="mb-2"><strong>MILP-A枚举关系：</strong> 第一个MILP模型（MILP-A）在这些候选项和XX<sup>T</sup>的目标表达式之间，穷举搜索并生成数以万计的线性关系。</li>
+                <li class="mb-2"><strong>MILP-B选择子集：</strong> 第二个MILP模型（MILP-B）从这些关系中选择一个最小的乘积子集，确保这些选出的乘积及其线性组合能够覆盖XX<sup>T</sup>的所有目标表达式，从而构成一个完整的计算方案。</li>
+            </ol>
+            <p>这个过程在LNS框架下迭代进行，不断优化和发现更高效的计算方案。这种方法可以看作是对AlphaTensor（一个用RL发现矩阵乘法算法的著名工作）思想的简化和特定化：它不是在巨大的张量空间中直接搜索，而是先由RL采样候选张量，再由MILP求解器找到这些候选张量的最优线性组合。这种人机协作的模式为发现复杂算法提供了新的途径。</p>
+        </section>
+        
+        <section class="content-section">
+            <h2>7. 结论与展望</h2>
+            <p>RXTX算法的提出，为计算矩阵与其转置的乘积XX<sup>T</sup>提供了一种新的、更高效的方法。通过新颖的4x4分块递归策略和由AI辅助发现的优化计算路径，RXTX在理论上减少了约5%的乘法运算，并在实际测试中展现出高达9%的运行时间加速，即使对于小规模矩阵也有效。</p>
+            <p><strong>物理逻辑启示：</strong></p>
+            <ul>
+                <li><strong>结构特异性优化：</strong> RXTX的成功强调了针对特定问题结构（如XX<sup>T</sup>的对称性和计算模式）进行算法优化的重要性，而不是仅仅依赖通用算法。物理系统中，对称性和守恒律往往导致简化的数学描述；类似地，在计算中利用结构特性也能带来效率提升。</li>
+                <li><strong>计算路径的探索：</strong> 传统算法设计多依赖人类直觉和数学推导。RXTX的发现过程表明，复杂的计算路径可以通过AI搜索和组合优化技术被有效地探索和发现。这类似于在复杂系统中寻找最优路径或最低能量状态，计算本身可以被视为一种需要在高维空间中优化的“物理过程”。</li>
+                <li><strong>分治与层级：</strong> 递归分块的思想是分治策略的体现，这在物理学中也常见，如将复杂系统分解为子系统研究，或在不同尺度上分析现象。RXTX的4x4分块相较于2x2分块，可以看作是在一个更粗粒度的层级上进行分解，但通过更精巧的组合方式获得了整体更优的性能。</li>
+            </ul>
+            <p>这项工作不仅为特定的矩阵运算提供了加速，更展示了AI技术在基础算法发现领域的巨大潜力。未来，类似的方法有望应用于更多结构化矩阵运算或其他计算密集型问题，推动科学计算和数据处理能力的进一步发展。同时，对RXTX算法在不同硬件平台上的适应性和优化，以及将其推广到更一般情况（如复数矩阵或稀疏矩阵）的研究，也将是值得探索的方向。</p>
+        </section>
+
+        <footer class="text-center mt-12 py-6 border-t border-gray-300">
+            <p class="text-sm text-gray-500">RXTX算法解读与动画演示 &copy; 2025</p>
+            <p class="text-xs text-gray-400 mt-1">基于论文 "XX<sup>T</sup> Can Be Faster" (arXiv:2505.09814v1)</p>
+        </footer>
+
+    </div>
+
+<script>
+// Animation 1: XX^T Concept
+const sketch1 = (p) => {
+    let matrixX, matrixXT, matrixXXT;
+    let step = 0;
+    let animationSpeed = 60; // frames
+    let currentFrame = 0;
+    let cols = 2, rows = 3; // X is 3x2
+    let cellSize = 40;
+    let margin = 20;
+    let stage = 0; // 0: initial, 1: show X, 2: show XT, 3: show multiply, 4: show result
+
+    p.setup = () => {
+        const canvas = p.createCanvas(400, 250);
+        canvas.parent('canvasContainer1');
+        p.textAlign(p.CENTER, p.CENTER);
+        p.textSize(14);
+        resetAnimation1();
+        document.getElementById('playBtn1').onclick = resetAnimation1;
+    };
+
+    function resetAnimation1() {
+        stage = 0;
+        currentFrame = 0;
+        matrixX = Array(rows).fill(0).map(() => Array(cols).fill(0).map(() => p.floor(p.random(1, 10))));
+        matrixXT = Array(cols).fill(0).map((_, i) => Array(rows).fill(0).map((_, j) => matrixX[j][i]));
+        matrixXXT = Array(rows).fill(0).map((_, i) => Array(rows).fill(0).map((_, j) => {
+            let sum = 0;
+            for (let k = 0; k < cols; k++) {
+                sum += matrixX[i][k] * matrixXT[k][j]; // which is matrixX[j][k]
+            }
+            return sum;
+        }));
+        p.loop();
+    }
+
+    p.draw = () => {
+        p.background(245);
+        currentFrame++;
+
+        if (stage === 0 && currentFrame > animationSpeed / 2) { stage = 1; currentFrame = 0; }
+        if (stage === 1 && currentFrame > animationSpeed) { stage = 2; currentFrame = 0; }
+        if (stage === 2 && currentFrame > animationSpeed) { stage = 3; currentFrame = 0; }
+        if (stage === 3 && currentFrame > animationSpeed * 2) { stage = 4; currentFrame = 0; }
+        if (stage === 4 && currentFrame > animationSpeed * 3) { p.noLoop(); }
+
+
+        // Calculate positions dynamically
+        let totalWidth = cols * cellSize + 50 + rows * cellSize + 60 + rows * cellSize;
+        let baseX = (p.width - totalWidth) / 2 + margin;
+        let baseY = 50;
+
+        if (stage >= 1) drawMatrix(matrixX, baseX, baseY, "X");
+
+        let xOffsetXT = baseX + cols * cellSize + 50;
+        if (stage >= 2) drawMatrix(matrixXT, xOffsetXT, baseY + (rows - cols) * cellSize / 2, "Xᵀ");
+
+        if (stage >= 3) {
+            p.textSize(20);
+            p.fill(0);
+            p.text("X", baseX + cols * cellSize / 2, baseY - 20);
+            p.text("Xᵀ", xOffsetXT + rows * cellSize / 2, baseY + (rows - cols) * cellSize / 2 - 20);
+            p.text("=", xOffsetXT + rows * cellSize + 30, baseY + rows * cellSize / 2);
+            p.textSize(14);
+        }
+
+        let xOffsetXXT = xOffsetXT + rows * cellSize + 60;
+        if (stage === 3) { // Show calculation process (simplified)
+            p.fill(200);
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < rows; j++) {
+                    p.rect(xOffsetXXT + j * cellSize, baseY + i * cellSize, cellSize, cellSize);
+                    p.fill(100);
+                    p.text("?", xOffsetXXT + j * cellSize + cellSize / 2, baseY + i * cellSize + cellSize / 2);
+                    p.fill(200);
+                }
+            }
+            p.fill(0);
+            p.text("XXᵀ", xOffsetXXT + rows * cellSize / 2, baseY - 20);
+        }
+
+        if (stage >= 4) {
+            drawMatrix(matrixXXT, xOffsetXXT, baseY, "XXᵀ", true);
+        }
+    };
+
+    function drawMatrix(matrix, x, y, label, highlight = false) {
+        p.push();
+        p.translate(x, y);
+        p.fill(0);
+        p.text(label, matrix[0].length * cellSize / 2, -margin / 2);
+        for (let i = 0; i < matrix.length; i++) {
+            for (let j = 0; j < matrix[0].length; j++) {
+                if (highlight && i === j) p.fill(255, 204, 0, 150); // Highlight diagonal
+                else if (highlight) p.fill(200,200,255,150);
+                else p.fill(230);
+                p.stroke(150);
+                p.rect(j * cellSize, i * cellSize, cellSize, cellSize);
+                p.fill(0);
+                p.noStroke();
+                p.text(matrix[i][j], j * cellSize + cellSize / 2, i * cellSize + cellSize / 2);
+            }
+        }
+        p.pop();
+    }
+};
+new p5(sketch1);
+
+// Animation 2: RXTX vs SotA Recursive Structure
+const sketch2 = (p) => {
+    let stage = 0; // 0: initial, 1: SotA 2x2, 2: RXTX 4x4
+    let matrixSize = 160;
+    let subBlockSizeSotA = matrixSize / 2;
+    let subBlockSizeRXTX = matrixSize / 4;
+
+    p.setup = () => {
+        const canvas = p.createCanvas(400, 250);
+        canvas.parent('canvasContainer2');
+        p.textAlign(p.CENTER, p.CENTER);
+        p.textSize(12);
+        document.getElementById('playBtn2').onclick = () => {
+            stage = (stage + 1) % 3;
+            p.loop();
+        };
+        p.noLoop(); // Start paused
+        p.draw(); // Draw initial state
+    };
+
+    p.draw = () => {
+        p.background(245);
+        
+        // Calculate positions dynamically
+        let totalWidth = matrixSize * 2 + 50; // Two matrices + space
+        let startX_SotA = (p.width - totalWidth) / 2;
+        let startX_RXTX = startX_SotA + matrixSize + 50;
+        let startY = 50;
+
+        p.fill(0);
+        p.text("SotA (2x2分块)", startX_SotA + matrixSize / 2, startY - 20);
+        p.text("RXTX (4x4分块)", startX_RXTX + matrixSize / 2, startY - 20);
+
+        // Draw SotA Matrix
+        drawBlockMatrix(startX_SotA, startY, matrixSize, 2, stage >= 1);
+
+        // Draw RXTX Matrix
+        drawBlockMatrix(startX_RXTX, startY, matrixSize, 4, stage >= 2);
+
+        if (stage === 0) {
+            p.fill(100);
+            p.text("点击“演示分解”按钮", p.width / 2, p.height - 20);
+        }
+        if (stage > 0) p.noLoop(); // Pause after drawing
+    };
+
+    function drawBlockMatrix(x, y, size, divisions, showDivisions) {
+        p.push();
+        p.translate(x, y);
+        p.stroke(0);
+        p.fill(200, 200, 255); // Light blue for main matrix
+        p.rect(0, 0, size, size);
+
+        if (showDivisions) {
+            let subSize = size / divisions;
+            for (let i = 0; i < divisions; i++) {
+                for (let j = 0; j < divisions; j++) {
+                    p.fill(p.map(i*divisions+j, 0, divisions*divisions, 100, 255), 150, 200);
+                    p.rect(j * subSize, i * subSize, subSize, subSize);
+                    p.fill(0);
+                    p.text(`B${i}${j}`, j*subSize + subSize/2, i*subSize + subSize/2);
+                }
+            }
+             if (divisions === 2) {
+                p.fill(0);
+                p.text("4S(n/2) + 2M(n/2)", size/2, size + 20);
+            } else if (divisions === 4) {
+                p.fill(0);
+                p.text("8R(n/4) + 26M(n/4)", size/2, size + 20);
+            }
+        } else {
+            p.fill(0);
+            p.text("N x N", size/2, size/2);
+        }
+        p.pop();
+    }
+};
+new p5(sketch2);
+
+// Animation 3: R(n)/S(n) Ratio Chart
+let chart3Instance = null;
+function createChart3() {
+    const ctx = document.getElementById('chart3').getContext('2d');
+    if (chart3Instance) {
+        chart3Instance.destroy();
+    }
+    const n_values = [4, 16, 64, 256, 1024, 4096, 16384]; // n = 4^1 to 4^7
+    // These are illustrative values based on Figure 1 in the paper.
+    // R(n)/S(n) values from paper: 4^1 (100%), 4^2 (89.5%), 4^3 (93.7%), 4^4 (94.6%), 4^5 (95.0%), 4^6 (95.1%), 4^7 (95.1%)
+    // The paper shows R(n)/S(n) starting at 100% for n=4 (4^1), then dipping, then approaching ~95.1%
+    // For the graph, let's use the values from the paper's Figure 1 (left) R(n)/S(n)
+    // n=4^1 (4): 1.0 (100%)
+    // n=4^2 (16): 0.895 (89.5%)
+    // n=4^3 (64): 0.937 (93.7%)
+    // n=4^4 (256): 0.946 (94.6%)
+    // n=4^5 (1024): 0.950 (95.0%)
+    // n=4^6 (4096): 0.951 (95.1%)
+    // n=4^7 (16384): 0.951 (95.1%)
+    const ratio_values = [1.0, 0.895, 0.937, 0.946, 0.950, 0.951, 0.951];
+    const asymptotic_limit = Array(n_values.length).fill(26/41 / (2/3)); // ~0.9511
+
+    chart3Instance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: n_values.map(n => `n=4^${Math.log(n)/Math.log(4)} (${n})`),
+            datasets: [{
+                label: 'R(n)/S(n) 比率',
+                data: ratio_values,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                fill: false
+            }, {
+                label: '渐进比率 (~95.1%)',
+                data: asymptotic_limit,
+                borderColor: 'rgb(255, 99, 132)',
+                borderDash: [5, 5],
+                tension: 0.1,
+                fill: false,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    title: { display: true, text: 'R(n)/S(n)' },
+                    ticks: { callback: function(value) { return (value * 100).toFixed(1) + '%'; } }
+                },
+                x: {
+                    title: { display: true, text: '矩阵规模 n (log scale)' }
+                }
+            },
+            animation: {
+                duration: 2000,
+            }
+        }
+    });
+}
+document.getElementById('playBtn3').onclick = createChart3;
+createChart3(); // Initial draw
+
+// Animation 4: Runtime Comparison Histogram (Simulated)
+let chart4Instance = null;
+function createChart4() {
+    const ctx = document.getElementById('chart4').getContext('2d');
+    if (chart4Instance) {
+        chart4Instance.destroy();
+    }
+
+    // Simulate data similar to Figure 5. These are not exact values from paper.
+    // Bins for time, e.g., 2.2-2.6, 2.6-3.0, ... 3.4-3.8
+    const labels = ['2.2-2.6', '2.6-3.0', '3.0-3.4', '3.4-3.8'];
+    const rxtxData = [30, 120, 40, 10]; // Example distribution for RXTX (avg ~2.55s)
+    const defaultData = [10, 80, 150, 60]; // Example distribution for Default (avg ~2.65s)
+
+    chart4Instance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'RXTX 运行时间 (s)',
+                    data: rxtxData,
+                    backgroundColor: 'rgba(255, 159, 64, 0.7)', // Orange
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: '默认BLAS 运行时间 (s)',
+                    data: defaultData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)', // Blue
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: '运行次数' }
+                },
+                x: {
+                    title: { display: true, text: '运行时间区间 (秒)' }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                },
+                annotation: { // Requires chartjs-plugin-annotation
+                    annotations: {
+                        line1: {
+                            type: 'line',
+                            yMin: 2.55, // Simulated average for RXTX
+                            yMax: 2.55,
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 2,
+                            borderDash: [6, 6],
+                            label: {
+                                content: 'RXTX Avg: ~2.55s',
+                                enabled: true,
+                                position: 'start',
+                                backgroundColor: 'rgba(255, 159, 64, 0.7)',
+                                color: 'black'
+                            }
+                        },
+                         line2: {
+                             type: 'line',
+                             yMin: 2.65, // Simulated average for Default
+                            yMax: 0,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2,
+                            borderDash: [6, 6],
+                            label: {
+                                content: 'Default Avg: ~2.65s',
+                                enabled: true,
+                                position: 'end',
+                                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                                color: 'black'
+                            }
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 1500,
+            }
+        }
+    });
+}
+document.getElementById('playBtn4').onclick = createChart4;
+createChart4(); // Initial draw
+
+// Animation 5: Discovery Methodology
+const sketch5 = (p) => {
+    let currentStep = 0;
+    const steps = [
+        "初始: 发现算法的需求",
+        "1. RL代理提议\n(候选秩-1双线性乘积)",
+        "2. MILP-A 枚举关系\n(候选乘积与目标表达式的线性关系)",
+        "3. MILP-B 选择最小子集\n(覆盖所有目标表达式)",
+        "迭代优化 (LNS)",
+        "RXTX算法诞生!"
+    ];
+    let positions = [];
+    let flowAlpha = [];
+
+    p.setup = () => {
+        const canvas = p.createCanvas(400, 280);
+        canvas.parent('canvasContainer5');
+        p.textAlign(p.CENTER, p.CENTER);
+        
+        // Calculate positions dynamically to center the flow chart
+        let boxWidth = 200;
+        let boxHeight = 40;
+        let verticalSpacing = 20;
+        let startY = 40;
+
+        positions = [
+            { x: p.width / 2, y: startY },
+            { x: p.width / 2, y: startY + boxHeight + verticalSpacing },
+            { x: p.width / 2, y: startY + (boxHeight + verticalSpacing) * 2 },
+            { x: p.width / 2, y: startY + (boxHeight + verticalSpacing) * 3 },
+            { x: p.width / 2 - boxWidth/2 - 40, y: startY + (boxHeight + verticalSpacing) * 3 }, // Loop back arrow start (adjusted)
+            { x: p.width / 2, y: startY + (boxHeight + verticalSpacing) * 4 + 20 } // Final result (adjusted)
+        ];
+
+        for (let i = 0; i < steps.length; i++) flowAlpha[i] = 0;
+
+        document.getElementById('playBtn5').onclick = () => {
+            currentStep = 0;
+            for (let i = 0; i < steps.length; i++) flowAlpha[i] = 0;
+            p.loop();
+        };
+        document.getElementById('nextStepBtn5').onclick = () => {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                flowAlpha[currentStep] = 0; // Initialize alpha for the next step
+                p.loop(); // Continue loop to animate next step
+            }
+            // Disable button on last step
+            if (currentStep === steps.length - 1) {
+                 document.getElementById('nextStepBtn5').disabled = true;
+            }
+        };
+        p.noLoop();
+        p.draw(); // Draw initial state
+    };
+
+    p.draw = () => {
+        p.background(245);
+
+        // Animate current step appearing
+        if (currentStep < steps.length && flowAlpha[currentStep] < 255) {
+            flowAlpha[currentStep] += 15;
+        } else if (currentStep < steps.length) {
+             p.noLoop(); // Pause after current step is fully visible
+        }
+
+        // Draw boxes and text based on currentStep
+        for (let i = 0; i < steps.length; i++) {
+            let alpha = 0;
+            if (i < currentStep) {
+                alpha = 255; // Fully visible for previous steps
+            } else if (i === currentStep) {
+                alpha = flowAlpha[currentStep]; // Fading in for current step
+            }
+
+            if (alpha > 0) { // Only draw if visible
+                p.fill(220, 230, 255, alpha);
+                p.stroke(150, 180, 255, alpha);
+                p.rectMode(p.CENTER);
+
+                if (i < 4) { // Main pipeline boxes
+                    p.rect(positions[i].x, positions[i].y, boxWidth, boxHeight, 5);
+                    p.fill(0, alpha);
+                    p.noStroke();
+                    p.textSize(11);
+                    p.text(steps[i], positions[i].x, positions[i].y);
+                } else if (i === 5) { // Final result box
+                    p.fill(200, 255, 200, alpha);
+                    p.stroke(100, 200, 100, alpha);
+                    p.rect(positions[i].x, positions[i].y, 180, 40, 10);
+                    p.fill(0, alpha);
+                    p.noStroke();
+                    p.textSize(14);
+                    p.text(steps[i], positions[i].x, positions[i].y);
+                }
+            }
+        }
+
+        // Draw arrows based on currentStep
+        for (let i = 0; i < currentStep; i++) {
+             let alpha = (i < currentStep -1) ? 255 : flowAlpha[currentStep]; // Fade in with the next step
+
+            if (alpha > 0) {
+                if (i < 3) { // Steps 0->1, 1->2, 2->3
+                    drawArrow(positions[i].x, positions[i].y + boxHeight / 2, positions[i + 1].x, positions[i + 1].y - boxHeight / 2, alpha);
+                }
+            }
+        }
+
+         // Loop arrow for LNS (from step 3 back to step 1 concept)
+        if (currentStep >= 4) { // "迭代优化 (LNS)" step and beyond
+             let alpha = (currentStep > 4) ? 255 : flowAlpha[4]; // Fade in with step 4
+             if (alpha > 0) {
+                p.stroke(0, 0, 255, alpha);
+                p.strokeWeight(2);
+                p.noFill();
+                p.beginShape();
+                p.vertex(positions[3].x - boxWidth / 2, positions[3].y); // side of MILP-B
+                p.vertex(positions[3].x - boxWidth / 2 - 40, positions[3].y);
+                p.vertex(positions[3].x - boxWidth / 2 - 40, positions[1].y);
+                p.vertex(positions[1].x - boxWidth / 2, positions[1].y); // side of RL Agent
+                p.endShape();
+                drawArrowHead(positions[1].x - boxWidth / 2, positions[1].y, 180, alpha); // Pointing left
+                p.fill(0, 0, 255, alpha);
+                p.noStroke();
+                p.textSize(11); // Adjust text size for LNS label
+                p.text(steps[4], positions[3].x - boxWidth / 2 - 60, positions[3].y - 30); // LNS text (adjusted position)
+             }
+        }
+        if (currentStep >= 5) { // Arrow from MILP-B to final result
+             let alpha = (currentStep > 5) ? 255 : flowAlpha[5]; // Fade in with step 5
+             if (alpha > 0) {
+                drawArrow(positions[3].x, positions[3].y + boxHeight / 2, positions[5].x, positions[5].y - boxHeight / 2, alpha);
+             }
+        }
+
+
+        // Stop loop when the last step is fully visible
+        if (currentStep === steps.length - 1 && flowAlpha[currentStep] >= 255) {
+            p.noLoop();
+        }
+
+
+    };
+
+    function drawArrow(x1, y1, x2, y2, alpha) {
+        p.stroke(0, alpha);
+        p.strokeWeight(2);
+        p.line(x1, y1, x2, y2);
+        let angle = p.atan2(y2 - y1, x2 - x1);
+        drawArrowHead(x2, y2, angle, alpha);
+    }
+
+    function drawArrowHead(x, y, angle, alpha) {
+        p.push();
+        p.translate(x, y);
+        p.rotate(angle);
+        p.fill(0, alpha);
+        p.noStroke();
+        p.triangle(0, 0, -8, -4, -8, 4);
+        p.pop();
+    }
+};
+new p5(sketch5);
+
+</script>
+</body>
+</html>

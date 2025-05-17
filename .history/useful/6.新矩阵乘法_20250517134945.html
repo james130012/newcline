@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RXTX算法物理逻辑视角深度解读</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', 'SimSun', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            overflow: hidden;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        header {
+            background: #333;
+            color: #fff;
+            padding: 1rem 0;
+            text-align: center;
+            border-bottom: #0779e4 3px solid;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #0779e4;
+            border-bottom: 2px solid #f4f4f4;
+            padding-bottom: 10px;
+        }
+        h3 {
+            color: #333;
+        }
+        p, li {
+            text-indent: 2em;
+            text-align: justify;
+        }
+        .citation {
+            font-size: 0.8em;
+            color: #555;
+        }
+        .animation-container {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            text-align: center;
+        }
+        .animation-container canvas {
+            display: block;
+            margin: 10px auto;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #0779e4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>RXTX算法：矩阵乘其转置的计算新篇章——物理逻辑视角解读</h1>
+    </header>
+    <div class="container">
+        <p>矩阵乘以其转置（$XX^T$）是众多科学和工程领域中的一项基础且关键的计算任务，例如在统计学中的协方差矩阵计算、数据分析、深度学习以及无线通信等领域都有广泛应用 [cite: 16, 17]。尽管从理论上讲，$XX^T$的计算与通用矩阵乘法具有相同的渐进复杂度 [cite: 18]，这意味着只能实现常数因子的加速 [cite: 19]，但这对于实际应用中的大规模计算而言，任何微小的效率提升都可能带来显著的性能改善。来自香港中文大学（深圳）和深圳大数据研究院的研究者们提出了一种名为RXTX的新算法，该算法在计算$XX^T$时，相比现有最优算法（State-of-the-Art, SotA）能够减少约5%的乘法和加法运算，并且即使对于小规模矩阵也能提供加速效果 [cite: 1]。本文将从物理逻辑的视角，深入解读RXTX算法的核心机制、性能优势及其发现过程。</p>
+
+        <h2>一、RXTX算法的核心机制：$4 \times 4$分块递归的创新</h2>
+        <p>传统的最优算法通常基于Strassen算法的思想，对$2 \times 2$的分块矩阵进行递归处理 [cite: 26]。而RXTX算法独辟蹊径，它基于对$4 \times 4$分块矩阵的递归乘法 [cite: 4]。具体来说，如果输入一个$4 \times 4$的块矩阵X，RXTX算法通过8次递归调用和26次通用的矩阵乘积来计算$C = XX^T$ [cite: 5, 10]。这与先前SotA算法在类似比较尺度下（如Table 1所示的$4 \times 4$秩的比较）通常需要16次递归调用和24次通用乘积形成了对比 [cite: 3, 5] (尽管SotA的原始递归是 $S(n)=4S(n/2)+2M(n/2)$ [cite: 3, 36])。RXTX算法巧妙地利用了$XX^T$计算中的特定结构，从而实现了操作数量的优化 [cite: 19, 27]。</p>
+
+        <div class="animation-container">
+            <h3>动画1：分块矩阵乘法概念 (RXTX vs SotA)</h3>
+            <canvas id="blockMatrixCanvas"></canvas>
+            <button onclick="playBlockMatrixAnimation()">播放动画</button>
+            <p>该动画演示了矩阵X进行分块处理以计算$XX^T$的基本思想。SotA通常基于$2 \times 2$分块，而RXTX采用$4 \times 4$分块策略，为更深层次的优化提供了可能。</p>
+        </div>
+
+        <p>RXTX算法的“物理”实现，即其具体的计算步骤，在论文的算法1中有详细描述 [cite: 10]。它包含了一系列复杂的中间矩阵变量（$m_1$到$m_{26}$，以及$s_1$到$s_8$）的计算，这些中间变量是通过对输入矩阵X的各个子块（$X_1$到$X_{16}$，这里假设X被划分为$4 \times 4$的子块）进行加减和乘法操作得到的。最后，通过这些中间变量的线性组合，得到最终结果矩阵C的各个子块（$C_{11}$到$C_{44}$） [cite: 11]。这种结构上的特化是RXTX能够减少运算量的关键。</p>
+
+        <h2>二、性能分析：从操作数到实际运行时间的提升</h2>
+        <p>RXTX算法的优越性不仅体现在理论上的渐进常数改进，更重要的是它在有限大小的矩阵上也能展现出实际的性能提升。</p>
+
+        <h3>1. 乘法运算次数的减少</h3>
+        <p>研究定义了$R(n)$为RXTX算法对$n \times n$矩阵X执行的乘法次数，$S(n)$为先前SotA（基于递归Strassen）的乘法次数，而$M(n)$为Strassen-Winograd算法进行通用矩阵乘法的乘法次数 [cite: 28, 29]。</p>
+        <p>RXTX的乘法次数递归关系为：$R(n) = 8R(n/4) + 26M(n/4)$ [cite: 33]。</p>
+        <p>其解为：$R(n) = (26/41)M(n) + (15/41)n^{3/2}$，其中 $M(n)$ 约等于 $n^{\log_2 7}$ [cite: 32]。</p>
+        <p>先前SotA的乘法次数递归关系为：$S(n) = 4S(n/2) + 2M(n/2)$ [cite: 36]。</p>
+        <p>其解为：$S(n) = (2/3)M(n) + (1/3)n^2$ [cite: 32]。</p>
+        <p>从渐进常数来看，RXTX的 $26/41 \approx 0.6341$ 比SotA的 $2/3 \approx 0.6666$ 小了约5% [cite: 1, 6]。这意味着在大规模计算中，RXTX的乘法运算量更少。</p>
+
+        <div class="animation-container">
+            <h3>动画2：递归调用对比 (SotA vs RXTX)</h3>
+            <canvas id="recursionCanvas"></canvas>
+            <button onclick="showSotARecursion()">SotA递归</button>
+            <button onclick="showRXTXRecursion()">RXTX递归</button>
+            <p>此动画展示了SotA ($S(n)=4S(n/2)+...$) 和RXTX ($R(n)=8R(n/4)+...$) 递归分解方式的差异。RXTX虽然初始分支更多，但处理的子问题规模更小，并通过特定数量的合并操作（通用乘积）来构建最终结果。</p>
+        </div>
+
+        <p>论文中的图1（左侧）直观地展示了$R(n)/S(n)$的比率随矩阵规模n（以4的幂次增加）的变化 [cite: 39, 40]。该比率始终低于100%，并逐渐趋近于渐进的95%，证实了乘法运算的减少 [cite: 38]。</p>
+
+        <div class="animation-container">
+            <h3>动画3：乘法运算次数比率 R(n)/S(n)</h3>
+            <canvas id="multiplicationRatioChart"></canvas>
+            <button onclick="playMultiplicationRatioChart()">播放图表</button>
+            <p>此图表动态展示了RXTX算法与SotA算法在乘法运算次数上的比率。数据来源于论文图1 [cite: 39]。可以看出，对于不同规模的矩阵（$n=4^k$），RXTX均展现出优势，并趋近于理论上的5%改进。</p>
+        </div>
+
+        <h3>2. 总运算次数（加法与乘法）的优化</h3>
+        <p>除了乘法，加法运算也是影响算法实际性能的重要因素。RXTX算法的原始定义涉及到对 $(n/4) \times (n/4)$ 矩阵的139次加法 [cite: 45]。研究者通过一种定制化的搜索方法，成功将这一数字从139次减少到了100次，并给出了优化后的加法方案（算法2和算法3） [cite: 46, 48, 54, 56]。</p>
+        <p>考虑优化后的100次加法，RXTX的总运算次数 $R_+(n)$ 为：</p>
+        <p>$R_+(n) = (156/41)n^{\log_2 7} - (615/164)n^2 + (155/164)n^{3/2}$ [cite: 51]。</p>
+        <p>而递归Strassen（SotA）的总运算次数 $S_+(n)$ 为：</p>
+        <p>$S_+(n) = 4n^{\log_2 7} - (7/4)n^2 \log_2 n - 3n^2$ [cite: 51]。</p>
+        <p>论文中的图3和图4（采用最优截断策略，即对足够小的矩阵使用标准乘法）比较了总运算次数 [cite: 52, 53]。结果显示，当矩阵规模 $n \ge 256$ 时，RXTX在总运算次数上开始优于递归Strassen [cite: 53, 61]。与朴素算法相比，RXTX在 $n \ge 32$（最优截断）时即显示出优势 [cite: 61]。</p>
+
+        <div class="animation-container">
+            <h3>动画4：总运算次数比率 $R_{+}^{opt}(n) / S_{+}^{opt}(n)$</h3>
+            <canvas id="totalOperationsRatioChart"></canvas>
+            <button onclick="playTotalOperationsRatioChart()">播放图表</button>
+            <p>此图表动态展示了采用最优截断策略后，RXTX算法与SotA算法在总运算次数（加法+乘法）上的比率。数据近似于论文图4 [cite: 53]。可见，当矩阵规模达到一定程度（$n \ge 256$）时，RXTX的总体运算效率更高。</p>
+        </div>
+
+        <h3>3. 实际运行时间加速</h3>
+        <p>理论上的运算次数减少最终需要通过实际运行时间的缩短来验证。研究者在一个单线程CPU（10代Intel Core i7-10510U）上进行了实验 [cite: 59]。他们对 $6144 \times 6144$ 大小的随机正态分布矩阵进行了1000次测试 [cite: 58]。RXTX以深度为1的递归实现，即直接使用BLAS库计算26个通用矩阵乘积和8个大小为 $1536 \times 1536$ 的对称乘积 [cite: 58]。对照组是直接调用BLAS-3库中计算$XX^T$的例程 [cite: 59]。</p>
+        <p>实验结果（论文图5）显示，RXTX的平均运行时间为2.524秒，而BLAS默认例程的平均运行时间为2.778秒，RXTX实现了约9%的加速 [cite: 62]。并且在99%的运行中，RXTX都表现得更快 [cite: 63]。这有力地证明了RXTX算法在实际应用中的加速效果，即使只进行了一层递归优化。</p>
+
+        <div class="animation-container">
+            <h3>动画5：运行时间分布直方图</h3>
+            <canvas id="runtimeHistogramChart"></canvas>
+            <button onclick="playRuntimeHistogramChart()">播放图表</button>
+            <p>此直方图动画模拟了论文图5的实验结果 [cite: 62]，展示了RXTX算法和默认BLAS库在计算 $6144 \times 6144$ 矩阵 $XX^T$ 时的运行时间分布。RXTX（橙色）的分布更靠左，平均运行时间更短，表明了其在实际计算中的性能优势。</p>
+        </div>
+
+        <h2>三、发现方法：机器学习引导的大邻域搜索</h2>
+        <p>RXTX算法的发现并非偶然，而是结合了机器学习的搜索方法和组合优化的结果 [cite: 1]。研究者采用了一种RL引导的大邻域搜索（RL-guided Large Neighborhood Search）策略，并结合了一个两阶段的混合整数线性规划（MILP）流程 [cite: 64, 65, 66]：</p>
+        <ol>
+            <li><strong>RL代理提议</strong>：强化学习（RL）代理首先提出一组可能的（可能是冗余的）秩为1的双线性乘积作为候选 [cite: 67]。这些候选乘积形如 $(\sum \alpha_i x_i) \cdot (\sum \beta_j x_j)$，其中系数 $\alpha_i, \beta_j$ 由RL策略选择 [cite: 73]。</li>
+            <li><strong>MILP-A枚举关系</strong>：第一个MILP（MILP-A）详尽地枚举这些候选秩1双线性乘积与目标表达式（即$XX^T$的各个元素）之间成千上万种线性关系 [cite: 67]。</li>
+            <li><strong>MILP-B选择子集</strong>：第二个MILP（MILP-B）则从这些关系中挑选出最小的一组乘积，这些乘积所导出的线性关系能够覆盖$XX^T$的每一个目标表达式 [cite: 68]。</li>
+        </ol>
+        <p>这个过程在一个大邻域搜索的框架下迭代进行 [cite: 69]。这种方法的巧妙之处在于，它将复杂的算法发现问题分解为：由RL进行探索性的“采样”，然后由高效的MILP求解器（如Gurobi [cite: 75]）进行精确的“组合与筛选”。这可以看作是对AlphaTensor RL方法的一种简化，它不是直接在巨大的张量空间中采样，而是采样候选的构建模块，再由MILP找到最优的组合方式 [cite: 70, 71]。</p>
+        <p>以一个简单的 $2 \times 2$ 矩阵为例，目标是计算 $x_1^2+x_2^2$, $x_3^2+x_4^2$, 和 $x_1x_3+x_2x_4$ 这三个表达式 [cite: 72]。RL代理会生成许多形如 $(\alpha_1 x_1 + ... + \alpha_4 x_4)(\beta_1 x_1 + ... + \beta_4 x_4)$ 的乘积项，然后MILP-A找到如何用这些乘积项线性组合出目标表达式，最后MILP-B选出最少的乘积项组合 [cite: 73, 74]。这种“物理的”搜索和构建过程，使得计算机能够有效地探索并发现比人类直觉更优的复杂算法结构。</p>
+
+        <h2>四、总结与展望</h2>
+        <p>RXTX算法的提出，为计算矩阵与其转置的乘积这一基础问题带来了新的突破。它通过采用新颖的$4 \times 4$分块递归策略和优化的加法方案，在理论上减少了乘法和总运算次数，并在实际运行中展现了可观的加速效果 [cite: 1, 6, 62]。更值得注意的是，RXTX的发现过程本身也展示了机器学习与组合优化相结合在算法发现领域的强大潜力 [cite: 1, 65]。</p>
+        <p>从物理逻辑的视角看，RXTX不仅仅是一组数学公式的革新，更代表了一种计算结构的优化。通过更精细的子问题划分（$n/4$ vs $n/2$）和特定数量的重组操作（26次通用乘积），RXTX在计算流和数据依赖上可能实现了更优的平衡。虽然论文提到运行时间对硬件、计算图组织和内存管理高度敏感 [cite: 60]，但其在标准CPU上的性能提升已初步证明了其价值。未来，针对特定硬件架构的进一步优化，以及将RXTX的思想推广到其他结构化矩阵计算中，都将是值得探索的方向 [cite: 94]。</p>
+    </div>
+
+    <script>
+        // Animation 1: Block Matrix Canvas
+        let blockMatrixSketch = function(p) {
+            let stage = 0; // 0: initial, 1: X, 2: XXT, 3: 2x2 blocks, 4: 4x4 blocks
+            let alpha = 0;
+            p.setup = function() {
+                let canvas = p.createCanvas(400, 200);
+                canvas.parent('blockMatrixCanvas');
+                p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(20);
+                p.noLoop();
+            };
+
+            p.draw = function() {
+                p.background(240);
+                alpha = p.min(alpha + 5, 255);
+
+                if (stage >= 1) { // Draw X
+                    p.fill(0, 0, 255, alpha);
+                    p.rect(50, 50, 80, 80);
+                    p.fill(0, alpha);
+                    p.text("X", 90, 90);
+                }
+                if (stage >= 2) { // Draw X^T and result
+                    p.fill(255, 0, 0, alpha);
+                    p.rect(150, 50, 80, 80);
+                    p.fill(0, alpha);
+                    p.text("Xᵀ", 190, 90);
+
+                    p.fill(0, 128, 0, alpha);
+                    p.rect(270, 50, 100, 80);
+                    p.fill(0, alpha);
+                    p.text("XXᵀ", 320, 90);
+                }
+                if (stage == 3) { // 2x2 blocks on X
+                    p.stroke(0, alpha);
+                    p.line(50, 90, 130, 90); // horizontal
+                    p.line(90, 50, 90, 130); // vertical
+                    p.fill(0, alpha);
+                    p.noStroke();
+                    p.text("SotA (2x2)", 200, 170);
+                }
+                if (stage == 4) { // 4x4 blocks on X
+                    p.stroke(0, alpha);
+                    for (let i = 1; i < 4; i++) {
+                        p.line(50 + i * 20, 50, 50 + i * 20, 130); // vertical
+                        p.line(50, 50 + i * 20, 130, 50 + i * 20); // horizontal
+                    }
+                    p.fill(0, alpha);
+                    p.noStroke();
+                    p.text("RXTX (4x4)", 200, 170);
+                }
+            };
+            window.playBlockMatrixAnimation = function() {
+                stage = 0; alpha = 0; p.loop();
+                setTimeout(() => { stage = 1; alpha = 0;}, 100);
+                setTimeout(() => { stage = 2; alpha = 0;}, 1000);
+                setTimeout(() => { stage = 3; alpha = 0;}, 2000);
+                setTimeout(() => { p.background(240); stage = 1; alpha = 0;}, 3000); // Redraw X
+                setTimeout(() => { stage = 2; alpha = 0;}, 3100);
+                setTimeout(() => { stage = 4; alpha = 0;}, 4000);
+                setTimeout(() => p.noLoop(), 5000);
+            }
+        };
+        new p5(blockMatrixSketch);
+
+        // Animation 2: Recursion Canvas
+        let recursionSketch = function(p) {
+            let mode = ''; // 'sota' or 'rxtx'
+            p.setup = function() {
+                let canvas = p.createCanvas(400, 250);
+                canvas.parent('recursionCanvas');
+                p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(14);
+                p.noLoop();
+            };
+            p.drawNode = function(x, y, label, level) {
+                p.fill(200, 200, 255);
+                p.ellipse(x, y, 60, 30);
+                p.fill(0);
+                p.text(label, x, y);
+            };
+            p.draw = function() {
+                p.background(240);
+                if (mode === 'sota') {
+                    p.text("SotA: S(n) = 4S(n/2) + 2M(n/2)", 200, 20);
+                    p.drawNode(200, 60, "S(n)", 0);
+                    for (let i = 0; i < 4; i++) {
+                        let childX = 50 + i * 100;
+                        p.line(200, 75, childX, 115);
+                        p.drawNode(childX, 130, "S(n/2)", 1);
+                    }
+                    p.text("+ 2M(n/2) merge", 200, 180);
+                } else if (mode === 'rxtx') {
+                    p.text("RXTX: R(n) = 8R(n/4) + 26M(n/4)", 200, 20);
+                    p.drawNode(200, 60, "R(n)", 0);
+                    for (let i = 0; i < 8; i++) {
+                        let angle = p.TWO_PI / 8 * i - p.HALF_PI;
+                        let childX = 200 + p.cos(angle) * 120;
+                        let childY = 150 + p.sin(angle) * 50;
+                        if (i<4) childY = 130; else childY = 170;
+                        childX = 30 + i * 45;
+
+
+                        p.line(200, 75, childX, 115);
+                        p.drawNode(childX, 130, "R(n/4)", 1);
+                    }
+                     p.text("+ 26M(n/4) merge", 200, 220);
+                }
+            };
+            window.showSotARecursion = function() { mode = 'sota'; p.redraw(); }
+            window.showRXTXRecursion = function() { mode = 'rxtx'; p.redraw(); }
+        };
+        new p5(recursionSketch);
+
+
+        // Animation 3: Multiplication Ratio Chart
+        let multChart;
+        function playMultiplicationRatioChart() {
+            const ctx = document.getElementById('multiplicationRatioChart').getContext('2d');
+            const data = {
+                labels: ['4^1', '4^2', '4^3', '4^4', '4^5', '4^6', '4^7', '4^8'],
+                datasets: [{
+                    label: 'R(n)/S(n) (%) [cite: 39]',
+                    data: [], // Initially empty
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    tension: 0.1
+                }]
+            };
+            const fullData = [100, 89.5, 91.7, 93.7, 94.6, 95.0, 95.1, 95.1];
+
+            if (multChart) {
+                multChart.destroy();
+            }
+            multChart = new Chart(ctx, {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 85,
+                            max: 101,
+                            title: { display: true, text: 'Ratio (%)' }
+                        },
+                        x: { title: { display: true, text: 'Matrix Size (n)'}}
+                    },
+                    animation: {
+                        duration: 200, // ms per step
+                        onProgress: function(animation) {
+                            // This is a bit of a hack to animate data loading
+                            // Chart.js v3 doesn't have a simple way to animate data points one by one by default for line charts
+                        }
+                    }
+                }
+            });
+
+            let currentPoint = 0;
+            function addDataPoint() {
+                if (currentPoint < fullData.length) {
+                    multChart.data.datasets[0].data.push(fullData[currentPoint]);
+                    multChart.update('none'); // 'none' for no animation during update, rely on interval
+                    currentPoint++;
+                    setTimeout(addDataPoint, 300);
+                }
+            }
+            addDataPoint();
+        }
+
+        // Animation 4: Total Operations Ratio Chart
+        let totalOpsChart;
+        function playTotalOperationsRatioChart() {
+            const ctx = document.getElementById('totalOperationsRatioChart').getContext('2d');
+            // Approximate data from Figure 4 (left) [cite: 53]
+            // R_opt(n) / S_opt(n)
+            const labels = ['2^2', '2^3', '2^4', '2^5', '2^6', '2^7', '2^8 (n=256)', '2^9', '2^10', '2^11', '2^12', '2^13', '2^14'];
+            const fullData = [100, 100, 100, 100, 100, 100, 99.6, 98.6, 97.7, 96.9, 96.2, 95.7, 95.3];
+
+
+            const data = {
+                labels: labels,
+                datasets: [{
+                    label: 'R_opt(n)/S_opt(n) (%) [cite: 53]',
+                    data: [],
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    tension: 0.1
+                }]
+            };
+             if (totalOpsChart) {
+                totalOpsChart.destroy();
+            }
+            totalOpsChart = new Chart(ctx, {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 94,
+                            max: 101,
+                            title: { display: true, text: 'Ratio (%)' }
+                        },
+                        x: { title: { display: true, text: 'Matrix Size (n)'}}
+                    }
+                }
+            });
+
+            let currentPoint = 0;
+            function addDataPoint() {
+                if (currentPoint < fullData.length) {
+                    totalOpsChart.data.datasets[0].data.push(fullData[currentPoint]);
+                    totalOpsChart.update('none');
+                    currentPoint++;
+                    setTimeout(addDataPoint, 250);
+                }
+            }
+            addDataPoint();
+        }
+
+
+        // Animation 5: Runtime Histogram Chart
+        let runtimeHistChart;
+        function playRuntimeHistogramChart() {
+            const ctx = document.getElementById('runtimeHistogramChart').getContext('2d');
+            // Simplified data based on Figure 5 description [cite: 62]
+            // Actual histogram has more bins, this is illustrative
+            const labels = ['2.2-2.4', '2.4-2.6', '2.6-2.8', '2.8-3.0', '3.0-3.2'];
+            const rxtxFullData = [15, 450, 80, 10, 5]; // Approximate RXTX distribution
+            const defaultFullData = [5, 20, 230, 180, 40]; // Approximate Default distribution
+
+            const data = {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'RXTX Runs [cite: 62]',
+                        data: [],
+                        backgroundColor: 'rgba(255, 159, 64, 0.7)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Default BLAS Runs [cite: 62]',
+                        data: [],
+                        backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            };
+
+            if (runtimeHistChart) {
+                runtimeHistChart.destroy();
+            }
+
+            runtimeHistChart = new Chart(ctx, {
+                type: 'bar',
+                data: data,
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Number of Runs' }
+                        },
+                        x: { title: { display: true, text: 'Time (s)' } }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Runtime Distribution (Illustrative)'
+                        },
+                        annotation: {
+                             annotations: {
+                                line1: {
+                                    type: 'line',
+                                    yMin: 0,
+                                    yMax: 500, // Adjust based on max frequency
+                                    xMin: '2.4-2.6', // Approximate bin for RXTX avg
+                                    xMax: '2.4-2.6',
+                                    borderColor: 'orange',
+                                    borderWidth: 2,
+                                    label: {
+                                        content: 'RXTX Avg: 2.524s [cite: 62]',
+                                        enabled: true,
+                                        position: "start"
+                                    }
+                                },
+                                line2: {
+                                    type: 'line',
+                                    yMin: 0,
+                                    yMax: 500,
+                                    xMin: '2.6-2.8', // Approximate bin for Default avg
+                                    xMax: '2.6-2.8',
+                                    borderColor: 'teal',
+                                    borderWidth: 2,
+                                    borderDash: [6, 6],
+                                    label: {
+                                        content: 'Default Avg: 2.778s [cite: 62]',
+                                        enabled: true,
+                                        position: "end"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            let currentBin = 0;
+            function addHistData() {
+                if (currentBin < labels.length) {
+                    runtimeHistChart.data.datasets[0].data.push(rxtxFullData[currentBin]);
+                    runtimeHistChart.data.datasets[1].data.push(defaultFullData[currentBin]);
+                    runtimeHistChart.update('none');
+                    currentBin++;
+                    setTimeout(addHistData, 400);
+                }
+            }
+            addHistData();
+        }
+        // Initialize charts with placeholders or load data on button click
+        // For simplicity, data is shown when 'play' button is clicked.
+        document.addEventListener('DOMContentLoaded', () => {
+            // Call play functions once to render empty charts if desired, or wait for button
+            playMultiplicationRatioChart(); // Render empty on load
+            playTotalOperationsRatioChart(); // Render empty on load
+            playRuntimeHistogramChart(); // Render empty on load
+
+            // Re-assign button clicks to ensure they clear and re-play if clicked again
+            document.querySelector('button[onclick="playMultiplicationRatioChart()"]').onclick = playMultiplicationRatioChart;
+            document.querySelector('button[onclick="playTotalOperationsRatioChart()"]').onclick = playTotalOperationsRatioChart;
+            document.querySelector('button[onclick="playRuntimeHistogramChart()"]').onclick = playRuntimeHistogramChart;
+
+            // Initialize p5 sketches without auto-looping
+            document.querySelector('button[onclick="playBlockMatrixAnimation()"]').onclick = window.playBlockMatrixAnimation;
+            document.querySelector('button[onclick="showSotARecursion()"]').onclick = window.showSotARecursion;
+            document.querySelector('button[onclick="showRXTXRecursion()"]').onclick = window.showRXTXRecursion;
+
+        });
+
+    </script>
+</body>
+</html>
