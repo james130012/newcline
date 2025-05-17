@@ -1,558 +1,653 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>研究解读：语言在发育中大脑的涌现</title>
-    <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
-    <style>
-        body {
-            font-family: 'Arial', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
-            line-height: 1.8;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f8;
-            color: #333;
-        }
-        .container {
-            width: 85%;
-            margin: 20px auto;
-            padding: 25px;
-            background-color: #fff;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            border-radius: 10px;
-        }
-        h1, h2, h3 {
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-        }
-        h1 { text-align: center; }
-        p { text-align: justify; }
-        .animation-container {
-            border: 1px solid #ddd;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-            text-align: center;
-        }
-        .animation-box {
-            width: 90%;
-            min-height: 150px;
-            background-color: #e0e0e0;
-            margin: 10px auto;
-            padding:10px;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            position: relative;
-            overflow: hidden;
-        }
-        button {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 10px 5px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #2980b9;
-        }
-        .hidden { display: none; }
-        .fade-in { animation: fadeIn 1s ease-in-out; }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .brain-outline {
-            width: 100px;
-            height: 100px;
-            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 2C23.5 2 2 23.5 2 50s21.5 48 48 48 48-21.5 48-48S76.5 2 50 2zm0 90C27.9 92 10 74.1 10 50S27.9 8 50 8s40 17.9 40 40-17.9 42-40 42z" fill="%23bdc3c7"/><path d="M50,15c-8.7,0-16.3,3.3-22.2,8.8c-0.8,0.7-1.1,1.8-0.7,2.7c1.9,4.4,3.3,9.1,4.1,14c0.3,1.5,1.6,2.6,3.1,2.6h31.4c1.5,0,2.8-1.1,3.1-2.6c0.8-4.8,2.2-9.6,4.1-14c0.4-1-0.1-2.1-0.7-2.7C66.3,18.3,58.7,15,50,15zM29.3,50c-1.2-5.1-1.8-10.4-1.8-15.8c0-1.6,1.3-2.9,2.9-2.9h3.3c1.6,0,2.9,1.3,2.9,2.9c0,5.5,0.6,10.8,1.8,15.8H29.3zM64.2,50h-8.4c1.2-5.1,1.8-10.4,1.8-15.8c0-1.6,1.3-2.9,2.9-2.9h3.3c1.6,0,2.9,1.3,2.9,2.9C66,39.6,65.4,44.9,64.2,50zM50,67c-5,0-9.5-1.7-13.2-4.5c-0.8-0.6-1.9-0.5-2.6,0.3c-2.3,2.7-4,5.8-5.1,9.2c-0.4,1.1,0.1,2.3,1.1,2.8C35.7,77.7,42.5,79,50,79s14.3-1.3,19.8-4.2c1-0.5,1.5-1.7,1.1-2.8c-1.1-3.3-2.8-6.5-5.1-9.2c-0.6-0.8-1.8-0.9-2.6-0.3C59.5,65.3,55,67,50,67z" fill="%233498db"/></svg>');
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: contain;
-        }
-        .sound-wave {
-            width: 30px;
-            height: 50px;
-            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 50"><path d="M5 15 Q10 5 15 15 T25 15 M5 25 Q10 15 15 25 T25 25 M5 35 Q10 25 15 35 T25 35" stroke="%232ecc71" stroke-width="3" fill="none"/></svg>');
-            animation: pulse 1.5s infinite;
-            opacity: 0;
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-        }
-        @keyframes pop-in {
-            from { transform: scale(0); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        .bar-chart-bar {
-            background-color: #3498db;
-            margin: 0 5px;
-            display: inline-block;
-            transition: height 1s ease-in-out;
-            width: 30px;
-            position: relative;
-        }
-        .bar-label {
-            position: absolute;
-            bottom: -20px;
-            width: 100%;
-            text-align: center;
-            font-size: 10px;
-        }
-        .process-step {
-            margin: 5px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            display: inline-block;
-            opacity: 0;
-            transform: translateX(-20px);
-            transition: opacity 0.5s, transform 0.5s;
-        }
-        .arrow {
-            font-size: 20px;
-            margin: 0 10px;
-            opacity: 0;
-            transition: opacity 0.5s 0.3s;
-        }
-        .flow-box {
-            padding: 15px;
-            border: 2px dashed #2ecc71;
-            margin:10px;
-            border-radius:5px;
-            width:40%;
-            text-align:center;
-        }
-        .line-graph-point {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            position: absolute;
-            background-color: red;
-            opacity:0;
-        }
-        .legend-item {
-            display:inline-block;
-            margin-right:15px;
-            font-size:12px;
-        }
-        .legend-color {
-            width:12px;
-            height:12px;
-            display:inline-block;
-            margin-right:5px;
-            vertical-align:middle;
-        }
-        .brain-region {
-            position:absolute;
-            border:1px solid;
-            border-radius:50%;
-            padding:5px;
-            font-size:10px;
-            text-align:center;
-            transition: background-color 0.5s, transform 0.5s;
-        }
-        .stg {
-            top:40%;
-            left:20%;
-            width:30px;
-            height:30px;
-            background-color:#f39c12;
-            border-color:#d35400;
-        }
-        .assoc-cortex {
-            top:20%;
-            left:50%;
-            width:50px;
-            height:50px;
-            background-color:#3498db;
-            border-color:#2980b9;
-        }
-        .hier-level {
-            margin: 10px;
-            padding: 10px;
-            background-color: #ecf0f1;
-            border-radius: 4px;
-            border-left: 5px solid;
-            transition: transform 0.5s, opacity 0.5s;
-        }
-        .phoneme-level { border-color: #e74c3c; }
-        .word-level { border-color: #2ecc71; }
-        .timeline {
-            display: flex;
-            justify-content: space-between;
-            margin-top:10px;
-            padding: 0 10%;
-        }
-        .timeline-event {
-            opacity: 0;
-            transition: opacity 1s;
-            background-color: #95a5a6;
-            color:white;
-            padding:5px;
-            border-radius:3px;
-            font-size:12px;
-        }
-    </style>
+<meta charset="UTF-8" />
+<title>神经网络与大脑语言发育</title>
+<style>
+/* 基础样式 */
+:root {
+  --anim-duration: 1s;
+  --anim-easing: ease-in-out;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  line-height: 1.6;
+}
+
+.animation-container {
+  margin: 30px 0;
+  border: 1px solid #ddd;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.animation-box {
+  background-color: #f9f9f9;
+  padding: 15px;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* 统一按钮样式 */
+button {
+  padding: 8px 16px;
+  margin: 10px 0;
+  cursor: pointer;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #2980b9;
+}
+
+/* 图表元素 */
+.bar-chart-bar {
+  display: inline-block;
+  width: 20px;
+  margin: 0 5px;
+  text-align: center;
+  position: relative;
+  transition: height var(--anim-duration) var(--anim-easing);
+}
+
+.bar-label {
+  position: absolute;
+  bottom: -20px;
+  width: 100%;
+  text-align: center;
+  font-size: 10px;
+}
+
+/* 时间轴样式 */
+.timeline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 30px;
+}
+
+.timeline-event {
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+/* 大脑区域样式 */
+.brain-outline {
+  position: relative;
+  display: inline-block;
+  width: 120px;
+  height: 120px;
+}
+
+.brain-region {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  transition: all 1s ease;
+}
+
+.stg {
+  background-color: #f39c12;
+  top: 20px;
+  left: 40px;
+}
+
+.assoc-cortex {
+  background-color: #3498db;
+  top: 60px;
+  left: 80px;
+}
+
+/* 图例样式 */
+.legend-item {
+  margin: 0 10px;
+}
+
+.legend-color {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+/* 层级样式 */
+.hier-level {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: all 0.5s;
+}
+
+.phoneme-level {
+  background-color: #f39c12;
+  padding: 5px;
+}
+
+.word-level {
+  background-color: #3498db;
+  padding: 5px;
+}
+
+/* 动画7样式 */
+.anim7-box-style {
+  background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150"><path d="M100 5C60 5 20 35 20 75s40 70 80 70 80-30 80-70S140 5 100 5zm0 130c-33.1 0-60-22.4-60-55s26.9-55 60-55 60 22.4 60 55-26.9 55-60 55z" fill="%23ecf0f1"/><circle cx="70" cy="70" r="10" fill="%23f39c12" id="svg-stg"/><text x="62" y="90" font-size="10">STG</text><circle cx="130" cy="50" r="8" fill="%233498db" id="svg-lifc" opacity="0.3"/><text x="120" y="35" font-size="10">L/IFC</text><circle cx="140" cy="90" r="8" fill="%232ecc71" id="svg-atl" opacity="0.3"/><text x="130" y="110" font-size="10">ATL</text><line id="svg-conn1" x1="80" y1="70" x2="122" y2="55" stroke="%237f8c8d" stroke-width="1" opacity="0"/><line id="svg-conn2" x1="80" y1="75" x2="132" y2="85" stroke="%237f8c8d" stroke-width="1" opacity="0"/></svg>');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  position: relative;
+  height: 150px;
+}
+
+/* SVG曲线 */
+svg {
+  display: block;
+  margin: 0 auto;
+}
+
+polyline {
+  transition: opacity var(--anim-duration) var(--anim-easing);
+}
+
+/* 动画关键帧 */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes slideIn {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes grow {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--final-height, 100px);
+  }
+}
+/* 辅助类 */
+.hidden {
+  visibility: hidden;
+}
+
+.grow {
+  animation: grow var(--anim-duration) var(--anim-easing) forwards;
+}
+
+.fadeIn {
+  animation: fadeIn var(--anim-duration) var(--anim-easing) forwards;
+}
+
+.slideIn {
+  animation: slideIn var(--anim-duration) var(--anim-easing) forwards;
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>研究解读：语言在发育中大脑的涌现</h1>
-        <p>本文基于 Linnea Evanson 等人于2025年5月12日发表的研究《Emergence of Language in the Developing Brain》，从物理和逻辑层面探讨儿童、青少年及成人在语言发展过程中大脑神经机制的奥秘。</p>
+<h1>神经网络与大脑语言发育的类比</h1>
+<p>本演示展示语言表征在发育大脑中的成熟路径，以及AI模型如何模拟这一过程。</p>
+<div class="animation-container">
+<h3>动画1: 声波进入大脑</h3>
+<div class="animation-box" id="anim1-box">
+<div id="anim1-sound" class="hidden" style="width: 100px; height: 100px; background-color: #e74c3c;"></div>
+<div id="anim1-text" class="hidden" style="margin-left: 10px; display: inline-block; vertical-align: middle;">语音信号</div>
+</div>
+<button id="anim1-btn" aria-label="播放声波动画">播放声波动画</button>
+<p>示意：语音信号从耳朵传入，激活大脑的STG区域。</p>
+</div>
+<div class="animation-container">
+<h3>动画2: 语言表征强度随年龄增长</h3>
+<div class="animation-box" id="anim2-box" style="display:flex; align-items:flex-end; height:120px;">
+<div id="bar_2_5" class="bar-chart-bar" style="height:0px; background-color:#f1c40f;">
+<span class="bar-label">2-5岁</span>
+</div>
+<div id="bar_6_11" class="bar-chart-bar" style="height:0px; background-color:#e67e22;">
+<span class="bar-label">6-11岁</span>
+</div>
+<div id="bar_12_plus" class="bar-chart-bar" style="height:0px; background-color:#2980b9;">
+<span class="bar-label">12+岁</span>
+</div>
+</div>
+<button id="anim2-btn" aria-label="展示强度增长">展示强度增长</button>
+<p>示意：语言表征强度随年龄增长而增强，12+岁组最强。</p>
+</div>
+<div class="animation-container">
+<h3>动画3: 语言处理的层级流程</h3>
+<div class="animation-box" id="anim3-box" style="flex-direction: column; align-items: center;">
+<div id="anim3-step1" class="hier-level phoneme-level">语音输入</div>
+<div id="anim3-arrow1" style="font-size:24px; margin:5px 0; opacity:0;">&darr;</div>
+<div id="anim3-step2" class="hier-level phoneme-level">STG处理音素</div>
+<div id="anim3-arrow2" style="font-size:24px; margin:5px 0; opacity:0;">&darr;</div>
+<div id="anim3-step3" class="hier-level word-level">联想皮层处理词汇</div>
+</div>
+<button id="anim3-btn" aria-label="展示层级流程">展示层级流程</button>
+<p>示意：语言处理从语音输入到STG音素处理，再到联想皮层的词汇处理。</p>
+</div>
+<div class="animation-container">
+<h3>动画4: 编码与解码模型</h3>
+<div class="animation-box" id="anim4-box">
+<div id="anim4-encoding" class="hidden">
+<h4>编码模型</h4>
+<p>输入语音 → 神经响应</p>
+<p>用于预测大脑如何编码语言信息</p>
+</div>
+<div id="anim4-decoding" class="hidden">
+<h4>解码模型</h4>
+<p>神经响应 → 预测语言</p>
+<p>用于从大脑活动重建语言内容</p>
+</div>
+</div>
+<button id="anim4-encoding-btn" aria-label="展示编码模型">展示编码模型</button>
+<button id="anim4-decoding-btn" aria-label="展示解码模型">展示解码模型</button>
+<p>示意：编码模型从语言输入预测神经响应，解码模型从神经响应重建语言输入。</p>
+</div>
+<div class="animation-container">
+<h3>动画5: 年龄相关的表征区域</h3>
+<div class="animation-box" id="anim5-box" style="justify-content: space-around;">
+<div id="anim5-brain-young" class="brain-outline" style="margin-right:20px;">
+<div class="brain-region stg" id="anim5-young-phonetic"></div>
+<div class="brain-region assoc-cortex" id="anim5-young-word" style="background-color:#aed6f1;"></div>
+<p style="font-size:12px; margin-top:105px;">2-5岁</p>
+</div>
+<div id="anim5-brain-older" class="brain-outline">
+<div class="brain-region stg" id="anim5-older-phonetic"></div>
+<div class="brain-region assoc-cortex" id="anim5-older-word"></div>
+<p style="font-size:12px; margin-top:105px;">12+岁</p>
+</div>
+</div>
+<button id="anim5-btn" aria-label="对比表征区域">对比表征区域</button>
+<p>示意：幼儿的STG已处理语音，而词汇表征在年长者联想皮层更显著。</p>
+</div>
+<p>在时间动态上，语音特征的神经响应在音素出现前即开始，约150毫秒达到峰值后迅速回落。相比之下，词汇特征的神经响应在词语出现前1秒便开始上升，约350毫秒达到峰值，并持续长达2秒。</p>
+<div class="animation-container">
+<h3>动画6: 语言特征的时间动态 (数据动画 - 曲线图)</h3>
+<div class="animation-box" id="anim6-box" style="height:150px;">
+<svg width="90%" height="130" style="border:1px solid #ccc; background-color:white;">
+<line x1="10" y1="110" x2="280" y2="110" stroke="black" stroke-width="1" />
+<line x1="10" y1="10" x2="10" y2="110" stroke="black" stroke-width="1" />
+<polyline id="anim6-phonetic-curve" points="" stroke="#e74c3c" stroke-width="2" fill="none" style="opacity:0;" />
+<polyline id="anim6-lexical-curve" points="" stroke="#2980b9" stroke-width="2" fill="none" style="opacity:0;" />
+<text x="50" y="125" font-size="10">0ms</text>
+<text x="100" y="125" font-size="10">150ms</text>
+<text x="150" y="125" font-size="10">350ms</text>
+<text x="200" y="125" font-size="10">~1s</text>
+</svg>
+<div style="text-align:center; margin-top:5px;">
+<span class="legend-item"><span class="legend-color" style="background-color:#e74c3c;"></span>语音特征</span>
+<span class="legend-item"><span class="legend-color" style="background-color:#2980b9;"></span>词汇特征</span>
+</div>
+</div>
+<button id="anim6-btn" aria-label="展示时间曲线">展示时间曲线</button>
+<p>示意：语音特征响应快而短暂，词汇特征响应慢而持久。</p>
+</div>
+<p>从大脑区域来看，语言表征网络随着年龄增长而扩展。年幼组（2-5岁）在STG有清晰的语言表征，但在IPL、L/IFC和ATL的表征相较于年长组则不明显或缺失。这表明语言功能从核心区域逐渐扩展到更广泛的皮层网络。</p>
+<div class="animation-container">
+<h3>动画7: 大脑区域贡献的演变 (网络/空间动画)</h3>
+<div class="animation-box" id="anim7-box" class="anim7-box-style"></div>
+<div id="anim7-status" style="position:absolute; top:5px; left:5px; font-size:14px; background:rgba(255,255,255,0.7); padding:3px;" aria-live="polite">年龄: 2-5岁</div>
+<button id="anim7-btn" aria-label="展示区域激活演变">展示区域激活演变</button>
+<p>示意：语言网络激活从STG核心区随年龄增长扩展到L/IFC、ATL等区域。</p>
+</div>
+<h2>AI模型的启示：模拟与验证</h2>
+<p>引人注目的是，大型语言模型（如wav2vec 2.0处理语音，Llama 3.1处理文本）能够自发捕捉到这种神经发育轨迹。研究显示：</p>
+<ul>
+<li>训练后的AI模型比未训练的模型更能解释大脑对语言的响应。</li>
+<li>特别是Llama 3.1模型，其通过训练获得的表征（训练增益 $ \Delta_T R = R_{\text{Trained}} - R_{\text{Random}} $）在预测年长组（如12+岁）的大脑活动时表现更佳，表明AI模型学习到的某些高级语言表征与人类大脑在发育后期形成的表征相似。</li>
+</ul>
+<div class="animation-container">
+<h3>动画8: AI模型训练效果对比 (数据动画 - 柱状图)</h3>
+<div class="animation-box" id="anim8-box" style="display:flex; align-items:flex-end; height:120px;">
+<div style="margin-right:30px;">
+<p style="font-size:12px; margin-bottom:5px;">幼儿组 (2-5岁)</p>
+<div id="bar_young_untrained" class="bar-chart-bar" style="height:0px; background-color:#f1c40f;">
+<span class="bar-label" style="font-size:8px;">未训练</span>
+</div>
+<div id="bar_young_trained" class="bar-chart-bar" style="height:0px; background-color:#e67e22;">
+<span class="bar-label" style="font-size:8px;">训练后</span>
+</div>
+</div>
+<div>
+<p style="font-size:12px; margin-bottom:5px;">年长组 (12+岁)</p>
+<div id="bar_old_untrained" class="bar-chart-bar" style="height:0px; background-color:#f1c40f;">
+<span class="bar-label" style="font-size:8px;">未训练</span>
+</div>
+<div id="bar_old_trained" class="bar-chart-bar" style="height:0px; background-color:#e67e22;">
+<span class="bar-label" style="font-size:8px;">训练后</span>
+</div>
+</div>
+</div>
+<button id="anim8-btn" aria-label="展示AI模型对比">展示AI模型对比</button>
+<p>示意：训练后的LLM（Llama 3.1）在预测大脑活动方面表现更好，尤其是在年长组中，训练带来的提升（$ \Delta_T R $）更为显著。</p>
+</div>
+<div class="animation-container">
+<h3>动画9: 语言处理的层级结构 (分层解析动画)</h3>
+<div class="animation-box" id="anim9-box">
+<div id="anim9-level1" class="hier-level phoneme-level">输入: "猫" (语音信号)</div>
+<div id="anim9-arrow1" style="font-size:24px; margin:5px 0; opacity:0;">&darr;</div>
+<div id="anim9-level2" class="hier-level phoneme-level">初级处理 (STG): 音素 /m/, /aʊ/</div>
+<div id="anim9-arrow2" style="font-size:24px; margin:5px 0; opacity:0;">&darr;</div>
+<div id="anim9-level3" class="hier-level word-level">高级处理 (联想皮层): 词义 "猫"</div>
+</div>
+<button id="anim9-btn" aria-label="展示层级处理">展示层级处理</button>
+<p>示意：语言信息从底层的语音特征（STG处理）到高层的词汇语义（联想皮层处理）的层级加工过程。</p>
+</div>
+<div class="animation-container">
+<h3>动画10: AI与大脑发育轨迹的吻合 (时间轴动画)</h3>
+<div class="animation-box" id="anim10-box" style="flex-direction:column;">
+<p style="font-size:14px; margin-bottom:10px;">大脑语言发育 & LLM训练的相似轨迹</p>
+<div style="width:80%;">
+<strong>大脑发育:</strong>
+<div class="timeline">
+<span id="anim10-brain-s1" class="timeline-event">幼儿期 (语音基础)</span>
+<span id="anim10-brain-s2" class="timeline-event">学龄期 (词汇丰富)</span>
+<span id="anim10-brain-s3" class="timeline-event">成年期 (高级语义)</span>
+</div>
+</div>
+<div style="width:80%; margin-top:15px;">
+<strong>LLM训练:</strong>
+<div class="timeline">
+<span id="anim10-llm-s1" class="timeline-event">早期训练 (基础模式)</span>
+<span id="anim10-llm-s2" class="timeline-event">中期训练 (复杂结构)</span>
+<span id="anim10-llm-s3" class="timeline-event">后期训练 (类人表征)</span>
+</div>
+</div>
+</div>
+<button id="anim10-btn" aria-label="展示吻合轨迹">展示吻合轨迹</button>
+<p>示意：LLM的训练过程（尤其像Llama 3.1）所学习到的表征，与人类大脑语言表征的成熟过程存在一定的平行关系。</p>
+</div>
+<h2>结论与意义</h2>
+<p>这项研究不仅详细描绘了语言表征在发育大脑中的成熟路径，从早期主要依赖STG处理语音特征，到后续联想皮层参与更高级的词汇和语义处理，而且证明了现代AI模型是模拟和理解人类语言习得神经基础的一个极具前景的工具。这些发现为我们理解人类独特的语言能力以及开发更类人的AI系统提供了深刻见解。</p>
+<script>
+// 动画工具函数
+class AnimationTools {
+  static fadeIn(element, delay = 0) {
+    if (!element) return;
+    setTimeout(() => {
+      element.classList.remove('hidden');
+      element.classList.add('fadeIn');
+    }, delay);
+  }
 
-        <h2>引言：语言习得的奇迹</h2>
-        <p>儿童仅凭数百万词汇的输入便能掌握复杂的语言，这一能力令人惊叹，但其背后的大脑机制仍有许多未知。该研究通过先进的神经科学技术和计算模型，旨在揭示语言表征在不同年龄段大脑中的位置、动态及其发展层级。</p>
+  static slideIn(element, delay = 0) {
+    if (!element) return;
+    setTimeout(() => {
+      element.style.opacity = '1';
+      element.style.transform = 'translateX(0)';
+    }, delay);
+  }
 
-        <div class="animation-container">
-            <h3>动画1: 研究核心探索 (概念动画)</h3>
-            <div class="animation-box" id="anim1-box">
-                <div class="brain-outline" id="anim1-brain"></div>
-                <div class="sound-wave" id="anim1-sound" style="left: 20%;"></div>
-                <div id="anim1-text" class="word-bubble hidden" style="margin-top:10px;">大脑如何处理和学习语言？</div>
-            </div>
-            <button onclick="playAnim1()">播放动画</button>
-            <p>示意：声波进入大脑，大脑特定区域被激活，展现语言处理过程。</p>
-        </div>
+  static barGrow(element, height, delay = 0) {
+    if (!element) return;
+    setTimeout(() => {
+      element.style.setProperty('--final-height', height);
+      element.classList.add('grow');
+    }, delay);
+  }
 
-        <h2>研究方法：多维度解析</h2>
-        <p>研究团队记录了46名因癫痫监测而植入颅内电极的参与者（年龄从2岁到46岁不等）在聆听法语有声书《小王子》时的神经活动数据，涉及超过7400个电极。他们运用了基于语言学理论和大型语言模型（LLMs）的神经编码与解码模型来分析这些数据。</p>
+  static drawSVGPath(element, points, delay = 0) {
+    if (!element) return;
+    setTimeout(() => {
+      element.setAttribute('points', points);
+      try {
+        const pathLength = element.getTotalLength();
+        element.style.strokeDasharray = pathLength;
+        element.style.strokeDashoffset = pathLength;
+        element.style.opacity = '1';
+        element.animate(
+          [{ strokeDashoffset: pathLength }, { strokeDashoffset: 0 }],
+          { duration: 2000, easing: 'ease-in-out', fill: 'forwards' }
+        );
+      } catch (e) {
+        console.warn('SVG path length calculation failed:', e);
+        element.style.opacity = '1';
+      }
+    }, delay);
+  }
 
-        <div class="animation-container">
-            <h3>动画2: 被试年龄分布 (数据动画)</h3>
-            <div class="animation-box" id="anim2-box" style="display:flex; align-items:flex-end; height:120px;">
-                <div id="bar_2_5" class="bar-chart-bar" style="height:0px; background-color:#1abc9c;"><span class="bar-label">2-5岁 (n=10)</span></div>
-                <div id="bar_6_11" class="bar-chart-bar" style="height:0px; background-color:#3498db;"><span class="bar-label">6-11岁 (n=16)</span></div>
-                <div id="bar_12_plus" class="bar-chart-bar" style="height:0px; background-color:#9b59b6;"><span class="bar-label">12+岁 (n=20)</span></div>
-            </div>
-            <button onclick="playAnim2()">展示数据</button>
-            <p>示意：柱状图展示三个年龄组的被试数量。2-5岁组有10名参与者，6-11岁组有16名，12岁以上组有20名。</p>
-        </div>
+  static resetElements(elementIds, props) {
+    elementIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        Object.entries(props).forEach(([prop, value]) => {
+          el.style[prop] = value;
+          el.classList.remove('grow', 'fadeIn', 'slideIn');
+        });
+      }
+    });
+  }
+}
 
-        <div class="animation-container">
-            <h3>动画3: 实验流程示意 (流程动画)</h3>
-            <div class="animation-box" id="anim3-box">
-                <span id="anim3-step1" class="process-step">儿童/成人被试</span>
-                <span id="anim3-arrow1" class="arrow">&rarr;</span>
-                <span id="anim3-step2" class="process-step">听《小王子》有声书</span>
-                <span id="anim3-arrow2" class="arrow">&rarr;</span>
-                <span id="anim3-step3" class="process-step">颅内脑电(SEEG)记录</span>
-            </div>
-            <button onclick="playAnim3()">展示流程</button>
-            <p>示意：被试听故事，同时记录其大脑神经活动。</p>
-        </div>
+const animations = {
+  anim1() {
+    const sound = document.getElementById('anim1-sound');
+    const text = document.getElementById('anim1-text');
+    AnimationTools.fadeIn(sound);
+    AnimationTools.fadeIn(text, 1000);
+    sound?.classList.add('pulse');
+  },
 
-        <div class="animation-container">
-            <h3>动画4: 神经编码与解码模型 (概念/流程动画)</h3>
-            <div class="animation-box" id="anim4-box" style="flex-direction: row; justify-content: space-around;">
-                <div id="anim4-encoding" class="flow-box hidden">
-                    <h4>编码 (Encoding)</h4>
-                    语言特征 &rarr; 模型 &rarr; 预测大脑活动
-                    <p style="font-size:12px;">$ \text{预测脑活动} \approx W \cdot \overline{Y}_{\text{语言特征}} $</p>
-                    <p style="font-size:10px;">目标: $ \min_W ||X - \overline{Y}W||^2 + \lambda_c ||W||^2 $</p>
-                </div>
-                <div id="anim4-decoding" class="flow-box hidden">
-                    <h4>解码 (Decoding)</h4>
-                    大脑活动 &rarr; 模型 &rarr; 预测语言特征
-                    <p style="font-size:12px;">$ \text{预测语言特征} \approx V \cdot \overline{X}_{\text{脑活动}} $</p>
-                </div>
-            </div>
-            <button onclick="playAnim4('encoding')">理解编码</button>
-            <button onclick="playAnim4('decoding')">理解解码</button>
-            <p>示意：编码是将语言特征映射到大脑活动，解码则相反。</p>
-        </div>
+  anim2() {
+    AnimationTools.resetElements(['bar_2_5', 'bar_6_11', 'bar_12_plus'], { height: '0px' });
+    const bars = [
+      { id: 'bar_2_5', height: '60px', delay: 0 },
+      { id: 'bar_6_11', height: '90px', delay: 300 },
+      { id: 'bar_12_plus', height: '120px', delay: 600 }
+    ];
+    bars.forEach(bar => AnimationTools.barGrow(document.getElementById(bar.id), bar.height, bar.delay));
+  },
 
-        <h2>核心发现：语言表征的动态发展</h2>
-        <p>研究发现，即便在2-5岁的幼儿大脑中，也已存在广泛的语言特征表征。然而，这些表征会随着年龄增长而演化：</p>
-        <ul>
-            <li><b>快速语音特征（如音素）</b>：在最年幼的个体（2-5岁）的颞上回（STG）就已出现。</li>
-            <li><b>较慢的词级表征</b>：仅在年龄较大的个体（如12岁以上）的联想皮层中才涌现。</li>
-        </ul>
+  anim3() {
+    const steps = [
+      { id: 'anim3-step1', delay: 0 },
+      { id: 'anim3-arrow1', delay: 500 },
+      { id: 'anim3-step2', delay: 1000 },
+      { id: 'anim3-arrow2', delay: 1500 },
+      { id: 'anim3-step3', delay: 2000 }
+    ];
+    AnimationTools.resetElements(steps.map(s => s.id).concat(['anim3-arrow1', 'anim3-arrow2']), { opacity: '0', transform: 'translateX(-20px)' });
+    steps.forEach(step => {
+      const el = document.getElementById(step.id);
+      AnimationTools.slideIn(el, step.delay);
+    });
+    AnimationTools.fadeIn(document.getElementById('anim3-arrow1'), 500);
+    AnimationTools.fadeIn(document.getElementById('anim3-arrow2'), 1500);
+  },
 
-        <div class="animation-container">
-            <h3>动画5: 语音与词汇表征的年龄差异 (空间结构动画)</h3>
-            <div class="animation-box" id="anim5-box">
-                <div style="text-align:center; margin-bottom:10px;">
-                    <span class="legend-item"><span class="legend-color" style="background-color:#f39c12;"></span>语音表征 (STG)</span>
-                    <span class="legend-item"><span class="legend-color" style="background-color:#3498db;"></span>词汇表征 (联想皮层)</span>
-                </div>
-                <div id="anim5-brain-young" class="brain-outline" style="display:inline-block; margin-right:20px; position:relative;">
-                    <div class="brain-region stg" id="anim5-young-phonetic" style="opacity:0;"></div>
-                    <div class="brain-region assoc-cortex" id="anim5-young-word" style="opacity:0; background-color:#aed6f1;"></div>
-                    <p style="font-size:12px; margin-top:105px;">2-5岁</p>
-                </div>
-                <div id="anim5-brain-older" class="brain-outline" style="display:inline-block; position:relative;">
-                    <div class="brain-region stg" id="anim5-older-phonetic" style="opacity:0;"></div>
-                    <div class="brain-region assoc-cortex" id="anim5-older-word" style="opacity:0;"></div>
-                    <p style="font-size:12px; margin-top:105px;">12+岁</p>
-                </div>
-            </div>
-            <button onclick="playAnim5()">对比表征区域</button>
-            <p>示意：幼儿的颞上回（STG）已处理语音，而词汇表征在年长者联想皮层更显著。</p>
-        </div>
+  anim4(type) {
+    const encoding = document.getElementById('anim4-encoding');
+    const decoding = document.getElementById('anim4-decoding');
+    AnimationTools.resetElements(['anim4-encoding', 'anim4-decoding'], { opacity: '0' });
+    if (type === 'encoding') {
+      AnimationTools.fadeIn(encoding);
+    } else {
+      AnimationTools.fadeIn(decoding);
+    }
+  },
 
-        <p>在时间动态上，语音特征的神经响应在音素出现前即开始，约150毫秒达到峰值后迅速回落。相比之下，词汇特征的神经响应在词语出现前1秒便开始上升，约350毫秒达到峰值，并持续长达2秒。</p>
-
-        <div class="animation-container">
-            <h3>动画6: 语言特征的时间动态 (数据动画 - 曲线图)</h3>
-            <div class="animation-box" id="anim6-box" style="height:150px;">
-                <svg width="90%" height="130" style="border:1px solid #ccc; background-color:white;">
-                    <line x1="10" y1="110" x2="280" y2="110" stroke="black" stroke-width="1"/>
-                    <line x1="10" y1="10" x2="10" y2="110" stroke="black" stroke-width="1"/>
-                    <polyline id="anim6-phonetic-curve" points="" stroke="#e74c3c" stroke-width="2" fill="none" style="opacity:0;"/>
-                    <polyline id="anim6-lexical-curve" points="" stroke="#2980b9" stroke-width="2" fill="none" style="opacity:0;"/>
-                    <text x="50" y="125" font-size="10">0ms</text>
-                    <text x="100" y="125" font-size="10">150ms</text>
-                    <text x="150" y="125" font-size="10">350ms</text>
-                    <text x="200" y="125" font-size="10">~1s</text>
-                </svg>
-                <div style="text-align:center; margin-top:5px;">
-                    <span class="legend-item"><span class="legend-color" style="background-color:#e74c3c;"></span>语音特征</span>
-                    <span class="legend-item"><span class="legend-color" style="background-color:#2980b9;"></span>词汇特征</span>
-                </div>
-            </div>
-            <button onclick="playAnim6()">展示时间曲线</button>
-            <p>示意：语音特征响应快而短暂，词汇特征响应慢而持久。</p>
-        </div>
-
-        <p>从大脑区域来看，语言表征网络随着年龄增长而扩展。年幼组（2-5岁）在颞上回（STG）有清晰的语言表征，但在顶下小叶（IPL）、外侧/额下皮层（L/IFC）和颞前叶（ATL）的表征相较于年长组则不明显或缺失。这表明语言功能从核心区域逐渐扩展到更广泛的皮层网络。</p>
-
-        <div class="animation-container">
-            <h3>动画7: 大脑区域贡献的演变 (网络/空间动画)</h3>
-            <div class="animation-box" id="anim7-box" style="background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 150\"><path d=\"M100 5C60 5 20 35 20 75s40 70 80 70 80-30 80-70S140 5 100 5zm0 130c-33.1 0-60-22.4-60-55s26.9-55 60-55 60 22.4 60 55-26.9 55-60 55z\" fill=\"%23ecf0f1\"/><circle cx=\"70\" cy=\"70\" r=\"10\" fill=\"%23f39c12\" id=\"svg-stg\"/><text x=\"62\" y=\"90\" font-size=\"10\">STG</text><circle cx=\"130\" cy=\"50\" r=\"8\" fill=\"%233498db\" id=\"svg-lifc\" opacity=\"0.3\"/><text x=\"120\" y=\"35\" font-size=\"10\">L/IFC</text><circle cx=\"140\" cy=\"90\" r=\"8\" fill=\"%232ecc71\" id=\"svg-atl\" opacity=\"0.3\"/><text x=\"130\" y=\"110\" font-size=\"10\">ATL</text><line id=\"svg-conn1\" x1=\"80\" y1=\"70\" x2=\"122\" y2=\"55\" stroke=\"%237f8c8d\" stroke-width=\"1\" opacity=\"0\"/><line id=\"svg-conn2\" x1=\"80\" y1=\"75\" x2=\"132\" y2=\"85\" stroke=\"%237f8c8d\" stroke-width=\"1\" opacity=\"0\"/></svg>');
-                background-repeat: no-repeat;
-                background-position: center;
-                background-size: contain;
-                position: relative;
-                height: 150px;
-            </div>
-            <div id="anim7-status" style="position:absolute; top:5px; left:5px; font-size:14px; background:rgba(255,255,255,0.7); padding:3px;">年龄: 2-5岁</div>
-            <button onclick="playAnim7()">展示区域激活演变</button>
-            <p>示意：语言网络激活从STG核心区随年龄增长扩展到L/IFC、ATL等区域。</p>
-        </div>
-        
-        <h2>AI模型的启示：模拟与验证</h2>
-        <p>引人注目的是，大型语言模型（如wav2vec 2.0处理语音，Llama 3.1处理文本）能够自发捕捉到这种神经发育轨迹。研究显示：</p>
-        <ul>
-            <li>训练后的AI模型比未训练的模型更能解释大脑对语言的响应。</li>
-            <li>特别是Llama 3.1模型，其通过训练获得的表征（训练增益 $ \Delta_T R = R_{\text{Trained}} - R_{\text{Random}} $）在预测年长组（如12+岁）的大脑活动时表现更佳，表明AI模型学习到的某些高级语言表征与人类大脑在发育后期形成的表征相似。</li>
-        </ul>
-
-        <div class="animation-container">
-            <h3>动画8: AI模型训练效果对比 (数据动画 - 柱状图)</h3>
-            <div class="animation-box" id="anim8-box" style="display:flex; align-items:flex-end; height:120px;">
-                <div style="margin-right:30px;">
-                    <p style="font-size:12px; margin-bottom:5px;">幼儿组 (2-5岁)</p>
-                    <div id="bar_young_untrained" class="bar-chart-bar" style="height:0px; background-color:#f1c40f; width:20px;"><span class="bar-label" style="font-size:8px;">未训练</span></div>
-                    <div id="bar_young_trained" class="bar-chart-bar" style="height:0px; background-color:#e67e22; width:20px;"><span class="bar-label" style="font-size:8px;">训练后</span></div>
-                </div>
-                <div>
-                    <p style="font-size:12px; margin-bottom:5px;">年长组 (12+岁)</p>
-                    <div id="bar_old_untrained" class="bar-chart-bar" style="height:0px; background-color:#f1c40f; width:20px;"><span class="bar-label" style="font-size:8px;">未训练</span></div>
-                    <div id="bar_old_trained" class="bar-chart-bar" style="height:0px; background-color:#e67e22; width:20px;"><span class="bar-label" style="font-size:8px;">训练后</span></div>
-                </div>
-            </div>
-            <button onclick="playAnim8()">展示AI模型对比</button>
-            <p>示意：训练后的LLM（Llama 3.1）在预测大脑活动方面表现更好，尤其是在年长组中，训练带来的提升（$ \Delta_T R $）更为显著。</p>
-        </div>
-
-        <div class="animation-container">
-            <h3>动画9: 语言处理的层级结构 (分层解析动画)</h3>
-            <div class="animation-box" id="anim9-box">
-                <div id="anim9-level1" class="hier-level phoneme-level" style="opacity:0;">输入: "猫" (语音信号)</div>
-                <div id="anim9-arrow1" style="font-size:24px; margin:5px 0; opacity:0;">&darr;</div>
-                <div id="anim9-level2" class="hier-level phoneme-level" style="opacity:0;">初级处理 (STG): 音素 /m/, /aʊ/</div>
-                <div id="anim9-arrow2" style="font-size:24px; margin:5px 0; opacity:0;">&darr;</div>
-                <div id="anim9-level3" class="hier-level word-level" style="opacity:0;">高级处理 (联想皮层): 词义 "猫"</div>
-            </div>
-            <button onclick="playAnim9()">展示层级处理</button>
-            <p>示意：语言信息从底层的语音特征（STG处理）到高层的词汇语义（联想皮层处理）的层级加工过程。</p>
-        </div>
-        
-        <div class="animation-container">
-            <h3>动画10: AI与大脑发育轨迹的吻合 (时间轴动画)</h3>
-            <div class="animation-box" id="anim10-box" style="flex-direction:column;">
-                <p style="font-size:14px; margin-bottom:10px;">大脑语言发育 & LLM训练的相似轨迹</p>
-                <div style="width:80%;">
-                    <strong>大脑发育:</strong>
-                    <div class="timeline">
-                        <span id="anim10-brain-s1" class="timeline-event">幼儿期 (语音基础)</span>
-                        <span id="anim10-brain-s2" class="timeline-event">学龄期 (词汇丰富)</span>
-                        <span id="anim10-brain-s3" class="timeline-event">成年期 (高级语义)</span>
-                    </div>
-                </div>
-                <div style="width:80%; margin-top:15px;">
-                    <strong>LLM训练:</strong>
-                    <div class="timeline">
-                        <span id="anim10-llm-s1" class="timeline-event">早期训练 (基础模式)</span>
-                        <span id="anim10-llm-s2" class="timeline-event">中期训练 (复杂结构)</span>
-                        <span id="anim10-llm-s3" class="timeline-event">后期训练 (类人表征)</span>
-                    </div>
-                </div>
-            </div>
-            <button onclick="playAnim10()">展示吻合轨迹</button>
-            <p>示意：LLM的训练过程（尤其像Llama 3.1）所学习到的表征，与人类大脑语言表征的成熟过程存在一定的平行关系。</p>
-        </div>
-
-        <h2>结论与意义</h2>
-        <p>这项研究不仅详细描绘了语言表征在发育大脑中的成熟路径，从早期主要依赖颞上回处理语音特征，到后续联想皮层参与更高级的词汇和语义处理，而且证明了现代AI模型是模拟和理解人类语言习得神经基础的一个极具前景的工具。这些发现为我们理解人类独特的语言能力以及开发更类人的AI系统提供了深刻见解。</p>
-    </div>
-
-    <script>
-        // 动画1: 声波进入大脑
-        function playAnim1() {
-            const sound = document.getElementById('anim1-sound');
-            const text = document.getElementById('anim1-text');
-            sound.style.animation = 'fadeIn 1s forwards';
-            setTimeout(() => {
-                text.classList.remove('hidden');
-                text.style.animation = 'pop-in 0.5s forwards';
-            }, 500);
-        }
-
-        // 动画2: 柱状图生长
-        function playAnim2() {
-            document.getElementById('bar_2_5').style.height = '60px';
-            document.getElementById('bar_6_11').style.height = '90px';
-            document.getElementById('bar_12_plus').style.height = '120px';
-        }
-
-        // 动画3: 流程步骤渐现
-        function playAnim3() {
-            const steps = ['anim3-step1', 'anim3-arrow1', 'anim3-step2', 'anim3-arrow2', 'anim3-step3'];
-            steps.forEach((id, index) => {
-                setTimeout(() => {
-                    const el = document.getElementById(id);
-                    el.style.opacity = '1';
-                    el.style.transform = 'translateX(0)';
-                }, index * 500);
+  anim5() {
+    const regions = [
+      { id: 'anim5-young-phonetic', props: { opacity: '1' }, delay: 0 },
+      { id: 'anim5-young-word', props: { opacity: '0.5' }, delay: 0 },
+      { id: 'anim5-older-phonetic', props: { opacity: '1' }, delay: 1000 },
+      { id: 'anim5-older-word', props: { opacity: '1' }, delay: 1000 }
+    ];
+    AnimationTools.resetElements(regions.map(r => r.id), { opacity: '0' });
+    setTimeout(() => {
+      regions.forEach(region => {
+        setTimeout(() => {
+          const el = document.getElementById(region.id);
+          if (el) {
+            Object.entries(region.props).forEach(([prop, value]) => {
+              el.style[prop] = value;
             });
-        }
+          }
+        }, region.delay);
+      });
+    }, 100);
+  },
 
-        // 动画4: 编码/解码模型切换
-        function playAnim4(type) {
-            const encoding = document.getElementById('anim4-encoding');
-            const decoding = document.getElementById('anim4-decoding');
-            if (type === 'encoding') {
-                encoding.classList.remove('hidden');
-                encoding.style.animation = 'fadeIn 1s';
-                decoding.classList.add('hidden');
-            } else {
-                decoding.classList.remove('hidden');
-                decoding.style.animation = 'fadeIn 1s';
-                encoding.classList.add('hidden');
-            }
-        }
+  anim6() {
+    const phoneticCurve = document.getElementById('anim6-phonetic-curve');
+    const lexicalCurve = document.getElementById('anim6-lexical-curve');
+    AnimationTools.resetElements(['anim6-phonetic-curve', 'anim6-lexical-curve'], { opacity: '0', strokeDasharray: '', strokeDashoffset: '' });
+    const phoneticPoints = '40,110 50,90 100,50 120,110';
+    const lexicalPoints = '30,110 50,100 150,30 200,70 250,110';
+    AnimationTools.drawSVGPath(phoneticCurve, phoneticPoints, 0);
+    AnimationTools.drawSVGPath(lexicalCurve, lexicalPoints, 500);
+  },
 
-        // 动画5: 大脑区域激活
-        function playAnim5() {
-            const youngPhonetic = document.getElementById('anim5-young-phonetic');
-            const youngWord = document.getElementById('anim5-young-word');
-            const olderPhonetic = document.getElementById('anim5-older-phonetic');
-            const olderWord = document.getElementById('anim5-older-word');
-            
-            youngPhonetic.style.opacity = '1';
-            youngPhonetic.style.backgroundColor = '#f39c12';
-            setTimeout(() => {
-                olderPhonetic.style.opacity = '1';
-                olderPhonetic.style.backgroundColor = '#f39c12';
-                olderWord.style.opacity = '1';
-                olderWord.style.backgroundColor = '#3498db';
-            }, 1000);
+  anim7() {
+    const transitions = [
+      {
+        time: 0,
+        label: '年龄: 2-5岁',
+        regions: [
+          { id: 'svg-stg', props: { opacity: '1' } },
+          { id: 'svg-lifc', props: { opacity: '0.3', transform: 'scale(1)' } },
+          { id: 'svg-atl', props: { opacity: '0.3', transform: 'scale(1)' } },
+          { id: 'svg-conn1', props: { opacity: '0' } },
+          { id: 'svg-conn2', props: { opacity: '0' } }
+        ]
+      },
+      {
+        time: 1000,
+        label: '年龄: 6-11岁',
+        regions: [
+          { id: 'svg-lifc', props: { opacity: '0.7', transform: 'scale(1.1)' } },
+          { id: 'svg-conn1', props: { opacity: '0.5' } }
+        ]
+      },
+      {
+        time: 2000,
+        label: '年龄: 12+岁',
+        regions: [
+          { id: 'svg-lifc', props: { opacity: '1', transform: 'scale(1.2)' } },
+          { id: 'svg-atl', props: { opacity: '1', transform: 'scale(1.2)' } },
+          { id: 'svg-conn1', props: { opacity: '1' } },
+          { id: 'svg-conn2', props: { opacity: '1' } }
+        ]
+      }
+    ];
+    const status = document.getElementById('anim7-status');
+    ['svg-lifc', 'svg-atl', 'svg-conn1', 'svg-conn2'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.style.transition = 'opacity 1s, transform 1s';
+      }
+    });
+    transitions.forEach(stage => {
+      setTimeout(() => {
+        if (status) {
+          status.textContent = stage.label;
         }
-
-        // 动画6: 时间动态曲线绘制
-        function playAnim6() {
-            const phoneticCurve = document.getElementById('anim6-phonetic-curve');
-            const lexicalCurve = document.getElementById('anim6-lexical-curve');
-            
-            // 语音特征曲线 (0-150ms)
-            phoneticCurve.setAttribute('points', '10,110 50,50 100,110');
-            phoneticCurve.style.opacity = '1';
-            
-            // 词汇特征曲线 (0-1s)
-            setTimeout(() => {
-                lexicalCurve.setAttribute('points', '10,110 150,30 200,110');
-                lexicalCurve.style.opacity = '1';
-            }, 500);
-        }
-
-        // 动画7: 区域激活演变
-        function playAnim7() {
-            const lifc = document.getElementById('svg-lifc');
-            const atl = document.getElementById('svg-atl');
-            const conn1 = document.getElementById('svg-conn1');
-            const conn2 = document.getElementById('svg-conn2');
-            const status = document.getElementById('anim7-status');
-            
-            // 初始状态
-            lifc.style.opacity = '1';
-            lifc.style.transform = 'scale(1.2)';
-            conn1.style.opacity = '1';
-            conn1.style.transform = 'translate(0)';
-            
-            // 12+岁状态
-            setTimeout(() => {
-                atl.style.opacity = '1';
-                atl.style.transform = 'scale(1.2)';
-                conn2.style.opacity = '1';
-                conn2.style.transform = 'translate(0)';
-                status.textContent = '年龄: 12+岁';
-            }, 1500);
-        }
-
-        // 动画8: AI模型对比柱状图
-        function playAnim8() {
-            const youngTrained = document.getElementById('bar_young_trained');
-            const oldTrained = document.getElementById('bar_old_trained');
-            
-            // 幼儿组训练后
-            youngTrained.style.height = '40px';
-            youngTrained.style.transform = 'scale(1)';
-            
-            // 年长组训练后
-            setTimeout(() => {
-                oldTrained.style.height = '80px';
-                oldTrained.style.transform = 'scale(1)';
-            }, 800);
-        }
-
-        // 动画9: 层级处理流程
-        function playAnim9() {
-            const elements = ['anim9-level1', 'anim9-arrow1', 'anim9-level2', 'anim9-arrow2', 'anim9-level3'];
-            elements.forEach((id, index) => {
-                setTimeout(() => {
-                    const el = document.getElementById(id);
-                    el.style.opacity = '1';
-                    el.style.transform = 'translateX(0)';
-                }, index * 500);
+        stage.regions.forEach(region => {
+          const el = document.getElementById(region.id);
+          if (el) {
+            Object.entries(region.props).forEach(([prop, value]) => {
+              el.style[prop] = value;
             });
-        }
+          }
+        });
+      }, stage.time);
+    });
+  },
 
-        // 动画10: 时间轴同步展示
-        function playAnim10() {
-            const brainEvents = ['anim10-brain-s1', 'anim10-brain-s2', 'anim10-brain-s3'];
-            const llmEvents = ['anim10-llm-s1', 'anim10-llm-s2', 'anim10-llm-s3'];
-            
-            brainEvents.forEach((id, index) => {
-                setTimeout(() => {
-                    document.getElementById(id).style.opacity = '1';
-                    document.getElementById(llmEvents[index]).style.opacity = '1';
-                }, index * 1000);
-            });
-        }
-    </script>
+  anim8() {
+    const barConfig = [
+      { id: 'bar_young_untrained', height: '30px', delay: 0 },
+      { id: 'bar_young_trained', height: '50px', delay: 100 },
+      { id: 'bar_old_untrained', height: '35px', delay: 0 },
+      { id: 'bar_old_trained', height: '90px', delay: 100 }
+    ];
+    AnimationTools.resetElements(barConfig.map(b => b.id), { height: '0px' });
+    barConfig.forEach(bar => {
+      const el = document.getElementById(bar.id);
+      if (el) {
+        animTools.barGrow(el, bar.height, bar.delay);
+      }
+    });
+  },
+
+  anim9() {
+    const steps = [
+      { id: 'anim9-level1', delay: 0 },
+      { id: 'anim9-arrow1', delay: 700 },
+      { id: 'anim9-level2', delay: 1400 },
+      { id: 'anim9-arrow2', delay: 2100 },
+      { id: 'anim9-level3', delay: 2800 }
+    ];
+    AnimationTools.resetElements(steps.map(s => s.id).concat(['anim9-arrow1', 'anim9-arrow2']), { opacity: '0', transform: 'translateX(-20px)' });
+    steps.forEach(step => {
+      const el = document.getElementById(step.id);
+      AnimationTools.slideIn(el, step.delay);
+    });
+    AnimationTools.fadeIn(document.getElementById('anim9-arrow1'), 700);
+    AnimationTools.fadeIn(document.getElementById('anim9-arrow2'), 2100);
+  },
+
+  anim10() {
+    const brainEvents = ['anim10-brain-s1', 'anim10-brain-s2', 'anim10-brain-s3'];
+    const llmEvents = ['anim10-llm-s1', 'anim10-llm-s2', 'anim10-llm-s3'];
+    AnimationTools.resetElements(brainEvents.concat(llmEvents), { opacity: '0' });
+    brainEvents.forEach((id, index) => {
+      setTimeout(() => {
+        const el1 = document.getElementById(id);
+        const el2 = document.getElementById(llmEvents[index]);
+        if (el1) el1.style.opacity = '1';
+        if (el2) el2.style.opacity = '1';
+      }, index * 1000);
+    });
+  }
+};
+
+function initEventListeners() {
+  document.querySelectorAll('[id^=anim][id$=-btn]').forEach(button => {
+    const animId = button.id.match(/anim(\d+)/)?.[1];
+    if (animId && animations[`anim${animId}`]) {
+      button.addEventListener('click', () => {
+        animations[`anim${animId}`]();
+        button.setAttribute('aria-pressed', 'true');
+        setTimeout(() => button.setAttribute('aria-pressed', 'false'), 1000);
+      });
+    }
+  });
+
+  document.getElementById('anim4-encoding-btn')?.addEventListener('click', () => animations.anim4('encoding'));
+  document.getElementById('anim4-decoding-btn')?.addEventListener('click', () => animations.anim4('decoding'));
+}
+
+document.addEventListener('DOMContentLoaded', initEventListeners);
+</script>
 </body>
 </html>
