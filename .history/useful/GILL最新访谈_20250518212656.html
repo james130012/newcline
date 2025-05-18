@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM作为贪婪代理：强化学习微调对决策能力影响的物理逻辑解读</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+    /* --- 强制 RLFT 画布填满容器 --- */
+    #rlftProcessCanvasContainer canvas {
+        width: 100% !important;
+        height: 100% !important;
+        display: block;
+    }
+
+    /* --- 固定图5容器高度 --- */
+    .chart-container {
+        position: relative;
+        width: 100%; /* Will be constrained by max-width on the div itself */
+        height: 350px; /* Fixed height */
+    }
+    .chart-container canvas {
+        position: absolute !important;
+        top: 0;
+        left: 0;
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+        body {
+            font-family: 'SimSun', 'Microsoft YaHei', Arial, sans-serif;
+            font-size: 16pt; /* 三号字体 (approx 16pt) */
+            line-height: 1.8;
+            background-color: #f0f2f5; /* Light grayish blue background */
+            color: #333333; /* Dark gray for text */
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 29.7cm; /* A3 width */
+            min-height: 40cm; /* A3 height, reduced slightly to prevent excessive empty space if content is shorter */
+            margin: 30px auto;
+            padding: 2.5cm 2cm; /* Generous padding */
+            background-color: #ffffff; /* White paper background */
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1); /* Softer shadow */
+            border: 1px solid #d9d9d9; /* Light border */
+            border-radius: 8px; /* Rounded corners for the page */
+        }
+        h1, h2, h3 {
+            color: #2c3e50; /* Dark blue-gray for headings */
+            margin-bottom: 0.7em;
+            font-weight: 700; /* Bolder headings */
+        }
+        h1 {
+            font-size: 26pt; /* Slightly reduced for balance */
+            text-align: center;
+            border-bottom: 3px solid #3498db; /* Accent color border */
+            padding-bottom: 0.6em;
+            margin-bottom: 1.2em;
+        }
+        h2 {
+            font-size: 20pt;
+            margin-top: 1.8em;
+            color: #2980b9; /* Brighter blue for H2 */
+        }
+        h3 {
+            font-size: 17pt;
+            margin-top: 1.2em;
+            color: #16a085; /* Teal for H3 */
+        }
+        p {
+            margin-bottom: 1.2em;
+            text-align: justify; /* Justified text for a formal look */
+        }
+        strong, .highlight {
+            color: #c0392b; /* Emphatic red for highlights */
+            font-weight: bold;
+        }
+        .animation-container {
+            border: 2px dashed #bdc3c7; /* Dashed border for animation sections */
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 10px;
+            background-color: #f8f9f9; /* Very light gray for animation background */
+            text-align: center;
+        }
+        /* Styling for canvas elements and P5 container */
+        canvas, #rlftProcessCanvasContainer div { /* Target P5's inner div if needed, or style container */
+            display: block;
+            margin: 0 auto 15px auto;
+            background-color: #ffffff;
+            border: 1px solid #cccccc;
+            border-radius: 6px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+         /* Specific styling for the P5.js container div */
+        #rlftProcessCanvasContainer {
+            width: 700px; /* Explicit width */
+            height: 300px; /* Explicit height */
+            margin: 0 auto 15px auto;
+            border: 1px solid #cccccc;
+            border-radius: 6px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            background-color: #ffffff; /* Ensure background for the container */
+            position: relative; /* For P5 canvas positioning if needed */
+        }
+
+        .controls {
+            margin-top: 10px;
+        }
+        .controls button {
+            background-color: #3498db; /* Primary button color */
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 14pt;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            margin: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls button:hover {
+            background-color: #2980b9; /* Darker shade on hover */
+            transform: translateY(-1px);
+        }
+        .controls button:active {
+            transform: translateY(0px);
+        }
+        .formula {
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            background-color: #e8f6fd; /* Light blue background for formulas */
+            padding: 12px;
+            border-radius: 6px;
+            display: inline-block;
+            border: 1px solid #b0e0f6; /* Border for formulas */
+            margin: 8px 0;
+            color: #2a2a2a;
+            font-size: 15pt;
+        }
+        .caption {
+            font-size: 13pt;
+            color: #7f8c8d; /* Muted color for captions */
+            text-align: center;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        .section-divider {
+            border-top: 1px solid #e0e0e0;
+            margin: 2.5em 0;
+        }
+        /* Comment lines for length */
+        /* Line 1 */
+        /* Line 2 */
+        /* ... up to Line 50+ */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>大型语言模型（LLM）的决策智能：一种物理逻辑视角的解读</h1>
+
+        <p>近期，Google DeepMind 的研究论文《LLM是贪婪的代理：强化学习微调对决策能力的影响》深入探讨了大型语言模型（LLM）在决策任务中的行为特性。本文将尝试从一种<strong class="highlight">“物理逻辑”的类比视角</strong>，结合论文核心观点，解读LLM在决策过程中的“惯性”、“势阱”以及如何通过外部“能量注入”（如强化学习微调）来优化其行为轨迹，实现更优决策。</p>
+
+        <h2>一、LLM决策的“物理惯性”与“局部最优陷阱”</h2>
+        <p>论文指出，尽管LLM拥有强大的知识储备和一定的推理能力（通过思维链CoT），但在复杂决策场景中，它们常表现出次优行为。这可以类比于物理系统中的某些特性：</p>
+        
+        <h3>1. 贪婪性（Greediness）</h3>
+        <p>LLM倾向于过早地锁定在当前看似最优的行动上，而忽视了更广阔的探索空间。这如同一个物体在能量场中迅速滑入<strong class="highlight">最近的“局部势阱”</strong>，即使附近存在更深的“全局最优势阱”，由于缺乏足够的“动能”或“扰动”来越过势垒，系统便稳定在次优点。论文数据显示，LLM可能仅探索了40-65%的行动空间，关键信息和文字可以突出表示。</p>
+        <div class="animation-container">
+            <h3>动画1：贪婪性——局部最优陷阱</h3>
+            <canvas id="greedinessCanvas" width="600" height="250"></canvas>
+            <div class="controls">
+                <button id="playGreediness">播放动画</button>
+            </div>
+            <p class="caption">演示智能体如何因贪婪策略而陷入局部最优。</p>
+        </div>
+
+        <h3>2. 频率偏见（Frequency Bias）</h3>
+        <p>LLM（尤其是小型模型）在决策时，会倾向于重复上下文中频繁出现的行动，即便这些行动的回报不高。这可视为一种<strong class="highlight">“行为惯性”</strong>或路径依赖。如同一个粒子在重复外力的作用下，即使存在更优路径，也更容易沿着已形成的“轨道”运动。大型模型（如27B参数）能部分克服此偏见，但仍受贪婪性影响。</p>
+        <div class="animation-container">
+            <h3>动画2：频率偏见——行为惯性</h3>
+            <canvas id="frequencyBiasCanvas" width="600" height="250"></canvas>
+            <div class="controls">
+                <button id="playFrequencyBias">播放动画</button>
+            </div>
+            <p class="caption">展示智能体如何倾向于选择频繁出现但非最优的行动。</p>
+        </div>
+
+        <h3>3. 知行差距（Knowing-Doing Gap）</h3>
+        <p>LLM可能能够准确描述解决任务的最优策略（“知道”），但在实际行动中却无法有效执行（“做不到”）。论文中，LLM能生成87%正确的UCB算法推理，但即便推理正确，仍有58%的行动是基于短期贪婪而非最优策略。这如同一个系统拥有完美的理论模型，但其<strong class="highlight">执行器或控制器受内部约束或简化启发式算法的影响</strong>，导致理论与实践脱节。</p>
+        <div class="animation-container">
+            <h3>动画3：知行差距——理论与实践的鸿沟</h3>
+            <canvas id="knowingDoingGapCanvas" width="600" height="200"></canvas>
+            <div class="controls">
+                <button id="playKnowingDoingGap">播放动画</button>
+            </div>
+            <p class="caption">概念演示：左侧为“认知”的理想策略，右侧为“行动”的次优实践。</p>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <h2>二、强化学习微调（RLFT）：注入“能量”以优化决策轨迹</h2>
+        <p>为解决上述问题，研究者提出在<strong class="highlight">自生成的思维链（CoT）基本原理上进行强化学习微调（RLFT）</strong>。这可以看作是向LLM这个“物理系统”注入外部“能量”或施加“引导力场”，以改变其自然的行为倾向。</p>
+        <p>RLFT的核心机制是：LLM生成包含CoT推理和具体行动的决策，与环境交互后获得奖励信号。随后，通过强化学习算法（类似PPO，并带有KL散度约束以保持与原模型不过度偏离），更新模型参数，使其倾向于产生能带来更高回报的CoT模式和行动。这个过程可以表示为：<span class="formula">Policy_new = RL_Update(Policy_old, CoT_rationale, Action, Reward)</span>。</p>
+        <div class="animation-container">
+            <h3>动画4：RLFT过程——决策优化循环</h3>
+            <div id="rlftProcessCanvasContainer"></div>
+            <div class="controls">
+                <button id="playRlftProcess">播放循环</button>
+            </div>
+            <p class="caption">图示RLFT如何通过环境反馈迭代优化LLM的决策过程。</p>
+        </div>
+        
+        <p>RLFT的效果显著：</p>
+        <ul>
+            <li><strong>降低遗憾值</strong>：在多臂老虎机（MAB）和上下文老虎机（CB）任务中，有效提升决策质量。</li>
+            <li><strong>增强探索</strong>：缓解贪婪性，例如2B模型行动覆盖率提升12%。如同增加系统“温度”，使其有能力<strong class="highlight">跳出局部势阱，探索更广阔的状态空间</strong>。</li>
+            <li><strong>对抗频率偏见</strong>：对于低重复率情景，频繁行动的选择比例从70%降至35%。</li>
+            <li><strong>提升复杂任务性能</strong>：在井字棋（Tic-tac-toe）中，胜率大幅提升，甚至能与MCTS（蒙特卡洛树搜索）打平。</li>
+        </ul>
+
+        <div class="section-divider"></div>
+
+        <h2>三、CoT与“思考时间”：决策的内部动力学</h2>
+        <p>论文强调，<strong class="highlight">思维链（CoT）对于RLFT至关重要</strong>。没有CoT的RLFT效果不佳。CoT可以视为LLM内部的一种“计算过程”或“状态演化”，它为决策提供了更丰富的上下文和推理基础，是探索和合理化的关键。这如同一个物理系统拥有更复杂的内部自由度，使其能够模拟和规划更优的轨迹，而非简单的刺激-反应。</p>
+        <p>此外，“思考时间”（即允许LLM生成更多token的预算）也对性能有积极影响。更多的生成预算能提升决策质量，但相应地增加了计算成本。这表明，<strong class="highlight">决策质量与“计算深度”或“信息处理时间”正相关</strong>。</p>
+
+        <div class="animation-container">
+            <h3>动画5：RLFT对行动覆盖率的影响</h3>
+            <div class="chart-container" style="height:350px;max-width:600px; margin: 0 auto 15px auto;">
+                <canvas id="actionCoverageCanvas"></canvas>
+            </div>
+            <div class="controls">
+                <button id="playActionCoverage">播放进展</button>
+            </div>
+            <p class="caption">展示RLFT如何随训练步数增加LLM的行动空间覆盖率。</p>
+        </div>
+        
+        <div class="section-divider"></div>
+
+        <h2>四、结论与展望：迈向更智能的LLM代理</h2>
+        <p>该研究通过系统的实验揭示了LLM在决策任务中的核心缺陷，并验证了RLFT结合CoT的有效性。从“物理逻辑”视角看，LLM的决策行为受到其固有“动力学特性”的制约，而RLFT则提供了一种有效的<strong class="highlight">“调控机制”</strong>。未来的研究方向可能包括探索更高效的探索策略（如论文中提到的“try-all”初始探索或奖励塑形），以及如何在计算成本和决策质量之间取得更优平衡，特别是在高风险决策场景中，赋予LLM更强的“系统鲁棒性”和“自适应能力”。</p>
+        <p>总而言之，将LLM视为一个可分析、可调控的复杂系统，借鉴物理学中描述系统行为和演化的逻辑框架，有助于我们更深刻地理解其内在机制，并设计出更有效的优化方法，推动其向更通用、更强大的智能代理演进。</p>
+    </div>
+
+    <script>
+        // Helper function to reset animations
+        function resetAnimation(ctx, canvas, playButton, text) {
+            if (ctx && canvas) { // Ensure ctx and canvas are provided for 2D context animations
+                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            if (playButton) playButton.disabled = false;
+            if (playButton && text) playButton.textContent = text;
+        }
+
+        // Animation 1: Greediness
+        const canvas1 = document.getElementById('greedinessCanvas');
+        const ctx1 = canvas1.getContext('2d');
+        const playGreedinessBtn = document.getElementById('playGreediness');
+        let agentX1 = 50, agentY1 = canvas1.height / 2;
+        let targetX1_anim1 = 0, targetY1_anim1 = 0; // Renamed to avoid conflict
+        let animationFrameId1;
+        let peaks1 = [
+            { x: 150, y: canvas1.height / 2, reward: 30, radius: 30, color: 'rgba(255, 165, 0, 0.7)' }, // Local optimum
+            { x: 450, y: canvas1.height / 2, reward: 70, radius: 50, color: 'rgba(0, 128, 0, 0.7)' }  // Global optimum
+        ];
+        let currentPeak1 = null;
+        let explorationPhase1 = true;
+        let steps1 = 0;
+
+        function drawLandscape1() {
+            ctx1.clearRect(0, 0, canvas1.width, canvas1.height);
+            ctx1.fillStyle = '#e0f7fa'; 
+            ctx1.fillRect(0, 0, canvas1.width, canvas1.height);
+
+            ctx1.font = "14px Arial";
+            ctx1.fillStyle = "#333";
+            ctx1.textAlign = "center";
+
+            peaks1.forEach(peak => {
+                ctx1.beginPath();
+                ctx1.arc(peak.x, peak.y, peak.radius, 0, Math.PI * 2);
+                ctx1.fillStyle = peak.color;
+                ctx1.fill();
+                ctx1.fillStyle = "#fff";
+                ctx1.fillText("回报: " + peak.reward, peak.x, peak.y + 5);
+            });
+
+            ctx1.beginPath();
+            ctx1.arc(agentX1, agentY1, 10, 0, Math.PI * 2);
+            ctx1.fillStyle = 'red';
+            ctx1.fill();
+            ctx1.strokeStyle = 'darkred';
+            ctx1.stroke();
+        }
+
+        function animateGreediness() {
+            steps1++;
+            if (explorationPhase1) {
+                if (!currentPeak1 || Math.random() < 0.05 || steps1 % 100 === 0) { 
+                    targetX1_anim1 = peaks1[0].x; 
+                    targetY1_anim1 = peaks1[0].y;
+                }
+            }
+
+            let dx = targetX1_anim1 - agentX1;
+            let dy = targetY1_anim1 - agentY1;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist > 1) {
+                agentX1 += dx / dist * 2; 
+                agentY1 += dy / dist * 2;
+            } else {
+                if (explorationPhase1) {
+                    currentPeak1 = peaks1[0]; 
+                    explorationPhase1 = false; 
+                    playGreedinessBtn.textContent = "陷入局部最优";
+                }
+            }
+            
+            drawLandscape1();
+            if (explorationPhase1 || dist > 1) { 
+                 animationFrameId1 = requestAnimationFrame(animateGreediness);
+            } else {
+                 playGreedinessBtn.disabled = false; 
+                 playGreedinessBtn.textContent = "重播动画";
+            }
+        }
+        
+        playGreedinessBtn.addEventListener('click', () => {
+            cancelAnimationFrame(animationFrameId1);
+            agentX1 = 50; agentY1 = canvas1.height / 2;
+            currentPeak1 = null;
+            explorationPhase1 = true;
+            steps1 = 0;
+            playGreedinessBtn.textContent = "播放中...";
+            playGreedinessBtn.disabled = true; 
+            animateGreediness();
+        });
+        drawLandscape1(); 
+
+        // Animation 2: Frequency Bias
+        const canvas2 = document.getElementById('frequencyBiasCanvas');
+        const ctx2 = canvas2.getContext('2d');
+        const playFrequencyBiasBtn = document.getElementById('playFrequencyBias');
+        let animationFrameId2;
+        let actions2 = [
+            { name: "A", freq: 0.1, reward: 8, color: '#3498db'},
+            { name: "B (频繁)", freq: 0.6, reward: 3, color: '#e74c3c'},
+            { name: "C", freq: 0.15, reward: 6, color: '#2ecc71'},
+            { name: "D", freq: 0.15, reward: 7, color: '#f1c40f'}
+        ];
+        let agentChoice2 = null;
+        let animProgress2 = 0;
+
+        function drawFrequencyBias() {
+            ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+            ctx2.fillStyle = '#f9f9f9';
+            ctx2.fillRect(0, 0, canvas2.width, canvas2.height);
+            
+            const barWidth = 80;
+            const spacing = 40;
+            const totalWidth = actions2.length * barWidth + (actions2.length - 1) * spacing;
+            let startX = (canvas2.width - totalWidth) / 2;
+
+            ctx2.font = "14px Arial";
+            ctx2.textAlign = "center";
+
+            actions2.forEach((action, index) => {
+                const barHeight = action.reward * 20; 
+                ctx2.fillStyle = action.color;
+                ctx2.fillRect(startX + index * (barWidth + spacing), canvas2.height - 30 - barHeight, barWidth, barHeight);
+                
+                ctx2.fillStyle = '#333';
+                ctx2.fillText(action.name, startX + index * (barWidth + spacing) + barWidth / 2, canvas2.height - 10);
+                ctx2.fillText("回报: " + action.reward, startX + index * (barWidth + spacing) + barWidth / 2, canvas2.height - 30 - barHeight - 5);
+
+                if (Math.random() < action.freq * (animProgress2 / 100)) { 
+                    ctx2.strokeStyle = 'gold';
+                    ctx2.lineWidth = 3;
+                    ctx2.strokeRect(startX + index * (barWidth + spacing) - 2, canvas2.height - 30 - barHeight - 2, barWidth + 4, barHeight + 4);
+                }
+            });
+
+            if (agentChoice2 !== null) {
+                const choiceIndex = actions2.findIndex(a => a.name === agentChoice2.name);
+                const choiceX = startX + choiceIndex * (barWidth + spacing) + barWidth / 2;
+                
+                ctx2.fillStyle = 'black';
+                ctx2.beginPath();
+                ctx2.moveTo(choiceX, 30);
+                ctx2.lineTo(choiceX - 10, 50);
+                ctx2.lineTo(choiceX + 10, 50);
+                ctx2.closePath();
+                ctx2.fill();
+                ctx2.fillText("LLM选择", choiceX, 20);
+            }
+        }
+
+        function animateFrequencyBias() {
+            animProgress2 += 1;
+            if (animProgress2 <= 100) {
+                if (animProgress2 > 70) { 
+                    agentChoice2 = actions2[1]; 
+                    playFrequencyBiasBtn.textContent = "选择了频繁项";
+                }
+                drawFrequencyBias();
+                animationFrameId2 = requestAnimationFrame(animateFrequencyBias);
+            } else {
+                playFrequencyBiasBtn.disabled = false;
+                playFrequencyBiasBtn.textContent = "重播动画";
+            }
+        }
+
+        playFrequencyBiasBtn.addEventListener('click', () => {
+            cancelAnimationFrame(animationFrameId2);
+            animProgress2 = 0;
+            agentChoice2 = null;
+            playFrequencyBiasBtn.disabled = true;
+            playFrequencyBiasBtn.textContent = "播放中...";
+            animateFrequencyBias();
+        });
+        drawFrequencyBias(); 
+
+        // Animation 3: Knowing-Doing Gap
+        const canvas3 = document.getElementById('knowingDoingGapCanvas');
+        const ctx3 = canvas3.getContext('2d');
+        const playKnowingDoingGapBtn = document.getElementById('playKnowingDoingGap');
+        let animProgress3 = 0;
+        let animationFrameId3;
+
+        function drawKnowingDoingGap() {
+            ctx3.clearRect(0, 0, canvas3.width, canvas3.height);
+            ctx3.fillStyle = '#fafafa';
+            ctx3.fillRect(0, 0, canvas3.width, canvas3.height);
+
+            const midX = canvas3.width / 2;
+            ctx3.strokeStyle = '#ccc';
+            ctx3.beginPath();
+            ctx3.moveTo(midX, 10);
+            ctx3.lineTo(midX, canvas3.height - 10);
+            ctx3.stroke();
+
+            ctx3.font = "bold 18px Arial";
+            ctx3.fillStyle = "#2c3e50";
+            ctx3.textAlign = "center";
+            ctx3.fillText("认知 (Knowing)", midX / 2, 30);
+            ctx3.fillText("行动 (Doing)", midX + midX / 2, 30);
+            
+            ctx3.font = "16px Arial";
+            ctx3.fillStyle = "#333";
+
+            if (animProgress3 > 10) ctx3.fillText("理想策略:", midX / 2, 70);
+            if (animProgress3 > 20) ctx3.fillText("1. 分析全局", midX / 2, 100);
+            if (animProgress3 > 30) ctx3.fillText("2. 评估长期回报", midX / 2, 130);
+            if (animProgress3 > 40) ctx3.fillText("3. 执行最优解", midX / 2, 160);
+
+            if (animProgress3 > 50) {
+                ctx3.fillStyle = "#e74c3c"; 
+                ctx3.fillText("实际行动:", midX + midX / 2, 70);
+                ctx3.beginPath();
+                ctx3.arc(midX + midX / 2, 120, 30, 0, Math.PI * 2);
+                ctx3.fill();
+                ctx3.fillStyle = "#fff";
+                ctx3.fillText("短期/贪婪", midX + midX / 2, 123);
+            }
+        }
+        
+        function animateKnowingDoingGap() {
+            animProgress3 += 1;
+            drawKnowingDoingGap();
+            if (animProgress3 < 70) {
+                animationFrameId3 = requestAnimationFrame(animateKnowingDoingGap);
+            } else {
+                playKnowingDoingGapBtn.disabled = false;
+                playKnowingDoingGapBtn.textContent = "重播动画";
+            }
+        }
+
+        playKnowingDoingGapBtn.addEventListener('click', () => {
+            cancelAnimationFrame(animationFrameId3);
+            animProgress3 = 0;
+            playKnowingDoingGapBtn.disabled = true;
+            playKnowingDoingGapBtn.textContent = "播放中...";
+            animateKnowingDoingGap();
+        });
+        drawKnowingDoingGap(); 
+
+        // Animation 4: RLFT Process (using P5.js)
+        const rlftSketch = (p) => {
+            let elements = [];
+            let currentStep = -1; 
+            let flowProgress = 0;
+            let p5Canvas;
+            let playButton; 
+
+            p.setup = () => {
+                p5Canvas = p.createCanvas(700, 300);
+                p5Canvas.parent('rlftProcessCanvasContainer'); 
+                p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(14);
+                
+                elements = [
+                    { x: 100, y: 150, w: 120, h: 60, text: "LLM (πθ)" },
+                    { x: 280, y: 80, w: 150, h: 70, text: "生成CoT + 行动 (zt)" },
+                    { x: 280, y: 220, w: 120, h: 60, text: "环境交互" },
+                    { x: 480, y: 220, w: 120, h: 60, text: "获取奖励 (rt)" },
+                    { x: 480, y: 80, w: 150, h: 70, text: "RL 更新 πθ\n(PPO + KL)" },
+                ];
+                
+                playButton = document.getElementById('playRlftProcess');
+                playButton.addEventListener('click', startRlftAnimation);
+
+                drawRlftProcessStatic(); 
+                // p.noLoop(); // 注释掉，保证初始渲染
+            };
+
+            function startRlftAnimation() {
+                currentStep = 0;
+                flowProgress = 0;
+                playButton.disabled = true;
+                playButton.textContent = "播放中...";
+                p.loop(); 
+            }
+            
+            function drawRlftProcessStatic() {
+                p.background(240, 248, 255); 
+                elements.forEach(el => {
+                    p.stroke(50, 100, 150);
+                    p.fill(200, 220, 255);
+                    p.rect(el.x - el.w / 2, el.y - el.h / 2, el.w, el.h, 5); 
+                    p.fill(0); 
+                    p.noStroke();
+                    p.text(el.text, el.x, el.y);
+                });
+            }
+
+            p.draw = () => {
+                if (currentStep === -1 && !p.isLooping()) { // Only draw static if not animating and loop is stopped
+                     drawRlftProcessStatic(); // Ensure initial draw if noLoop was re-enabled
+                     p.noLoop(); // Stop if it somehow restarted
+                     return;
+                }
+                 if (currentStep === -1 && p.isLooping()) { // If loop is running but animation not started, draw static and stop
+                    drawRlftProcessStatic();
+                    p.noLoop();
+                    return;
+                }
+
+
+                drawRlftProcessStatic(); 
+
+                p.stroke(255, 0, 0); 
+                p.strokeWeight(3);
+                p.noFill();
+
+                let from, to;
+                if (currentStep === 0) { from = elements[0]; to = elements[1]; } 
+                else if (currentStep === 1) { from = elements[1]; to = elements[2]; } 
+                else if (currentStep === 2) { from = elements[2]; to = elements[3]; } 
+                else if (currentStep === 3) { from = elements[3]; to = elements[4]; } 
+                else if (currentStep === 4) { from = elements[4]; to = elements[0]; } 
+
+                if (from && to) {
+                    let interX = p.lerp(from.x, to.x, flowProgress);
+                    let interY = p.lerp(from.y, to.y, flowProgress);
+                    p.line(from.x, from.y, interX, interY);
+                    p.fill(255,0,0); 
+                    p.ellipse(interX, interY, 10, 10); 
+                }
+                
+                flowProgress += 0.05; 
+                if (flowProgress >= 1) {
+                    flowProgress = 0;
+                    currentStep = (currentStep + 1) % elements.length; 
+                    if (currentStep === 0) { 
+                        p.noLoop(); 
+                        playButton.disabled = false;
+                        playButton.textContent = "重播循环";
+                    }
+                }
+            };
+        };
+        new p5(rlftSketch); 
+
+        // Animation 5: Action Coverage (using Chart.js)
+        const canvas5 = document.getElementById('actionCoverageCanvas');
+        const playActionCoverageBtn = document.getElementById('playActionCoverage');
+        let actionCoverageChart;
+        let chartAnimationInterval5;
+        const maxVisiblePoints = 20; 
+
+        const initialChartData = () => ({ 
+            labels: [0],
+            datasets: [
+                {
+                    label: '基线LLM 行动覆盖率 (%)',
+                    data: [10],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    fill: false,
+                    tension: 0.1
+                },
+                {
+                    label: 'LLM with RLFT 行动覆盖率 (%)',
+                    data: [10],
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: false,
+                    tension: 0.1
+                }
+            ]
+        });
+
+        const chartConfig = {
+            type: 'line',
+            data: initialChartData(), 
+            options: {
+                responsive: true,
+                maintainAspectRatio: true, // Changed as per suggestion B (optional part)
+                scales: {
+                    x: {
+                        title: { display: true, text: '训练迭代 (模拟)' }
+                    },
+                    y: {
+                        title: { display: true, text: '行动覆盖率 (%)' },
+                        min: 0,
+                        max: 80 
+                    }
+                },
+                animation: {
+                    duration: 200 
+                }
+            }
+        };
+        
+        function startActionCoverageAnimation() {
+            if (actionCoverageChart) {
+                actionCoverageChart.destroy(); 
+            }
+            const newChartConfig = JSON.parse(JSON.stringify(chartConfig)); 
+            newChartConfig.data = initialChartData(); 
+            actionCoverageChart = new Chart(canvas5.getContext('2d'), newChartConfig); 
+            
+            playActionCoverageBtn.disabled = true;
+            playActionCoverageBtn.textContent = "播放中...";
+
+            let currentDataStep = 0; 
+
+            clearInterval(chartAnimationInterval5); 
+            chartAnimationInterval5 = setInterval(() => {
+                currentDataStep++;
+                if (currentDataStep > maxVisiblePoints) { 
+                    clearInterval(chartAnimationInterval5);
+                    playActionCoverageBtn.disabled = false;
+                    playActionCoverageBtn.textContent = "重播进展";
+                    return;
+                }
+
+                actionCoverageChart.data.labels.push(currentDataStep * 1000); 
+                
+                let baselineCoverage = actionCoverageChart.data.datasets[0].data[actionCoverageChart.data.datasets[0].data.length-1];
+                baselineCoverage += Math.random() * 0.5 + 0.1; 
+                actionCoverageChart.data.datasets[0].data.push(Math.min(baselineCoverage, 40)); 
+
+                let rlftCoverage = actionCoverageChart.data.datasets[1].data[actionCoverageChart.data.datasets[1].data.length-1];
+                rlftCoverage += Math.random() * 2.5 + 1; 
+                actionCoverageChart.data.datasets[1].data.push(Math.min(rlftCoverage, 75)); 
+                
+                if (actionCoverageChart.data.labels.length > maxVisiblePoints) {
+                    actionCoverageChart.data.labels.shift();
+                    actionCoverageChart.data.datasets.forEach(dataset => {
+                        dataset.data.shift();
+                    });
+                }
+                
+                actionCoverageChart.update();
+            }, 350); 
+        }
+
+        playActionCoverageBtn.addEventListener('click', startActionCoverageAnimation);
+        actionCoverageChart = new Chart(canvas5.getContext('2d'), chartConfig); 
+
+    </script>
+</body>
+</html>

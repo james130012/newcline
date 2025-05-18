@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guillaume Verdon 访谈的物理逻辑解读</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        body {
+            font-family: 'LXGW WenKai TC', 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif; /* 活泼的字体 */
+            line-height: 1.8;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa; /* 干净的背景色 */
+            color: #333;
+            font-size: 20px; /* 基础字号，为A3纸张和三号字做准备 */
+        }
+
+        .container {
+            max-width: 1200px; /* 限制内容最大宽度，保持可读性 */
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        h1, h2, h3 {
+            color: #2c3e50; /* 标题颜色 */
+            font-weight: bold;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em; /* 标题字号 */
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 2em;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: #3498db; /* 二级标题使用主题色 */
+        }
+        
+        h3 {
+            font-size: 1.5em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #e67e22; /* 三级标题使用强调色 */
+        }
+
+        p {
+            margin-bottom: 1.2em;
+            text-align: justify;
+        }
+
+        strong, .highlight {
+            color: #e74c3c; /* 强调文字颜色 */
+            font-weight: bold;
+        }
+
+        .emphasis-block {
+            background-color: #eaf6ff; /* 淡蓝色背景 */
+            border-left: 5px solid #3498db; /* 左侧蓝色边框 */
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-style: italic;
+        }
+
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #ecf0f1;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .animation-container {
+            margin: 30px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            text-align: center; /* 使canvas和按钮居中 */
+            width: 90%; /* 动画容器宽度 */
+            max-width: 600px; /* 最大宽度 */
+        }
+        
+        .animation-container canvas {
+            display: block; /* 确保canvas是块级元素以应用margin:auto */
+            margin: 0 auto 15px auto; /* 上下边距，左右自动居中 */
+            border: 1px solid #ccc;
+            max-width: 100%; /* 确保canvas在小屏幕上响应式 */
+            height: auto; /* 高度自动，保持比例 */
+        }
+
+
+        .animation-controls button {
+            background-color: #3498db; /* 主题蓝色 */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'LXGW WenKai TC', 'Comic Sans MS', sans-serif;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        .animation-controls button:hover {
+            background-color: #2980b9; /* 深一点的蓝色 */
+        }
+        
+        /* A3纸张打印样式 */
+        @media print {
+            @page {
+                size: A3;
+                margin: 2cm;
+            }
+            body {
+                font-size: 16pt; /* 三号字 (16pt) */
+                background-color: #fff; /* 打印时背景通常为白色 */
+                color: #000; /* 打印时文字为黑色 */
+                width: 257mm; /* A3宽度减去边距 */
+            }
+            .container {
+                box-shadow: none;
+                border: none;
+                margin: 0;
+                padding: 0;
+                max-width: 100%;
+            }
+            h1, h2, h3, strong, .highlight {
+                color: #000 !important; /* 打印时所有彩色文字变黑 */
+            }
+            .animation-container {
+                display: none; /* 打印时不显示动画 */
+            }
+        }
+
+        /* 强制 P5 canvas 铺满其父容器，并具有固定高度（如果需要） */
+        #scalesCanvasContainer, #thermoLifeCanvasContainer, #computeCompareCanvasContainer, #kardashevCanvasContainer, #blackholeInfoCanvasContainer {
+            width: 100%; /* 容器宽度 */
+            height: 300px; /* 示例固定高度，根据需要调整 */
+            margin-bottom: 15px; /* 与控制按钮的间距 */
+        }
+        
+        #scalesCanvasContainer canvas, 
+        #thermoLifeCanvasContainer canvas,
+        #computeCompareCanvasContainer canvas,
+        #kardashevCanvasContainer canvas,
+        #blackholeInfoCanvasContainer canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Guillaume Verdon 访谈：物理逻辑的深邃洞察</h1>
+
+        <p class="introduction">Guillaume Verdon，一位兼具物理学家、应用数学家、量子机器学习研究员与创业者等多重身份的人物，其更为人所知的另一个身份是X平台上的匿名账户 @BasedBeffJezos，以及有效加速主义（e/acc）运动的创始人。在与 Lex Fridman 的深度对话中，Verdon 展现了他如何从<strong>宇宙的基本物理规律</strong>出发，构建其对计算、人工智能（AI）、乃至人类文明未来走向的独特见解。本文将尝试从<strong class="highlight">物理逻辑的视角</strong>，对Verdon在访谈中阐述的核心思想进行一番解读。</p>
+
+        <h2>宇宙观：计算与信息</h2>
+        <p>Verdon 的探索始于一个经典物理学家的初心：<strong>理解宇宙的“万有理论”</strong>。他逐渐将视角聚焦于信息论，认为宇宙本身可以被理解为一台进行着宏大计算的巨型计算机。“我意识到，我不仅想理解宇宙如何计算，更想学习自然的计算方式，并创造出受自然启发的计算机——也就是基于物理的计算机。”</p>
+        <p>这一思考路径引导他从黑洞物理学的研究，转向探索如何模拟自然、学习自然的表示。他认为，如果AI能够“像自然一样思考”，就能更准确地表征世界。这构成了他早期投身量子机器学习领域的基础，试图将智能的概念扩展到量子领域。</p>
+
+        <h2>尺度的交响：从量子到热力学</h2>
+        <p>Verdon 对物理尺度的理解是其思想体系中的关键一环。他指出：</p>
+        <ul>
+            <li>在<strong>微观尺度</strong>，世界由<strong class="highlight">量子力学</strong>主导，展现出叠加、干涉等奇异特性。</li>
+            <li>在<strong>宏观尺度</strong>，量子效应平均化，世界呈现出我们日常经验中的<strong>确定性</strong>。</li>
+            <li>然而，在对生命和日常生活至关重要的<strong>中观尺度</strong>（meso scales）——例如蛋白质、生物、气体、液体等层面——<strong class="highlight">热力学，特别是非平衡态热力学</strong>，扮演着统治者的角色。</li>
+        </ul>
+        <div class="emphasis-block">
+            “生命是一个热力学过程，并且是远离平衡态的。”Verdon 强调，“我们不是与自然处于平衡态的粒子汤，而是一种试图通过获取和消耗自由能来维持自身存在的相干状态。”
+        </div>
+        <p>他高度认同MIT物理学家 Jeremy England 的理论，即生命的出现可能是宇宙为了更有效地产生熵（在更大尺度上）的一种方式。复杂的生命系统通过消耗自由能（如食物、能量）并将其转化为热量（熵增加到环境中），从而在局部维持自身的低熵有序结构。这揭示了<strong class="highlight">熵增定律与复杂性涌现之间的深刻联系</strong>。“热力学统治着中观尺度，”Verdon说，“它是连接量子与宇宙（宏观宇宙学）之间缺失的一环。”</p>
+        
+        <div class="animation-container">
+            <h3>动画1：物理学的尺度</h3>
+            <p>这个动画展示了物理学在不同尺度下的主导理论：微观的量子力学，中观的热力学，以及宏观的经典确定性理论。</p>
+            <div id="scalesCanvasContainer"></div>
+            <div class="animation-controls">
+                <button onclick="scalesSketch.playAnimation()">播放/暂停</button>
+                <button onclick="scalesSketch.resetAnimation()">重置</button>
+            </div>
+        </div>
+
+        <div class="animation-container">
+            <h3>动画2：热力学与生命</h3>
+            <p>此动画模拟生命系统如何通过消耗自由能（输入）来维持自身有序结构，同时向环境释放热量（熵增加）。</p>
+            <div id="thermoLifeCanvasContainer"></div>
+            <div class="animation-controls">
+                <button onclick="thermoLifeSketch.toggleAnimation()">播放/暂停</button>
+                <button onclick="thermoLifeSketch.resetAnimation()">重置</button>
+            </div>
+        </div>
+
+        <h2>物理启发的计算范式</h2>
+        <p>Verdon 对物理规律的深刻理解，直接催生了他对新型计算范式的探索，这主要体现在量子计算和其后来的热力学计算两个方向上。</p>
+        
+        <h3>量子计算与量子机器学习</h3>
+        <p>Verdon 早期致力于量子计算和量子机器学习，目标是利用量子计算机模拟自然，并学习自然的量子表示。他参与创建了 TensorFlow Quantum，旨在将可微分编程引入量子计算生态系统。他提出的 <strong class="highlight">Baqprop（带Q的反向传播）</strong>概念，试图将深度学习的优化思想应用于量子参数空间。然而，他也清醒地认识到量子计算面临的巨大挑战：</p>
+        <ul>
+            <li><strong>噪声和退相干：</strong>量子比特极易受到环境干扰，维持其量子态非常困难。</li>
+            <li><strong>量子纠错的巨大开销：</strong>为了克服噪声，需要复杂的量子纠错编码，这极大地增加了物理资源的消耗。Verdon 形容其为“算法冰箱”，不断泵出系统中的熵。</li>
+            <li><strong>商业化时间表漫长：</strong>他坦言，对量子计算在10-15年内取得突破持乐观态度，但认为其发展路径类似核聚变，充满长期挑战。</li>
+        </ul>
+
+        <h3>Extropic 与热力学计算</h3>
+        <p>正是由于对量子计算漫长前景的不满足，以及对中观尺度热力学重要性的深刻洞察，Verdon 创立了 Extropic 公司，将目光投向了<strong class="highlight">热力学计算</strong>。</p>
+        <div class="emphasis-block">
+            “我们想知道，当生成式AI正在吞噬世界时，我们如何利用物理学从第一性原理（物理学、信息论、计算理论，最终是热力学）来设计生成式AI的终极物理基底。”
+        </div>
+        <p>Extropic 的核心理念是构建基于物理（特别是<strong>非平衡态热力学</strong>）的计算系统和AI算法。这意味着将<strong class="highlight">机器学习视为一个物理过程</strong>，直接利用或驾驭物理系统（如热涨落）来进行计算。这种范式可能将传统计算中视为敌人的“噪声”转变为一种可利用的资源。这与量子计算需要极力抑制噪声形成鲜明对比，也不同于经典计算在确定性逻辑门上的操作。</p>
+
+        <div class="animation-container">
+            <h3>动画3：量子计算 vs. 热力学计算</h3>
+            <p>本动画对比展示了量子计算（依赖低温、纠错、抗噪声）与热力学计算（可能利用涨落、与环境交互）的核心概念差异。</p>
+            <div id="computeCompareCanvasContainer"></div>
+            <div class="animation-controls">
+                <button onclick="computeCompareSketch.toggleView()">切换视角</button>
+                <button onclick="computeCompareSketch.resetAnimation()">重置</button>
+            </div>
+        </div>
+
+        <h2>有效加速主义 (e/acc) 的物理逻辑</h2>
+        <p>Verdon 创立的 e/acc 运动，其哲学基础同样深植于物理学，特别是热力学原理。</p>
+        <ul>
+            <li><strong>生命与增长的本质：</strong> Verdon 将生命比作一种“寻求宇宙中自由能并力图增长的火焰”。这与热力学中系统倾向于演化到能更有效获取自由能并耗散更多热量的状态（从而在更大范围加速熵产生）的观点相呼应。这种“增长”被视为生命和复杂系统的基本倾向。</li>
+            <li><strong>人类-技术-资本-模因机器：</strong> 他将人类社会、技术发展、资本流动和信息传播（模因）视为一个相互耦合的复杂系统，这个系统具有内在的、符合热力学原理的增长和适应趋势。e/acc 主张顺应并“加速”这一自然趋势。</li>
+            <li><strong>多样性与适应性：</strong> 为了保证这个复杂系统的适应性和持续增长，Verdon 强调维持“多样性”（variance）至关重要。这包括思想、技术路径、组织形式等各个层面。他类比量子纠错中通过非局域编码来抵抗局部错误，认为一个多样化的、去中心化的系统更能容错并找到最优发展路径。</li>
+            <li><strong>攀登卡尔达肖夫指数：</strong> e/acc 的一个目标是提升人类文明在卡尔达肖夫指数上的等级，即大幅提升能量获取和利用的效率。这直接关联到热力学第二定律的推论——更高级的文明形态能更有效地利用能量、驱动熵增。公式可以简单理解为：文明等级提升 = f(能量利用效率增加)。</li>
+        </ul>
+        <p>例如，卡尔达肖夫指数将文明划分为：</p>
+        <ul>
+            <li><strong>I型文明：</strong>能够利用其行星上所有可用的能量。</li>
+            <li><strong>II型文明：</strong>能够利用其恒星系统的所有能量。</li>
+            <li><strong>III型文明：</strong>能够利用其所在星系的能量。</li>
+        </ul>
+
+        <div class="animation-container">
+            <h3>动画4：卡尔达肖夫指数</h3>
+            <p>此动画以阶梯形式展示卡尔达肖夫指数的不同文明等级及其对应的能量利用范围。</p>
+            <div id="kardashevCanvasContainer"></div>
+            <div class="animation-controls">
+                <button onclick="kardashevSketch.nextLevel()">下一等级</button>
+                <button onclick="kardashevSketch.resetAnimation()">重置</button>
+            </div>
+        </div>
+        
+        <h2>黑洞、量子引力与终极问题</h2>
+        <p>Verdon 对物理学的探索并未止步于应用层面，他对诸如黑洞信息悖论、量子引力等基础物理问题依然抱有浓厚兴趣。他提及 <strong class="highlight">AdS/CFT 对偶</strong>这一理论物理中的重要进展，并展望未来或许可以通过量子机器学习的方法来帮助理解时空的量子本质和引力的起源。黑洞在他看来，是信息储存和处理的极致物理单元，也是检验量子力学与广义相对论结合的理想“实验室”。</p>
+        <p>他甚至畅想，如果人类文明能够达到极高等级（超越卡尔达肖夫III型），或许能够工程化设计黑洞，将信息传递到我们创造的新宇宙中，以此实现某种形式的“宇宙级传承”。</p>
+
+        <div class="animation-container">
+            <h3>动画5：黑洞与信息 (概念动画)</h3>
+            <p>一个简化的概念动画，展示信息落入黑洞，部分信息可能通过霍金辐射等机制逃逸的过程。</p>
+            <div id="blackholeInfoCanvasContainer"></div>
+            <div class="animation-controls">
+                <button onclick="blackholeInfoSketch.toggleAnimation()">播放/暂停</button>
+                <button onclick="blackholeInfoSketch.resetAnimation()">重置</button>
+            </div>
+        </div>
+
+        <h2>结论</h2>
+        <p>Guillaume Verdon 的思想体系展现了一种深刻的<strong class="highlight">物理学一以贯之的逻辑</strong>。从宇宙的计算本质，到生命的热力学驱动，再到新型计算范式的构建和对人类文明发展方向的思考，其核心洞见均源于对物质世界基本规律的深刻理解和创造性应用。他提醒我们，无论是设计下一代AI，还是规划人类的长远未来，回归物理学的第一性原理，或许能为我们照亮前进的道路。他的工作不仅是对技术边界的拓展，更是对我们理解自身在宇宙中位置的一次哲学追问。</p>
+    </div>
+
+    <script>
+        // 全局变量存储 P5.js 实例
+        let scalesSketch, thermoLifeSketch, computeCompareSketch, kardashevSketch, blackholeInfoSketch;
+
+        // 动画1: 物理学的尺度
+        const sketchScales = (p) => {
+            let scaleState = 0; // 0: Quantum, 1: Thermo, 2: Classical
+            let alpha = 0;
+            let playing = false;
+            let targetState = 0;
+
+            p.setup = () => {
+                const container = document.getElementById('scalesCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight).parent('scalesCanvasContainer');
+                p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(p.width / 20);
+                p.noLoop(); // 初始不循环
+                p.redraw(); // 绘制初始帧
+            };
+            
+            p.windowResized = () => {
+                const container = document.getElementById('scalesCanvasContainer');
+                p.resizeCanvas(container.offsetWidth, container.offsetHeight);
+                 p.textSize(p.width / 20);
+            };
+
+            p.draw = () => {
+                p.background(240);
+                
+                if (playing) {
+                    alpha += 0.02;
+                    if (alpha >= 1) {
+                        alpha = 0;
+                        scaleState = (scaleState + 1) % 3;
+                        if (scaleState !== targetState) {
+                           // continue
+                        } else {
+                            playing = false; // Stop if target reached or full cycle
+                        }
+                    }
+                }
+
+                p.push();
+                if (scaleState === 0) {
+                    p.fill(0, 150, 255, p.map(alpha, 0, 1, 255, 0));
+                    p.text("微观：量子力学\n(叠加, 纠缠)", p.width / 2, p.height / 2);
+                    p.fill(255, 100, 0, p.map(alpha, 0, 1, 0, 255));
+                    p.text("中观：热力学\n(涨落, 生命)", p.width / 2, p.height / 2);
+                } else if (scaleState === 1) {
+                    p.fill(255, 100, 0, p.map(alpha, 0, 1, 255, 0));
+                    p.text("中观：热力学\n(涨落, 生命)", p.width / 2, p.height / 2);
+                    p.fill(100, 100, 100, p.map(alpha, 0, 1, 0, 255));
+                    p.text("宏观：经典/确定性\n(平均效应)", p.width / 2, p.height / 2);
+                } else { // scaleState === 2
+                    p.fill(100, 100, 100, p.map(alpha, 0, 1, 255, 0));
+                    p.text("宏观：经典/确定性\n(平均效应)", p.width / 2, p.height / 2);
+                    p.fill(0, 150, 255, p.map(alpha, 0, 1, 0, 255));
+                    p.text("微观：量子力学\n(叠加, 纠缠)", p.width / 2, p.height / 2);
+                }
+                p.pop();
+
+                if (!playing) p.noLoop(); else p.loop();
+            };
+
+            p.playAnimation = () => {
+                playing = !playing;
+                if (playing) {
+                    targetState = (scaleState + 1) % 3; // Play one transition or full cycle
+                    alpha = 0;
+                    p.loop();
+                } else {
+                    p.noLoop();
+                }
+            };
+            
+            p.resetAnimation = () => {
+                playing = false;
+                scaleState = 0;
+                alpha = 0;
+                p.redraw();
+            };
+        };
+
+        // 动画2: 热力学与生命
+        const sketchThermoLife = (p) => {
+            let particles = [];
+            let lifeSystem;
+            let playing = false;
+            const numParticles = 50;
+
+            class LifeSystem {
+                constructor(x, y, r) {
+                    this.pos = p.createVector(x, y);
+                    this.radius = r;
+                    this.energy = 50; // Initial energy
+                    this.entropyColor = p.color(0, 255, 0); // Green for low entropy
+                }
+
+                consume(particle) {
+                    if (p.dist(this.pos.x, this.pos.y, particle.pos.x, particle.pos.y) < this.radius + particle.radius) {
+                        this.energy += 5;
+                        particle.reset();
+                        return true;
+                    }
+                    return false;
+                }
+
+                dissipate() {
+                    if (this.energy > 10 && p.frameCount % 30 === 0) { // Dissipate heat periodically
+                        this.energy -= 2;
+                        // Visual cue for dissipation (e.g., a flash or outward particles)
+                        let heatParticle = new Particle(true); // True for heat particle
+                        heatParticle.pos = this.pos.copy();
+                        heatParticle.vel = p5.Vector.random2D().mult(2);
+                        particles.push(heatParticle);
+                    }
+                    this.entropyColor = p.color(p.map(this.energy, 0, 100, 255, 0), p.map(this.energy, 0, 100, 0, 255), 0);
+                }
+
+                display() {
+                    p.fill(this.entropyColor);
+                    p.stroke(50);
+                    p.ellipse(this.pos.x, this.pos.y, this.radius * 2);
+                    p.fill(0);
+                    p.textAlign(p.CENTER, p.CENTER);
+                    p.textSize(16);
+                    p.text("生命", this.pos.x, this.pos.y);
+                }
+            }
+
+            class Particle {
+                constructor(isHeat = false) {
+                    this.isHeat = isHeat;
+                    this.reset();
+                }
+
+                reset() {
+                    if (this.isHeat) { // Heat particles originate from center and move outwards
+                        this.pos = p.createVector(p.width / 2, p.height / 2);
+                        this.vel = p5.Vector.random2D().mult(p.random(1,3));
+                        this.radius = 3;
+                        this.color = p.color(255, 0, 0, 150); // Red for heat
+                    } else { // Energy particles come from edges
+                        this.pos = p.createVector(p.random(p.width), p.random(p.height));
+                         if (p.random(1) < 0.5) {
+                            this.pos.x = p.random(1) < 0.5 ? 0 : p.width;
+                        } else {
+                            this.pos.y = p.random(1) < 0.5 ? 0 : p.height;
+                        }
+                        this.vel = p5.Vector.sub(p.createVector(p.width/2, p.height/2), this.pos).normalize().mult(p.random(0.5, 1.5));
+                        this.radius = 5;
+                        this.color = p.color(255, 255, 0); // Yellow for free energy
+                    }
+                }
+
+                update() {
+                    this.pos.add(this.vel);
+                    if (this.pos.x < 0 || this.pos.x > p.width || this.pos.y < 0 || this.pos.y > p.height) {
+                        if (this.isHeat) { // Remove heat particles that leave
+                           particles = particles.filter(pt => pt !== this);
+                        } else {
+                           this.reset(); // Reset energy particles
+                        }
+                    }
+                }
+
+                display() {
+                    p.noStroke();
+                    p.fill(this.color);
+                    p.ellipse(this.pos.x, this.pos.y, this.radius * 2);
+                }
+            }
+            
+            p.setup = () => {
+                const container = document.getElementById('thermoLifeCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight).parent('thermoLifeCanvasContainer');
+                lifeSystem = new LifeSystem(p.width / 2, p.height / 2, 30);
+                for (let i = 0; i < numParticles; i++) {
+                    particles.push(new Particle());
+                }
+                p.noLoop();
+                p.redraw();
+            };
+
+            p.windowResized = () => {
+                const container = document.getElementById('thermoLifeCanvasContainer');
+                p.resizeCanvas(container.offsetWidth, container.offsetHeight);
+                lifeSystem.pos = p.createVector(p.width / 2, p.height / 2);
+            };
+
+            p.draw = () => {
+                p.background(50,50,80); // Dark background for contrast
+
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let particle = particles[i];
+                    particle.update();
+                    particle.display();
+                    if (!particle.isHeat) {
+                       if (lifeSystem.consume(particle)) {
+                           // Particle consumed, already reset
+                       }
+                    }
+                }
+                
+                lifeSystem.dissipate();
+                lifeSystem.display();
+
+                // Add new energy particles if needed
+                if (p.frameCount % 60 === 0 && particles.filter(pt => !pt.isHeat).length < numParticles) {
+                    particles.push(new Particle());
+                }
+            };
+
+            p.toggleAnimation = () => {
+                playing = !playing;
+                if (playing) p.loop(); else p.noLoop();
+            };
+            
+            p.resetAnimation = () => {
+                particles = [];
+                lifeSystem = new LifeSystem(p.width / 2, p.height / 2, 30);
+                for (let i = 0; i < numParticles; i++) {
+                    particles.push(new Particle());
+                }
+                playing = false;
+                p.noLoop();
+                p.redraw();
+            };
+        };
+
+        // 动画3: 量子计算 vs. 热力学计算
+        const sketchComputeCompare = (p) => {
+            let viewQuantum = true; // true for Quantum, false for Thermodynamic
+            let quantumParticles = [];
+            let thermoParticles = [];
+            let time = 0;
+
+            p.setup = () => {
+                const container = document.getElementById('computeCompareCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight).parent('computeCompareCanvasContainer');
+                p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(16);
+                for (let i = 0; i < 20; i++) {
+                    quantumParticles.push({
+                        x: p.random(p.width * 0.1, p.width * 0.4),
+                        y: p.random(p.height * 0.2, p.height * 0.8),
+                        vx: p.random(-0.5, 0.5),
+                        vy: p.random(-0.5, 0.5),
+                        state: p.random(['0', '1', '0+1'])
+                    });
+                    thermoParticles.push({
+                        x: p.random(p.width * 0.6, p.width * 0.9),
+                        y: p.random(p.height * 0.2, p.height * 0.8),
+                        vx: p.random(-1, 1),
+                        vy: p.random(-1, 1)
+                    });
+                }
+                p.noLoop();
+                p.redraw();
+            };
+
+            p.windowResized = () => {
+                const container = document.getElementById('computeCompareCanvasContainer');
+                p.resizeCanvas(container.offsetWidth, container.offsetHeight);
+                 p.textSize(p.width / 30 > 12 ? p.width / 30 : 12);
+            };
+
+            p.draw = () => {
+                p.background(230);
+                time += 0.01;
+
+                // Quantum Computing Side
+                p.fill(0, 0, 150, 50);
+                p.rect(0, 0, p.width / 2, p.height);
+                p.fill(255);
+                p.text("量子计算", p.width * 0.25, p.height * 0.1);
+                p.textSize(p.width / 40 > 10 ? p.width / 40 : 10);
+                p.text("低温、纠错、抗噪声\n叠加、纠缠", p.width * 0.25, p.height * 0.9);
+                 p.textSize(p.width / 30 > 12 ? p.width / 30 : 12);
+
+
+                for (let qp of quantumParticles) {
+                    if (viewQuantum) {
+                        p.fill(100, 200, 255);
+                        p.ellipse(qp.x, qp.y, 15, 15);
+                        p.fill(0);
+                        p.text(qp.state, qp.x, qp.y);
+                        // Simulate noise trying to flip state (less movement)
+                        qp.x += qp.vx * 0.1 * p.sin(time + qp.x);
+                        qp.y += qp.vy * 0.1 * p.cos(time + qp.y);
+                        if (qp.x < p.width*0.05 || qp.x > p.width*0.45) qp.vx *= -1;
+                        if (qp.y < p.height*0.15 || qp.y > p.height*0.85) qp.vy *= -1;
+                    }
+                }
+                 // "Noise" particles for Quantum
+                if (viewQuantum) {
+                    for(let i=0; i<5; i++){
+                        p.fill(255,0,0, 100); // Red noise
+                        p.ellipse(p.random(p.width*0.05, p.width*0.45), p.random(p.height*0.15, p.height*0.85), 5,5);
+                    }
+                }
+
+
+                // Thermodynamic Computing Side
+                p.fill(150, 0, 0, 50);
+                p.rect(p.width / 2, 0, p.width / 2, p.height);
+                p.fill(255);
+                p.text("热力学计算", p.width * 0.75, p.height * 0.1);
+                p.textSize(p.width / 40 > 10 ? p.width / 40 : 10);
+                p.text("利用涨落、与环境交互\n噪声可能为资源", p.width * 0.75, p.height * 0.9);
+                p.textSize(p.width / 30 > 12 ? p.width / 30 : 12);
+
+                for (let tp of thermoParticles) {
+                    if (!viewQuantum) {
+                        p.fill(255, 150, 100);
+                        p.ellipse(tp.x, tp.y, 10, 10);
+                        // Simulate more chaotic movement (fluctuations)
+                        tp.x += tp.vx * (1 + p.sin(time * 2 + tp.y));
+                        tp.y += tp.vy * (1 + p.cos(time * 2 + tp.x));
+                         if (tp.x < p.width*0.55 || tp.x > p.width*0.95) tp.vx *= -1;
+                        if (tp.y < p.height*0.15 || tp.y > p.height*0.85) tp.vy *= -1;
+                    }
+                }
+                // "Fluctuation" particles for Thermo
+                if (!viewQuantum) {
+                    for(let i=0; i<15; i++){ // More fluctuations
+                        p.fill(255,200,0, 150); // Yellow fluctuations
+                        p.ellipse(p.random(p.width*0.55, p.width*0.95), p.random(p.height*0.15, p.height*0.85), p.random(3,8), p.random(3,8));
+                    }
+                }
+
+
+                if (viewQuantum) { // Highlight Quantum
+                    p.stroke(0, 255, 0); p.strokeWeight(4);
+                    p.noFill();
+                    p.rect(0, 0, p.width / 2 -2, p.height-2);
+                    p.noStroke();
+                } else { // Highlight Thermodynamic
+                    p.stroke(0, 255, 0); p.strokeWeight(4);
+                    p.noFill();
+                    p.rect(p.width / 2 + 2, 0, p.width / 2 -2 , p.height-2);
+                     p.noStroke();
+                }
+                 if(p.isLooping()) p.loop(); else p.noLoop();
+            };
+
+            p.toggleView = () => {
+                viewQuantum = !viewQuantum;
+                if (!p.isLooping()) p.loop(); // Start loop if not already
+                // Keep looping for a short duration to show animation then stop
+                setTimeout(() => { if(p.isLooping()) p.noLoop(); p.redraw(); }, 1000);
+            };
+            
+            p.resetAnimation = () => {
+                viewQuantum = true;
+                time = 0;
+                 // Reset particle positions if needed, or simply redraw
+                p.noLoop();
+                p.redraw();
+            };
+        };
+
+        // 动画4: 卡尔达肖夫指数
+        const sketchKardashev = (p) => {
+            let currentLevel = 0;
+            const levels = [
+                { name: "I型文明", desc: "利用行星能量", color: [0, 150, 255], height: 0.25 },
+                { name: "II型文明", desc: "利用恒星能量", color: [255, 200, 0], height: 0.5 },
+                { name: "III型文明", desc: "利用星系能量", color: [255, 100, 0], height: 0.75 }
+            ];
+
+            p.setup = () => {
+                const container = document.getElementById('kardashevCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight).parent('kardashevCanvasContainer');
+                p.textAlign(p.CENTER, p.CENTER);
+                p.noLoop();
+                p.redraw();
+            };
+
+            p.windowResized = () => {
+                const container = document.getElementById('kardashevCanvasContainer');
+                p.resizeCanvas(container.offsetWidth, container.offsetHeight);
+            };
+
+            p.draw = () => {
+                p.background(245);
+                let barWidth = p.width / (levels.length * 2);
+                
+                for (let i = 0; i < levels.length; i++) {
+                    if (i <= currentLevel) {
+                        p.fill(levels[i].color[0], levels[i].color[1], levels[i].color[2]);
+                    } else {
+                        p.fill(200); // Grey for unreached levels
+                    }
+                    let x = p.width * (0.25 + i * 0.25);
+                    let h = p.height * levels[i].height * ( (i <= currentLevel) ? 1 : 0.8); // Animate height
+                    p.rectMode(p.CENTER);
+                    p.rect(x, p.height - h / 2 - p.height*0.1, barWidth, h);
+                    
+                    p.fill(0);
+                    p.textSize(p.width/35 > 12 ? p.width/35 : 12);
+                    p.text(levels[i].name, x, p.height - h - p.height*0.1 - 20);
+                    if (i === currentLevel) {
+                        p.textSize(p.width/40 > 10 ? p.width/40 : 10);
+                        p.text(levels[i].desc, x, p.height * 0.1);
+                    }
+                }
+            };
+
+            p.nextLevel = () => {
+                currentLevel = (currentLevel + 1) % levels.length;
+                p.redraw();
+            };
+            
+            p.resetAnimation = () => {
+                currentLevel = 0;
+                p.redraw();
+            };
+        };
+        
+        // 动画5: 黑洞与信息
+        const sketchBlackholeInfo = (p) => {
+            let particles = [];
+            let blackhole;
+            let playing = true;
+            const numParticles = 10;
+
+            class BlackHole {
+                constructor(x, y, r) {
+                    this.pos = p.createVector(x,y);
+                    this.radius = r; // Event horizon radius
+                    this.massEffectRadius = r * 3; // Gravitational pull radius
+                }
+                display() {
+                    p.fill(0);
+                    p.ellipse(this.pos.x, this.pos.y, this.radius * 2);
+                    p.noFill();
+                    p.stroke(50,50,50,100);
+                    p.ellipse(this.pos.x, this.pos.y, this.massEffectRadius * 2); // Show gravitational influence
+                    p.noStroke();
+                }
+                attract(particle) {
+                    let force = p5.Vector.sub(this.pos, particle.pos);
+                    let distanceSq = force.magSq();
+                    if (distanceSq < (this.massEffectRadius * this.massEffectRadius)) {
+                        let G = 10; // Gravitational constant
+                        let strength = G / distanceSq;
+                        force.setMag(strength);
+                        particle.applyForce(force);
+                    }
+                }
+            }
+
+            class InfoParticle {
+                constructor() {
+                    this.pos = p.createVector(p.random(p.width), p.random(p.height*0.1, p.height*0.9));
+                    this.vel = p.createVector();
+                    this.acc = p.createVector();
+                    this.radius = 5;
+                    this.color = p.color(p.random(100,255), p.random(100,255), p.random(100,255)); // Random info color
+                    this.isAbsorbed = false;
+                    this.isRadiated = false;
+                    this.radiationTarget = p.createVector(p.random(p.width), p.random(p.height));
+                }
+
+                applyForce(force) {
+                    this.acc.add(force);
+                }
+
+                update() {
+                    if (this.isAbsorbed && !this.isRadiated) {
+                        // "Sedimented" near horizon or radiates
+                        if (p.random(1) < 0.005) { // Chance to radiate
+                            this.isRadiated = true;
+                            this.vel = p5.Vector.sub(this.radiationTarget, this.pos).normalize().mult(1);
+                            this.color = p.color(200,200,255,150); // Radiation color
+                        } else {
+                            // Jiggle near horizon
+                            this.pos.x += p.random(-0.5,0.5);
+                            this.pos.y += p.random(-0.5,0.5);
+                            let distToCenter = p.dist(this.pos.x, this.pos.y, blackhole.pos.x, blackhole.pos.y);
+                            if (distToCenter < blackhole.radius * 0.8) this.pos.add(p5.Vector.sub(this.pos, blackhole.pos).setMag(0.5)); // Push out slightly
+                        }
+                        return;
+                    }
+                    
+                    if (this.isRadiated) {
+                         this.pos.add(this.vel);
+                         if (this.pos.x < 0 || this.pos.x > p.width || this.pos.y < 0 || this.pos.y > p.height) {
+                            // Reset particle if it leaves as radiation
+                            this.constructor(); // Reinitialize
+                         }
+                         return;
+                    }
+
+
+                    this.vel.add(this.acc);
+                    this.pos.add(this.vel);
+                    this.acc.mult(0); // Reset acceleration
+
+                    let d = p.dist(this.pos.x, this.pos.y, blackhole.pos.x, blackhole.pos.y);
+                    if (d < blackhole.radius) {
+                        this.isAbsorbed = true;
+                        this.vel.mult(0); // Stop moving
+                        // Position slightly inside horizon or on it
+                        this.pos = p5.Vector.sub(this.pos, blackhole.pos).setMag(blackhole.radius * 0.9).add(blackhole.pos);
+                    }
+                }
+                display() {
+                    p.fill(this.color);
+                    p.noStroke();
+                    p.ellipse(this.pos.x, this.pos.y, this.radius * 2);
+                }
+            }
+
+            p.setup = () => {
+                const container = document.getElementById('blackholeInfoCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight).parent('blackholeInfoCanvasContainer');
+                blackhole = new BlackHole(p.width/2, p.height/2, p.width/15);
+                for(let i=0; i<numParticles; i++) {
+                    particles.push(new InfoParticle());
+                }
+                if (!playing) p.noLoop(); else p.loop(); // Initial state based on playing
+                p.redraw();
+            };
+
+            p.windowResized = () => {
+                const container = document.getElementById('blackholeInfoCanvasContainer');
+                p.resizeCanvas(container.offsetWidth, container.offsetHeight);
+                blackhole.pos = p.createVector(p.width/2, p.height/2);
+                blackhole.radius = p.width/15;
+            };
+
+            p.draw = () => {
+                p.background(30,30,30);
+                blackhole.display();
+
+                for(let particle of particles) {
+                    if (!particle.isAbsorbed) {
+                       blackhole.attract(particle);
+                    }
+                    particle.update();
+                    particle.display();
+                }
+            };
+            
+            p.toggleAnimation = () => {
+                playing = !playing;
+                if (playing) p.loop(); else p.noLoop();
+            };
+
+            p.resetAnimation = () => {
+                particles = [];
+                 for(let i=0; i<numParticles; i++) {
+                    particles.push(new InfoParticle());
+                }
+                playing = true; // Default to playing on reset
+                p.loop();
+                p.redraw();
+            };
+        };
+
+
+        // Initialize sketches
+        window.onload = () => {
+            scalesSketch = new p5(sketchScales);
+            thermoLifeSketch = new p5(sketchThermoLife);
+            computeCompareSketch = new p5(sketchComputeCompare);
+            kardashevSketch = new p5(sketchKardashev);
+            blackholeInfoSketch = new p5(sketchBlackholeInfo);
+        };
+    </script>
+</body>
+</html>
