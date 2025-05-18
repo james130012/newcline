@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自监督学习的物理逻辑解读</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+            font-size: 16pt; /* 模拟三号字体大小 */
+            line-height: 1.8;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container-a3 {
+            max-width: 1200px; /* A3宽度约为29.7cm，这里用像素模拟一个宽敞的阅读区域 */
+            min-height: 90vh; /* A3高度约为42cm */
+            margin: 20px auto;
+            padding: 40px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+            font-weight: 600;
+        }
+        h1 {
+            font-size: 2.2em;
+            text-align: center;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5em;
+        }
+        h2 {
+            font-size: 1.8em;
+        }
+        h3 {
+            font-size: 1.4em;
+        }
+        p, li {
+            text-align: justify;
+            margin-bottom: 1em;
+        }
+        ul {
+            list-style-type: disc;
+            padding-left: 30px;
+        }
+        .animation-container {
+            border: 1px solid #bdc3c7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+            background-color: #f8f9fa;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .animation-canvas {
+            display: block;
+            margin: 15px auto;
+            background-color: #ffffff;
+            border-radius: 4px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+        }
+        .controls {
+            text-align: center;
+            margin-top: 15px;
+        }
+        .controls button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+        .controls button:hover {
+            background-color: #2980b9;
+        }
+        .controls button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: inline-block;
+            color: #495057;
+            font-size: 0.95em;
+        }
+        .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .caption {
+            text-align: center;
+            font-style: italic;
+            color: #7f8c8d;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-a3">
+        <h1>自监督学习的物理逻辑解读</h1>
+
+        <section>
+            <h2>引言：探索智能的本质——学习世界如何运作</h2>
+            <p>人工智能领域的核心追求之一，是构建能够像人类和动物一样理解世界、适应环境并做出智能决策的系统。演讲者开宗明义，指出其研究的核心问题在于探寻智能体（尤其是人类和动物）学习世界运作方式的机制。这种学习，在生命早期主要通过观察完成，随后逐渐加入与环境的互动。自监督学习（Self-Supervised Learning, SSL）被认为是实现这一目标的关键途径，它使得系统能够从海量未标记数据中发现结构、理解模式，进而理解世界并可能进行规划与行动。</p>
+            <p>从物理学的视角看，宇宙万物遵循特定的规律与结构。物理学家通过观察现象、收集数据、建立模型来揭示这些规律。类似地，SSL的目标也是让机器从数据中“发现”世界的内在结构和规律，这与物理学探索自然法则的逻辑不谋而合。世界本身是结构化的、存在冗余信息的，这为SSL提供了学习的土壤。</p>
+        </section>
+
+        <div class="animation-container">
+            <h3>动画1：观察中学习 (Learning by Observation)</h3>
+            <canvas id="anim1Canvas" class="animation-canvas" width="600" height="250"></canvas>
+            <div class="controls">
+                <button id="anim1Play">播放/暂停</button>
+                <button id="anim1Reset">重置</button>
+            </div>
+            <p class="caption">模拟智能体通过观察动态环境（如物体间的简单物理交互）来学习模式。</p>
+        </div>
+
+        <section>
+            <h2>数据之辩：语言的局限与感官信息的浩瀚</h2>
+            <p>演讲者尖锐地指出，当前AI领域部分研究者对于“仅通过扩大语言模型（LLMs）就能实现人类水平AI”的观点持批判态度。他通过一个引人深思的“数量级估算”来支撑其论点：</p>
+            <ul>
+                <li>大型语言模型（LLMs）的训练数据量级约为 <span class="formula">10<sup>14</sup></span> 字节（约30万亿tokens）。人类阅读如此体量的数据，大约需要50万年。</li>
+                <li>相比之下，一个4岁儿童，在约16000小时的清醒时间内，通过视觉（视神经每秒传输约1字节数据，共约200万根视神经纤维）接收到的信息量也达到了 <span class="formula">10<sup>14</sup></span> 字节的量级，但仅需4年。</li>
+            </ul>
+            <p>这一对比强烈暗示，<span class="highlight">仅仅依赖文本信息不足以构建对世界全面的理解</span>。人类（及动物）学习到的关于世界的许多知识与语言无关，而是源于丰富的感官输入，尤其是视觉。视觉信号虽然高度冗余，但这正是SSL得以发挥作用的关键——SSL的核心在于利用数据中的冗余和结构来学习。随机信号无法学习，必须有结构可循。这如同物理学中，只有在可观测、可重复的现象中才能提炼出规律。</p>
+        </section>
+
+        <div class="animation-container">
+            <h3>动画2：信息输入量级对比 (Data Volume Comparison)</h3>
+            <canvas id="anim2Canvas" class="animation-canvas" width="600" height="300"></canvas>
+            <div class="controls">
+                <button id="anim2Play">开始对比</button>
+            </div>
+            <p class="caption">动态展示LLM通过文本学习与人类儿童通过视觉学习所处理的信息量级与时间跨度。</p>
+        </div>
+
+        <section>
+            <h2>能量模型（EBMs）：一种物理学启发的建模范式</h2>
+            <p>面对如何形式化“发现数据结构”这一问题，演讲者对传统概率密度估计方法在处理高维空间数据时的局限性表示怀疑（如归一化常数难以计算等问题，物理学家对此深有体会）。他转而推崇一种更“弱”但更灵活的方式——能量模型（Energy-Based Models, EBMs）。</p>
+            <p>EBM的核心思想是为输入变量（例如X和Y）定义一个能量函数 <span class="formula">F(X, Y)</span>。这个函数的特性是：</p>
+            <ul>
+                <li>当X和Y是“相容”或“匹配”的（即它们是数据流形上的点），能量函数 <span class="formula">F(X, Y)</span> 取<span class="highlight">低值</span>。</li>
+                <li>当X和Y是“不相容”的（即它们偏离数据流形），能量函数 <span class="formula">F(X, Y)</span> 取<span class="highlight">高值</span>。</li>
+            </ul>
+            <p>这种表述与物理学中的能量概念异曲同工。物理系统总是趋向于达到能量最低的稳定状态。EBMs借鉴了这一思想，通过学习一个能量函数来捕捉变量间的依赖关系，而非直接预测一个变量到另一个变量的函数映射（因为可能存在一对多的关系）。</p>
+            <p>在EBM框架下，<span class="highlight">推理（Inference）过程不再是简单的前向传播，而是一个搜索或优化过程</span>。例如，给定X，要推断Y，系统会搜索能使能量函数 <span class="formula">F(X, Y)</span> 最小化的Y值。如果F是连续可微的，可以使用基于梯度的优化方法。这种通过优化进行推理的方式，本质上比传统神经网络的前向计算更强大。未来的AI系统很可能需要采用这种基于搜索和推理的机制。</p>
+        </section>
+
+        <div class="animation-container">
+            <h3>动画3：能量景观与推理过程 (Energy Landscape & Inference)</h3>
+            <canvas id="anim3Canvas" class="animation-canvas" width="600" height="300"></canvas>
+            <div class="controls">
+                <button id="anim3ToggleData">显示/隐藏数据点</button>
+                <button id="anim3StartInference">开始推理</button>
+                <button id="anim3Reset">重置</button>
+            </div>
+            <p class="caption">展示一个能量表面，数据点聚集在低能量区域（“峡谷”）。动画演示一个粒子（代表推理过程）如何搜索并移动到能量最低点。</p>
+        </div>
+
+        <section>
+            <h2>训练EBMs：对比方法、正则化方法与“坍塌”问题</h2>
+            <p>训练EBMs的关键在于塑造能量函数。演讲者主要介绍了两类训练方法：</p>
+            <ol>
+                <li><strong>对比方法 (Contrastive Methods)</strong>：
+                    <ul>
+                        <li>对真实数据点（正样本），降低其能量值。</li>
+                        <li>生成一些“对比样本”或“负样本”（例如，演讲中闪烁的绿点），并提升这些负样本的能量值。</li>
+                        <li>代表性方法包括：最大似然法（配合MCMC采样负样本）、对比散度（CD）、Siamese Nets中的度量学习、CLIP等。生成对抗网络（GANs）和掩码自编码器（Masked Autoencoders, MAE）、扩散模型等也属于此类。</li>
+                        <li><span class="highlight">挑战</span>：在高维空间中，可能需要指数级数量的负样本才能有效塑造能量曲面，这使得对比方法在处理高维复杂数据时效率不高。</li>
+                    </ul>
+                </li>
+                <li><strong>正则化方法 (Regularized Methods)</strong>：
+                    <ul>
+                        <li>通过架构约束或在损失函数中加入正则项，来限制能够取得低能量值的数据区域的“体积”或“容量”。</li>
+                        <li>当降低真实数据点的能量时，由于低能量空间的容量有限，其他区域的能量自然会“被迫”升高。</li>
+                        <li>代表性方法包括：PCA、K-Means、高斯混合模型、稀疏编码、变分自编码器（VAE）、VQ-VAE、Barlow Twins、VICReg等。</li>
+                        <li>演讲者认为，对于SSL，<span class="highlight">正则化方法比对比方法更有前景</span>。</li>
+                    </ul>
+                </li>
+            </ol>
+            <p>无论是哪种方法，都需要解决一个核心问题——<span class="highlight">“坍塌”（Collapse）</span>。如果能量函数非常灵活，在训练时仅降低正样本的能量而不做其他约束，能量函数可能会学到一个处处都很低的“平坦”表面。这样的模型是无用的，因为它无法区分真实数据和非真实数据，失去了捕捉变量间依赖关系的能力。这类似于物理系统陷入一个平凡的、无结构的基态，无法展现丰富的动力学行为。许多SSL技术的核心就是防止这种坍塌。</p>
+        </section>
+
+        <div class="animation-container">
+            <h3>动画4：EBM训练方法与坍塌问题 (EBM Training & Collapse Prevention)</h3>
+            <canvas id="anim4Canvas" class="animation-canvas" width="600" height="300"></canvas>
+            <div class="controls">
+                <button id="anim4Contrastive">对比训练</button>
+                <button id="anim4Collapse">演示坍塌</button>
+                <button id="anim4Regularized">正则化训练</button>
+                <button id="anim4Reset">重置</button>
+            </div>
+            <p class="caption">模拟对比学习中正负样本能量的调整、模型坍塌的后果以及正则化方法如何维持能量表面的结构。</p>
+        </div>
+        
+        <section>
+            <h2>架构创新：联合嵌入预测架构 (JEPA)</h2>
+            <p>演讲者强调，对于图像、视频这类高维连续数据，直接使用生成式架构（Generative Architectures，即试图预测每一个像素的模型）效果不佳，因为精确预测高维信号的每一个细节极其困难，往往导致预测结果模糊（系统倾向于预测平均值）。</p>
+            <p>他提出的解决方案是<span class="highlight">联合嵌入预测架构 (Joint Embedding Predictive Architectures, JEPA)</span>。其核心思想是：</p>
+            <ul>
+                <li>将输入X通过一个编码器（Encoder）映射到一个抽象的表示空间，得到表示 <span class="formula">S<sub>X</sub></span>。</li>
+                <li>对目标Y（例如，视频的下一帧，或者X的另一个视角）也通过一个（通常是共享权重或缓慢更新权重的）编码器映射到表示 <span class="formula">S<sub>Y</sub></span>。</li>
+                <li>然后，训练一个预测器（Predictor），在<span class="highlight">表示空间</span>中从 <span class="formula">S<sub>X</sub></span> 预测 <span class="formula">S<sub>Y</sub></span>。</li>
+            </ul>
+            <p>JEPA的关键在于，它<span class="highlight">不在原始输入空间（如像素空间）进行预测，而是在更低维、更抽象的表示空间进行预测</span>。编码器可以过滤掉输入中不可预测的细节和噪声，只保留对预测有用的核心信息。这使得预测任务变得更简单、更可行。例如，预测视频中物体将如何移动的抽象概念，比预测背景中每一片树叶如何摆动要容易得多。</p>
+            <p>这种“在抽象层面进行预测”的思想，与物理学中通过建立抽象模型（如质点模型、场论模型）来描述和预测复杂系统行为的逻辑高度一致。物理学家不会试图追踪系统中每个原子的精确状态，而是关注宏观量或关键自由度的演化。</p>
+            <p>JEPA的训练也需要防止坍塌，例如通过对比损失（如Siamese Nets的早期做法）或更近期的正则化方法（如Barlow Twins, VICReg, DINO中的自蒸馏技巧等）。演讲中提到的DINO等方法，通过特定的训练技巧（如EMA更新目标编码器、多尺度裁剪增强等）在图像表示学习上取得了超越监督学习的性能，证明了JEPA类架构的巨大潜力。</p>
+        </section>
+
+        <div class="animation-container">
+            <h3>动画5：JEPA架构工作原理 (JEPA Architecture in Action)</h3>
+            <canvas id="anim5Canvas" class="animation-canvas" width="600" height="350"></canvas>
+            <div class="controls">
+                <button id="anim5Play">播放/暂停</button>
+                <button id="anim5Reset">重置</button>
+            </div>
+            <p class="caption">展示数据X和Y分别通过编码器得到表示Sx和Sy，以及预测器如何在表示空间中从Sx预测Sy。</p>
+        </div>
+
+        <section>
+            <h2>世界模型、规划与智能的未来</h2>
+            <p>JEPA架构为构建<span class="highlight">世界模型 (World Models)</span> 提供了坚实基础。世界模型能够：</p>
+            <ul>
+                <li>感知当前世界状态，并形成一个表示 <span class="formula">S<sub>current</sub></span>。</li>
+                <li>给定一个设想的动作序列 <span class="formula">A = (a<sub>1</sub>, a<sub>2</sub>, ..., a<sub>n</sub>)</span>。</li>
+                <li>预测采取该动作序列后，世界将达到的一系列未来状态的表示 <span class="formula">S<sub>future1</sub>, S<sub>future2</sub>, ...</span>。</li>
+            </ul>
+            <p>一旦拥有了这样的世界模型，智能体就可以通过<span class="highlight">规划 (Planning)</span> 来实现目标：在一个成本函数（衡量任务完成度、危险性等）的指导下，通过优化搜索，找到能够使目标最优化的动作序列。这类似于心理学中的“系统2”思维——深思熟虑、基于对行动后果的预估来做决策。</p>
+            <p>这种学习世界模型并用于规划的方法，被认为是比传统强化学习（RL）更有效率的路径。RL通常需要大量的试错，而基于模型的规划则更为数据高效。演讲者甚至直言，应尽可能减少对RL的依赖。</p>
+            <p>从物理学的角度看，建立世界模型的过程，就像科学家试图构建描述宇宙万物演化规律的理论模型（例如，牛顿力学可以预测行星运动）。一旦有了准确的模型，就可以进行预测和控制。科学的进步很大程度上依赖于找到对现象的<span class="highlight">良好表示</span>（例如，描述行星运动只需要位置和速度六个参数，而无需其颜色、温度等大量无关信息）。AI的目标也是如此：学习到对世界有用的抽象表示，并在此基础上建立预测模型。</p>
+            <p>演讲中提到，基于JEPA训练的视频模型（如VJPA），在观看包含物理上不可能发生的事件（如物体凭空消失或变形）的视频时，其预测误差会显著上升。这表明这些模型仅仅通过观察自然视频，就自发地学习到了一些关于世界运作方式的“直觉物理”知识，这非常令人振奋。</p>
+        </section>
+        
+        <div class="animation-container">
+            <h3>动画6：基于世界模型的规划 (Planning with a World Model)</h3>
+            <canvas id="anim6Canvas" class="animation-canvas" width="600" height="300"></canvas>
+            <div class="controls">
+                <button id="anim6SetGoal">设置目标</button>
+                <button id="anim6Plan">规划路径</button>
+                <button id="anim6Reset">重置</button>
+            </div>
+            <p class="caption">一个简化的网格世界，智能体使用其内部世界模型（对动作结果的预测）来规划到达目标的路径。</p>
+        </div>
+
+        <section>
+            <h2>结论与展望：走向真正的理解</h2>
+            <p>演讲者最后总结了他的核心观点和建议：</p>
+            <ul>
+                <li>放弃在高维连续数据（如图像、视频）上使用生成式模型，转而采用JEPA等联合嵌入预测架构。</li>
+                <li>放弃概率建模，拥抱能量模型的视角。</li>
+                <li>放弃（或谨慎使用）对比学习方法，优先考虑正则化方法。</li>
+                <li>尽可能减少对强化学习的依赖，用学习世界模型并进行规划来替代。</li>
+                <li>对于有志于实现人类水平AI的研究者，不应执着于扩展LLMs，而应聚焦于JEPA、自监督世界模型和规划等更有前景的方向。</li>
+            </ul>
+            <p>核心在于，智能的本质是对世界的<span class="highlight">多层次抽象表示</span>的构建和运用。正如物理学通过从量子场论到宏观物体等不同层次的抽象来理解世界一样，AI也需要发展出能够捕捉世界不同层面本质规律的表示学习方法。只有这样，机器才能真正“理解”世界，而不仅仅是模式匹配或文本生成。</p>
+        </section>
+
+    </div>
+
+    <script>
+        // General Animation State
+        let animationStates = {};
+
+        // --- Animation 1: Learning by Observation ---
+        const canvas1 = document.getElementById('anim1Canvas');
+        const ctx1 = canvas1.getContext('2d');
+        const anim1PlayBtn = document.getElementById('anim1Play');
+        const anim1ResetBtn = document.getElementById('anim1Reset');
+
+        animationStates.anim1 = {
+            particles: [],
+            agent: { x: 50, y: canvas1.height / 2, radius: 10, color: '#3498db', knowledge: 0 },
+            playing: false,
+            intervalId: null
+        };
+
+        function setupAnim1() {
+            animationStates.anim1.particles = [];
+            for (let i = 0; i < 5; i++) {
+                animationStates.anim1.particles.push({
+                    x: Math.random() * (canvas1.width - 150) + 150,
+                    y: Math.random() * canvas1.height,
+                    radius: Math.random() * 5 + 5,
+                    color: `hsl(${Math.random() * 360}, 70%, 70%)`,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    type: Math.random() > 0.5 ? 'A' : 'B' // Simple property
+                });
+            }
+            animationStates.anim1.agent.x = 50;
+            animationStates.anim1.agent.y = canvas1.height / 2;
+            animationStates.anim1.agent.knowledge = 0;
+            drawAnim1();
+        }
+
+        function drawAnim1() {
+            ctx1.clearRect(0, 0, canvas1.width, canvas1.height);
+            // Draw agent
+            ctx1.beginPath();
+            ctx1.arc(animationStates.anim1.agent.x, animationStates.anim1.agent.y, animationStates.anim1.agent.radius, 0, Math.PI * 2);
+            ctx1.fillStyle = animationStates.anim1.agent.color;
+            ctx1.fill();
+            ctx1.closePath();
+
+            // Draw particles
+            animationStates.anim1.particles.forEach(p => {
+                ctx1.beginPath();
+                ctx1.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx1.fillStyle = p.color;
+                ctx1.fill();
+                ctx1.closePath();
+
+                // Agent "observes"
+                let dist = Math.hypot(p.x - animationStates.anim1.agent.x, p.y - animationStates.anim1.agent.y);
+                if (dist < 100 && animationStates.anim1.playing) { // Observation range
+                    ctx1.beginPath();
+                    ctx1.moveTo(animationStates.anim1.agent.x, animationStates.anim1.agent.y);
+                    ctx1.lineTo(p.x, p.y);
+                    ctx1.strokeStyle = 'rgba(0,0,0,0.1)';
+                    ctx1.stroke();
+                    animationStates.anim1.agent.knowledge += 0.001; // Simulate learning
+                }
+            });
+
+            // Draw knowledge bar
+            ctx1.fillStyle = '#2ecc71';
+            ctx1.fillRect(10, canvas1.height - 30, Math.min(animationStates.anim1.agent.knowledge * 100, canvas1.width - 20), 20);
+            ctx1.strokeStyle = '#27ae60';
+            ctx1.strokeRect(10, canvas1.height - 30, canvas1.width - 20, 20);
+            ctx1.fillStyle = '#000';
+            ctx1.fillText(`Knowledge: ${Math.round(animationStates.anim1.agent.knowledge * 100)}%`, 15, canvas1.height - 15);
+        }
+
+        function updateAnim1() {
+            if (!animationStates.anim1.playing) return;
+            animationStates.anim1.particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x + p.radius > canvas1.width || p.x - p.radius < 150) p.vx *= -1; // Keep particles in observation zone
+                if (p.y + p.radius > canvas1.height || p.y - p.radius < 0) p.vy *= -1;
+            });
+            if (animationStates.anim1.agent.knowledge < (canvas1.width - 20)/100) {
+                 // Agent can move a bit too
+                animationStates.anim1.agent.y += (Math.random() - 0.5) * 1;
+                if(animationStates.anim1.agent.y < 0) animationStates.anim1.agent.y = 0;
+                if(animationStates.anim1.agent.y > canvas1.height) animationStates.anim1.agent.y = canvas1.height;
+            } else {
+                animationStates.anim1.playing = false; // Stop when "full"
+                clearInterval(animationStates.anim1.intervalId);
+                animationStates.anim1.intervalId = null;
+                anim1PlayBtn.textContent = "播放";
+            }
+            drawAnim1();
+        }
+
+        anim1PlayBtn.addEventListener('click', () => {
+            animationStates.anim1.playing = !animationStates.anim1.playing;
+            anim1PlayBtn.textContent = animationStates.anim1.playing ? "暂停" : "播放";
+            if (animationStates.anim1.playing && !animationStates.anim1.intervalId) {
+                if (animationStates.anim1.agent.knowledge >= (canvas1.width - 20)/100) setupAnim1(); // Reset if full
+                animationStates.anim1.intervalId = setInterval(updateAnim1, 50);
+            } else if (!animationStates.anim1.playing && animationStates.anim1.intervalId) {
+                clearInterval(animationStates.anim1.intervalId);
+                animationStates.anim1.intervalId = null;
+            }
+        });
+        anim1ResetBtn.addEventListener('click', () => {
+            animationStates.anim1.playing = false;
+            anim1PlayBtn.textContent = "播放";
+            if (animationStates.anim1.intervalId) clearInterval(animationStates.anim1.intervalId);
+            animationStates.anim1.intervalId = null;
+            setupAnim1();
+        });
+        setupAnim1();
+
+
+        // --- Animation 2: Data Volume Comparison ---
+        const canvas2 = document.getElementById('anim2Canvas');
+        const ctx2 = canvas2.getContext('2d');
+        const anim2PlayBtn = document.getElementById('anim2Play');
+
+        animationStates.anim2 = {
+            llmBytes: 0,
+            humanBytes: 0,
+            targetBytes: 100, // Arbitrary scale for visualization
+            llmTime: 0, // in arbitrary units for animation
+            humanTime: 0,
+            llmTimeToFull: 500, // represents 500k years
+            humanTimeToFull: 4,   // represents 4 years
+            playing: false,
+            animationFrameId: null
+        };
+
+        function drawAnim2() {
+            ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+            const barWidth = 50;
+            const spacing = 100;
+            const baseX = 150;
+            const baseY = canvas2.height - 50;
+            const maxHeight = canvas2.height - 100;
+
+            // LLM Bar
+            const llmHeight = (animationStates.anim2.llmBytes / animationStates.anim2.targetBytes) * maxHeight;
+            ctx2.fillStyle = '#e74c3c';
+            ctx2.fillRect(baseX, baseY - llmHeight, barWidth, llmHeight);
+            ctx2.fillStyle = '#000';
+            ctx2.textAlign = 'center';
+            ctx2.fillText('LLM (Text)', baseX + barWidth / 2, baseY + 20);
+            ctx2.fillText(`${(animationStates.anim2.llmBytes / animationStates.anim2.targetBytes * 100).toFixed(0)}%`, baseX + barWidth / 2, baseY - llmHeight - 5);
+            ctx2.fillText(`Time: ${(animationStates.anim2.llmTime / animationStates.anim2.llmTimeToFull * 500000).toFixed(0)} yrs`, baseX + barWidth / 2, baseY + 40);
+
+
+            // Human Bar
+            const humanHeight = (animationStates.anim2.humanBytes / animationStates.anim2.targetBytes) * maxHeight;
+            ctx2.fillStyle = '#2ecc71';
+            ctx2.fillRect(baseX + spacing, baseY - humanHeight, barWidth, humanHeight);
+            ctx2.fillStyle = '#000';
+            ctx2.fillText('Human (Vision)', baseX + spacing + barWidth / 2, baseY + 20);
+            ctx2.fillText(`${(animationStates.anim2.humanBytes / animationStates.anim2.targetBytes * 100).toFixed(0)}%`, baseX + spacing + barWidth / 2, baseY - humanHeight - 5);
+            ctx2.fillText(`Time: ${(animationStates.anim2.humanTime).toFixed(1)} yrs`, baseX + spacing + barWidth / 2, baseY + 40);
+
+            // Target Line (10^14 Bytes)
+            ctx2.beginPath();
+            ctx2.moveTo(baseX - 20, baseY - maxHeight);
+            ctx2.lineTo(baseX + spacing + barWidth + 20, baseY - maxHeight);
+            ctx2.strokeStyle = '#7f8c8d';
+            ctx2.setLineDash([5, 5]);
+            ctx2.stroke();
+            ctx2.setLineDash([]);
+            ctx2.fillStyle = '#7f8c8d';
+            ctx2.textAlign = 'left';
+            ctx2.fillText('~10^14 Bytes Target', baseX + spacing + barWidth + 25, baseY - maxHeight + 5);
+        }
+
+        function updateAnim2() {
+            let progressMade = false;
+            if (animationStates.anim2.llmBytes < animationStates.anim2.targetBytes) {
+                animationStates.anim2.llmBytes += animationStates.anim2.targetBytes / animationStates.anim2.llmTimeToFull; // Slower
+                animationStates.anim2.llmTime += 1;
+                progressMade = true;
+            }
+            if (animationStates.anim2.humanBytes < animationStates.anim2.targetBytes) {
+                animationStates.anim2.humanBytes += animationStates.anim2.targetBytes / animationStates.anim2.humanTimeToFull; // Faster
+                animationStates.anim2.humanTime += animationStates.anim2.humanTimeToFull / animationStates.anim2.humanTimeToFull * (4/500); // Scale time correctly
+                progressMade = true;
+            }
+
+            animationStates.anim2.llmBytes = Math.min(animationStates.anim2.llmBytes, animationStates.anim2.targetBytes);
+            animationStates.anim2.humanBytes = Math.min(animationStates.anim2.humanBytes, animationStates.anim2.targetBytes);
+            
+            drawAnim2();
+
+            if (progressMade && animationStates.anim2.playing) {
+                animationStates.anim2.animationFrameId = requestAnimationFrame(updateAnim2);
+            } else {
+                animationStates.anim2.playing = false;
+                anim2PlayBtn.disabled = false;
+            }
+        }
+
+        anim2PlayBtn.addEventListener('click', () => {
+            if (animationStates.anim2.playing) return;
+            animationStates.anim2.llmBytes = 0;
+            animationStates.anim2.humanBytes = 0;
+            animationStates.anim2.llmTime = 0;
+            animationStates.anim2.humanTime = 0;
+            animationStates.anim2.playing = true;
+            anim2PlayBtn.disabled = true;
+            if(animationStates.anim2.animationFrameId) cancelAnimationFrame(animationStates.anim2.animationFrameId);
+            updateAnim2();
+        });
+        drawAnim2(); // Initial draw
+
+        // --- Animation 3: Energy Landscape & Inference ---
+        const canvas3 = document.getElementById('anim3Canvas');
+        const ctx3 = canvas3.getContext('2d');
+        const anim3ToggleDataBtn = document.getElementById('anim3ToggleData');
+        const anim3StartInferenceBtn = document.getElementById('anim3StartInference');
+        const anim3ResetBtn = document.getElementById('anim3Reset');
+
+        animationStates.anim3 = {
+            showData: true,
+            inferring: false,
+            particle: { x: 50, y: 50, trail: [] },
+            dataPoints: [],
+            animationFrameId: null
+        };
+
+        // Simple 2D energy function: sum of Gaussians (inverted for valleys)
+        function energyFunc(x, y) {
+            const peaks = [
+                { x: canvas3.width * 0.3, y: canvas3.height * 0.5, h: -100, sx: 50, sy: 50 },
+                { x: canvas3.width * 0.7, y: canvas3.height * 0.4, h: -80, sx: 70, sy: 40 },
+                { x: canvas3.width * 0.5, y: canvas3.height * 0.8, h: -60, sx: 40, sy: 60 }
+            ];
+            let totalEnergy = 50; // Base energy
+            peaks.forEach(p => {
+                totalEnergy += p.h * Math.exp(-((x - p.x) ** 2 / (2 * p.sx ** 2) + (y - p.y) ** 2 / (2 * p.sy ** 2)));
+            });
+            return totalEnergy;
+        }
+        
+        function gradientEnergyFunc(x, y) {
+            const eps = 0.1;
+            const gx = (energyFunc(x + eps, y) - energyFunc(x - eps, y)) / (2 * eps);
+            const gy = (energyFunc(x, y + eps) - energyFunc(x, y - eps)) / (2 * eps);
+            return { gx, gy };
+        }
+
+        function setupAnim3() {
+            animationStates.anim3.dataPoints = [];
+            for (let i = 0; i < 50; i++) {
+                // Sample points near low energy regions
+                let px, py, e;
+                do {
+                    px = Math.random() * canvas3.width;
+                    py = Math.random() * canvas3.height;
+                    e = energyFunc(px, py);
+                } while (e > -10); // Sample in lower energy regions
+                animationStates.anim3.dataPoints.push({ x: px, y: py });
+            }
+            animationStates.anim3.particle = { x: Math.random()*100 + 20, y: Math.random()*100+20, trail: [] };
+            animationStates.anim3.inferring = false;
+            anim3StartInferenceBtn.disabled = false;
+            drawAnim3();
+        }
+
+        function drawAnim3() {
+            ctx3.clearRect(0, 0, canvas3.width, canvas3.height);
+
+            // Draw energy landscape (simple heatmap)
+            const gridSize = 10;
+            for (let i = 0; i < canvas3.width; i += gridSize) {
+                for (let j = 0; j < canvas3.height; j += gridSize) {
+                    const e = energyFunc(i + gridSize / 2, j + gridSize / 2);
+                    const intensity = Math.max(0, Math.min(1, (e + 100) / 150)); // Normalize roughly
+                    ctx3.fillStyle = `rgb(${intensity * 200 + 55}, ${255 - intensity * 150}, ${255 - intensity * 200})`;
+                    ctx3.fillRect(i, j, gridSize, gridSize);
+                }
+            }
+
+            // Draw data points
+            if (animationStates.anim3.showData) {
+                ctx3.fillStyle = 'rgba(0,0,0,0.7)';
+                animationStates.anim3.dataPoints.forEach(p => {
+                    ctx3.beginPath();
+                    ctx3.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                    ctx3.fill();
+                });
+            }
+
+            // Draw particle and trail
+            ctx3.strokeStyle = '#e74c3c';
+            ctx3.lineWidth = 2;
+            ctx3.beginPath();
+            animationStates.anim3.particle.trail.forEach((p, index) => {
+                if (index === 0) ctx3.moveTo(p.x, p.y);
+                else ctx3.lineTo(p.x, p.y);
+            });
+            ctx3.stroke();
+            ctx3.lineWidth = 1;
+
+            ctx3.beginPath();
+            ctx3.arc(animationStates.anim3.particle.x, animationStates.anim3.particle.y, 5, 0, Math.PI * 2);
+            ctx3.fillStyle = '#e74c3c';
+            ctx3.fill();
+            ctx3.strokeStyle = '#c0392b';
+            ctx3.stroke();
+        }
+
+        function updateAnim3() {
+            if (!animationStates.anim3.inferring) return;
+
+            const { gx, gy } = gradientEnergyFunc(animationStates.anim3.particle.x, animationStates.anim3.particle.y);
+            const stepSize = 1;
+            animationStates.anim3.particle.trail.push({ x: animationStates.anim3.particle.x, y: animationStates.anim3.particle.y });
+            if(animationStates.anim3.particle.trail.length > 100) animationStates.anim3.particle.trail.shift();
+
+            animationStates.anim3.particle.x -= stepSize * gx;
+            animationStates.anim3.particle.y -= stepSize * gy;
+            
+            // Boundary checks
+            animationStates.anim3.particle.x = Math.max(0, Math.min(canvas3.width, animationStates.anim3.particle.x));
+            animationStates.anim3.particle.y = Math.max(0, Math.min(canvas3.height, animationStates.anim3.particle.y));
+
+            drawAnim3();
+
+            if (Math.abs(gx) < 0.1 && Math.abs(gy) < 0.1 || animationStates.anim3.particle.trail.length >= 100) { // Converged or max steps
+                animationStates.anim3.inferring = false;
+                anim3StartInferenceBtn.disabled = false;
+            } else {
+                animationStates.anim3.animationFrameId = requestAnimationFrame(updateAnim3);
+            }
+        }
+
+        anim3ToggleDataBtn.addEventListener('click', () => {
+            animationStates.anim3.showData = !animationStates.anim3.showData;
+            drawAnim3();
+        });
+        anim3StartInferenceBtn.addEventListener('click', () => {
+            if (animationStates.anim3.inferring) return;
+            animationStates.anim3.particle.trail = [];
+            animationStates.anim3.particle.x = Math.random()*canvas3.width * 0.2; // Start from a corner
+            animationStates.anim3.particle.y = Math.random()*canvas3.height * 0.2;
+            animationStates.anim3.inferring = true;
+            anim3StartInferenceBtn.disabled = true;
+            if(animationStates.anim3.animationFrameId) cancelAnimationFrame(animationStates.anim3.animationFrameId);
+            updateAnim3();
+        });
+        anim3ResetBtn.addEventListener('click', () => {
+            animationStates.anim3.inferring = false;
+            if(animationStates.anim3.animationFrameId) cancelAnimationFrame(animationStates.anim3.animationFrameId);
+            setupAnim3();
+        });
+        setupAnim3();
+
+        // --- Animation 4: EBM Training & Collapse Prevention ---
+        const canvas4 = document.getElementById('anim4Canvas');
+        const ctx4 = canvas4.getContext('2d');
+        // Buttons
+        const anim4ContrastiveBtn = document.getElementById('anim4Contrastive');
+        const anim4CollapseBtn = document.getElementById('anim4Collapse');
+        const anim4RegularizedBtn = document.getElementById('anim4Regularized');
+        const anim4ResetBtn = document.getElementById('anim4Reset');
+
+        animationStates.anim4 = {
+            mode: 'initial', // 'initial', 'contrastive', 'collapse', 'regularized'
+            energySurface: [], // Array of y-values for a 1D energy surface
+            dataPoints: [{x: canvas4.width * 0.3, energy: 50}, {x: canvas4.width * 0.7, energy: 50}],
+            contrastivePoints: [],
+            animationFrameId: null,
+            iteration: 0,
+            maxIterations: 100
+        };
+
+        function initializeEnergySurface(baseLevel = 150, complexity = 0.1) {
+            animationStates.anim4.energySurface = [];
+            for (let x = 0; x < canvas4.width; x++) {
+                animationStates.anim4.energySurface.push(baseLevel - Math.sin(x * complexity) * 30 - Math.cos(x * complexity * 0.5) * 20);
+            }
+        }
+        
+        function setupAnim4() {
+            animationStates.anim4.mode = 'initial';
+            animationStates.anim4.iteration = 0;
+            initializeEnergySurface();
+            animationStates.anim4.dataPoints = [{x: canvas4.width * 0.3, energy: 50, targetEnergy: 30}, {x: canvas4.width * 0.7, energy: 50, targetEnergy: 30}];
+            animationStates.anim4.contrastivePoints = [];
+            if(animationStates.anim4.animationFrameId) cancelAnimationFrame(animationStates.anim4.animationFrameId);
+            drawAnim4();
+        }
+
+        function drawAnim4() {
+            ctx4.clearRect(0, 0, canvas4.width, canvas4.height);
+            
+            // Draw energy surface
+            ctx4.beginPath();
+            ctx4.moveTo(0, animationStates.anim4.energySurface[0]);
+            for (let x = 1; x < canvas4.width; x++) {
+                ctx4.lineTo(x, animationStates.anim4.energySurface[x]);
+            }
+            ctx4.strokeStyle = '#3498db';
+            ctx4.lineWidth = 2;
+            ctx4.stroke();
+            ctx4.lineTo(canvas4.width, canvas4.height);
+            ctx4.lineTo(0, canvas4.height);
+            ctx4.closePath();
+            ctx4.fillStyle = 'rgba(52, 152, 219, 0.1)';
+            ctx4.fill();
+            ctx4.lineWidth = 1;
+
+            // Draw data points (positive)
+            ctx4.fillStyle = '#2ecc71'; // Green for positive
+            animationStates.anim4.dataPoints.forEach(p => {
+                ctx4.beginPath();
+                ctx4.arc(p.x, animationStates.anim4.energySurface[Math.floor(p.x)], 5, 0, Math.PI * 2);
+                ctx4.fill();
+            });
+
+            // Draw contrastive points (negative)
+            if (animationStates.anim4.mode === 'contrastive' || animationStates.anim4.mode === 'regularized_show_contrast') {
+                 ctx4.fillStyle = '#e74c3c'; // Red for negative
+                 animationStates.anim4.contrastivePoints.forEach(p => {
+                    ctx4.beginPath();
+                    ctx4.arc(p.x, animationStates.anim4.energySurface[Math.floor(p.x)], 4, 0, Math.PI * 2);
+                    ctx4.fill();
+                });
+            }
+            
+            ctx4.fillStyle = '#000';
+            ctx4.textAlign = 'center';
+            ctx4.fillText(`Mode: ${animationStates.anim4.mode} | Iteration: ${animationStates.anim4.iteration}`, canvas4.width/2, 20);
+        }
+
+        function updateAnim4() {
+            if (animationStates.anim4.iteration >= animationStates.anim4.maxIterations) {
+                animationStates.anim4.mode = 'finished_' + animationStates.anim4.mode;
+                drawAnim4();
+                return;
+            }
+
+            const lr = 0.5; // Learning rate for energy surface modification
+
+            if (animationStates.anim4.mode === 'contrastive') {
+                // Push down energy for data points
+                animationStates.anim4.dataPoints.forEach(dp => {
+                    const currentEnergy = animationStates.anim4.energySurface[Math.floor(dp.x)];
+                    const error = currentEnergy - dp.targetEnergy; // Target lower energy
+                    animationStates.anim4.energySurface[Math.floor(dp.x)] -= lr * error * 0.1; // Push down
+                     // Smoothly affect neighbors
+                    for(let i = -10; i <= 10; i++) {
+                        let nx = Math.floor(dp.x) + i;
+                        if(nx >= 0 && nx < canvas4.width) {
+                            animationStates.anim4.energySurface[nx] -= lr * error * 0.1 * Math.exp(- (i*i) / 20);
+                        }
+                    }
+                });
+
+                // Generate contrastive points and push their energy up
+                if (animationStates.anim4.iteration % 10 === 0) { // Add new contrastive points periodically
+                    animationStates.anim4.contrastivePoints = [];
+                    for(let i=0; i<3; i++) {
+                         let cx = Math.random() * canvas4.width;
+                         // Avoid being too close to data points
+                         if (animationStates.anim4.dataPoints.some(dp => Math.abs(dp.x - cx) < 50)) continue;
+                         animationStates.anim4.contrastivePoints.push({x: cx, targetEnergy: 200}); // Target higher energy
+                    }
+                }
+                animationStates.anim4.contrastivePoints.forEach(cp => {
+                    const currentEnergy = animationStates.anim4.energySurface[Math.floor(cp.x)];
+                    const error = cp.targetEnergy - currentEnergy; // Target higher energy
+                    animationStates.anim4.energySurface[Math.floor(cp.x)] += lr * error * 0.05; // Push up
+                    for(let i = -10; i <= 10; i++) {
+                        let nx = Math.floor(cp.x) + i;
+                        if(nx >= 0 && nx < canvas4.width) {
+                            animationStates.anim4.energySurface[nx] += lr * error * 0.05 * Math.exp(- (i*i) / 20);
+                        }
+                    }
+                });
+
+            } else if (animationStates.anim4.mode === 'collapse') {
+                // Simulate collapse: push down energy for data points, but no push up for others
+                // This leads to overall flattening if not careful
+                animationStates.anim4.dataPoints.forEach(dp => {
+                    const currentEnergy = animationStates.anim4.energySurface[Math.floor(dp.x)];
+                    const error = currentEnergy - dp.targetEnergy;
+                    animationStates.anim4.energySurface[Math.floor(dp.x)] -= lr * error * 0.1;
+                     for(let i = -10; i <= 10; i++) { // Wider effect for collapse demo
+                        let nx = Math.floor(dp.x) + i;
+                        if(nx >= 0 && nx < canvas4.width) {
+                            animationStates.anim4.energySurface[nx] -= lr * error * 0.1 * Math.exp(- (i*i) / 50);
+                        }
+                    }
+                });
+                // And a general downward pull to simulate collapse
+                for(let x=0; x < canvas4.width; x++) {
+                    animationStates.anim4.energySurface[x] -= 0.1; 
+                    if (animationStates.anim4.energySurface[x] < 10) animationStates.anim4.energySurface[x] = 10; // Floor
+                }
+
+
+            } else if (animationStates.anim4.mode === 'regularized') {
+                // Push down energy for data points
+                animationStates.anim4.dataPoints.forEach(dp => {
+                    const currentEnergy = animationStates.anim4.energySurface[Math.floor(dp.x)];
+                    const error = currentEnergy - dp.targetEnergy;
+                    animationStates.anim4.energySurface[Math.floor(dp.x)] -= lr * error * 0.1;
+                     for(let i = -10; i <= 10; i++) {
+                        let nx = Math.floor(dp.x) + i;
+                        if(nx >= 0 && nx < canvas4.width) {
+                            animationStates.anim4.energySurface[nx] -= lr * error * 0.1 * Math.exp(- (i*i) / 20);
+                        }
+                    }
+                });
+                // Regularization: implicitly push up other areas by limiting low-energy volume
+                // Simplified: maintain average energy or penalize too much low energy
+                let totalEnergy = 0;
+                for(let x=0; x < canvas4.width; x++) totalEnergy += animationStates.anim4.energySurface[x];
+                let avgEnergy = totalEnergy / canvas4.width;
+                const targetAvgEnergy = 120; // Try to keep average energy around this
+                if (avgEnergy < targetAvgEnergy) {
+                    for(let x=0; x < canvas4.width; x++) {
+                        // Don't push up where data points are
+                        if (!animationStates.anim4.dataPoints.some(dp => Math.abs(dp.x - x) < 15)) {
+                             animationStates.anim4.energySurface[x] += (targetAvgEnergy - avgEnergy) * 0.001;
+                        }
+                    }
+                }
+            }
+            
+            // Ensure surface doesn't go too low or too high
+            for(let x=0; x < canvas4.width; x++) {
+                 animationStates.anim4.energySurface[x] = Math.max(10, Math.min(canvas4.height - 10, animationStates.anim4.energySurface[x]));
+            }
+
+            animationStates.anim4.iteration++;
+            drawAnim4();
+            animationStates.anim4.animationFrameId = requestAnimationFrame(updateAnim4);
+        }
+        
+        function startAnim4Mode(mode) {
+            setupAnim4(); // Reset to initial state but keep mode
+            animationStates.anim4.mode = mode;
+            animationStates.anim4.iteration = 0;
+            if(animationStates.anim4.animationFrameId) cancelAnimationFrame(animationStates.anim4.animationFrameId);
+            updateAnim4();
+        }
+
+        anim4ContrastiveBtn.addEventListener('click', () => startAnim4Mode('contrastive'));
+        anim4CollapseBtn.addEventListener('click', () => startAnim4Mode('collapse'));
+        anim4RegularizedBtn.addEventListener('click', () => startAnim4Mode('regularized'));
+        anim4ResetBtn.addEventListener('click', () => setupAnim4());
+        setupAnim4();
+
+        // --- Animation 5: JEPA Architecture ---
+        const canvas5 = document.getElementById('anim5Canvas');
+        const ctx5 = canvas5.getContext('2d');
+        const anim5PlayBtn = document.getElementById('anim5Play');
+        const anim5ResetBtn = document.getElementById('anim5Reset');
+
+        animationStates.anim5 = {
+            playing: false,
+            progress: 0, // 0 to 100
+            intervalId: null,
+            elements: {
+                inputX: { x: 50, y: 100, w: 80, h: 50, label: "Input X (e.g., Video Frame t)" },
+                inputY: { x: 50, y: 250, w: 80, h: 50, label: "Input Y (e.g., Frame t+1)" },
+                encoderX: { x: 180, y: 100, w: 100, h: 50, label: "Encoder E_x" },
+                encoderY: { x: 180, y: 250, w: 100, h: 50, label: "Encoder E_y (target)" },
+                reprSX: { x: 330, y: 100, w: 80, h: 40, label: "S_x" },
+                reprSY: { x: 330, y: 250, w: 80, h: 40, label: "S_y" },
+                predictor: { x: 460, y: 100, w: 100, h: 50, label: "Predictor P" },
+                predSYhat: { x: 460, y: 200, w: 80, h: 40, label: "S_y_hat (Predicted)" },
+                loss: { x: 460, y: 275, label: "Loss(S_y, S_y_hat)"}
+            }
+        };
+        
+        function drawBox(ctx, el, color = '#3498db') {
+            ctx.fillStyle = color;
+            ctx.fillRect(el.x, el.y - el.h/2, el.w, el.h);
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            ctx.font = '10px Arial';
+            const words = el.label.split(' ');
+            let line = '';
+            let yPos = el.y - (words.length > 2 ? 5 : 0); // Adjust for multi-line
+            for(let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                if (ctx.measureText(testLine).width > el.w - 10 && n > 0) {
+                    ctx.fillText(line, el.x + el.w/2, yPos);
+                    line = words[n] + ' ';
+                    yPos += 10;
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line, el.x + el.w/2, yPos);
+            ctx.font = '16pt "PingFang SC"'; // Reset font
+        }
+
+        function drawArrow(ctx, fromEl, toEl, progress, stageStart, stageEnd) {
+            if (progress < stageStart) return;
+            const currentProgress = Math.min(1, (progress - stageStart) / (stageEnd - stageStart));
+            
+            const x1 = fromEl.x + fromEl.w;
+            const y1 = fromEl.y;
+            const x2 = toEl.x;
+            const y2 = toEl.y;
+
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            
+            const currentX = x1 + dx * currentProgress;
+            const currentY = y1 + dy * currentProgress;
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(currentX, currentY);
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            if (currentProgress >= 1) { // Draw arrowhead if complete
+                const angle = Math.atan2(dy, dx);
+                ctx.beginPath();
+                ctx.moveTo(currentX, currentY);
+                ctx.lineTo(currentX - 10 * Math.cos(angle - Math.PI / 6), currentY - 10 * Math.sin(angle - Math.PI / 6));
+                ctx.lineTo(currentX - 10 * Math.cos(angle + Math.PI / 6), currentY - 10 * Math.sin(angle + Math.PI / 6));
+                ctx.closePath();
+                ctx.fillStyle = '#2c3e50';
+                ctx.fill();
+            }
+        }
+
+        function drawAnim5() {
+            ctx5.clearRect(0, 0, canvas5.width, canvas5.height);
+            const els = animationStates.anim5.elements;
+            const p = animationStates.anim5.progress;
+
+            // Draw boxes
+            drawBox(ctx5, els.inputX, p >= 0 ? '#3498db' : '#bdc3c7');
+            drawBox(ctx5, els.inputY, p >= 0 ? '#3498db' : '#bdc3c7');
+            drawBox(ctx5, els.encoderX, p >= 10 ? '#2ecc71' : '#bdc3c7');
+            drawBox(ctx5, els.encoderY, p >= 10 ? '#2ecc71' : '#bdc3c7');
+            drawBox(ctx5, els.reprSX, p >= 30 ? '#9b59b6' : '#bdc3c7');
+            drawBox(ctx5, els.reprSY, p >= 30 ? '#9b59b6' : '#bdc3c7');
+            drawBox(ctx5, els.predictor, p >= 50 ? '#f1c40f' : '#bdc3c7');
+            drawBox(ctx5, els.predSYhat, p >= 70 ? '#e67e22' : '#bdc3c7');
+
+            // Draw arrows based on progress
+            drawArrow(ctx5, els.inputX, els.encoderX, p, 0, 10);
+            drawArrow(ctx5, els.inputY, els.encoderY, p, 0, 10);
+            drawArrow(ctx5, els.encoderX, els.reprSX, p, 10, 30);
+            drawArrow(ctx5, els.encoderY, els.reprSY, p, 10, 30);
+            drawArrow(ctx5, els.reprSX, els.predictor, p, 30, 50);
+            drawArrow(ctx5, els.predictor, els.predSYhat, p, 50, 70);
+
+            // Loss connection
+            if (p >= 80) {
+                ctx5.beginPath();
+                ctx5.moveTo(els.reprSY.x + els.reprSY.w / 2, els.reprSY.y + els.reprSY.h / 2);
+                ctx5.lineTo(els.loss.x - 20, els.loss.y);
+                ctx5.moveTo(els.predSYhat.x + els.predSYhat.w / 2, els.predSYhat.y + els.predSYhat.h / 2);
+                ctx5.lineTo(els.loss.x - 20, els.loss.y);
+                ctx5.strokeStyle = '#e74c3c';
+                ctx5.stroke();
+                
+                ctx5.fillStyle = '#e74c3c';
+                ctx5.textAlign = 'center';
+                ctx5.font = '12px Arial';
+                ctx5.fillText(els.loss.label, els.loss.x + 20, els.loss.y + 5);
+                ctx5.font = '16pt "PingFang SC"';
+            }
+        }
+
+        function updateAnim5() {
+            if (!animationStates.anim5.playing) return;
+            animationStates.anim5.progress += 1;
+            if (animationStates.anim5.progress > 100) {
+                animationStates.anim5.progress = 100;
+                animationStates.anim5.playing = false;
+                anim5PlayBtn.textContent = "播放";
+                clearInterval(animationStates.anim5.intervalId);
+                animationStates.anim5.intervalId = null;
+            }
+            drawAnim5();
+        }
+        
+        anim5PlayBtn.addEventListener('click', () => {
+            animationStates.anim5.playing = !animationStates.anim5.playing;
+            anim5PlayBtn.textContent = animationStates.anim5.playing ? "暂停" : "播放";
+            if (animationStates.anim5.playing && !animationStates.anim5.intervalId) {
+                 if (animationStates.anim5.progress >= 100) animationStates.anim5.progress = 0; // Restart if finished
+                animationStates.anim5.intervalId = setInterval(updateAnim5, 100);
+            } else if (!animationStates.anim5.playing && animationStates.anim5.intervalId) {
+                clearInterval(animationStates.anim5.intervalId);
+                animationStates.anim5.intervalId = null;
+            }
+        });
+        anim5ResetBtn.addEventListener('click', () => {
+            animationStates.anim5.playing = false;
+            anim5PlayBtn.textContent = "播放";
+            if (animationStates.anim5.intervalId) clearInterval(animationStates.anim5.intervalId);
+            animationStates.anim5.intervalId = null;
+            animationStates.anim5.progress = 0;
+            drawAnim5();
+        });
+        drawAnim5(); // Initial draw
+
+        // --- Animation 6: Planning with a World Model ---
+        const canvas6 = document.getElementById('anim6Canvas');
+        const ctx6 = canvas6.getContext('2d');
+        const anim6SetGoalBtn = document.getElementById('anim6SetGoal');
+        const anim6PlanBtn = document.getElementById('anim6Plan');
+        const anim6ResetBtn = document.getElementById('anim6Reset');
+
+        const GRID_SIZE_6 = 40;
+        const COLS_6 = Math.floor(canvas6.width / GRID_SIZE_6);
+        const ROWS_6 = Math.floor(canvas6.height / GRID_SIZE_6);
+
+        animationStates.anim6 = {
+            grid: [],
+            agent: { r: 0, c: 0 },
+            goal: { r: ROWS_6 - 1, c: COLS_6 - 1 },
+            path: [],
+            planning: false,
+            executing: false,
+            pathIndex: 0,
+            animationFrameId: null
+        };
+
+        function setupAnim6() {
+            animationStates.anim6.grid = [];
+            for (let r = 0; r < ROWS_6; r++) {
+                animationStates.anim6.grid[r] = [];
+                for (let c = 0; c < COLS_6; c++) {
+                    // 0: empty, 1: obstacle
+                    animationStates.anim6.grid[r][c] = (Math.random() < 0.2 && !(r === 0 && c === 0) && !(r === ROWS_6 -1 && c === COLS_6 -1)) ? 1 : 0;
+                }
+            }
+            animationStates.anim6.agent = { r: 0, c: 0 };
+            animationStates.anim6.goal = { r: ROWS_6 - 1, c: COLS_6 - 1 };
+            animationStates.anim6.path = [];
+            animationStates.anim6.planning = false;
+            animationStates.anim6.executing = false;
+            animationStates.anim6.pathIndex = 0;
+            anim6PlanBtn.disabled = false;
+            if(animationStates.anim6.animationFrameId) cancelAnimationFrame(animationStates.anim6.animationFrameId);
+            drawAnim6();
+        }
+
+        function drawAnim6() {
+            ctx6.clearRect(0, 0, canvas6.width, canvas6.height);
+            for (let r = 0; r < ROWS_6; r++) {
+                for (let c = 0; c < COLS_6; c++) {
+                    ctx6.strokeRect(c * GRID_SIZE_6, r * GRID_SIZE_6, GRID_SIZE_6, GRID_SIZE_6);
+                    if (animationStates.anim6.grid[r][c] === 1) {
+                        ctx6.fillStyle = '#7f8c8d'; // Obstacle
+                        ctx6.fillRect(c * GRID_SIZE_6, r * GRID_SIZE_6, GRID_SIZE_6, GRID_SIZE_6);
+                    }
+                }
+            }
+
+            // Draw Goal
+            ctx6.fillStyle = '#e74c3c'; // Goal
+            ctx6.fillRect(animationStates.anim6.goal.c * GRID_SIZE_6 + 5, animationStates.anim6.goal.r * GRID_SIZE_6 + 5, GRID_SIZE_6 - 10, GRID_SIZE_6 - 10);
+
+            // Draw Agent
+            ctx6.fillStyle = '#3498db'; // Agent
+            ctx6.beginPath();
+            ctx6.arc(animationStates.anim6.agent.c * GRID_SIZE_6 + GRID_SIZE_6 / 2, animationStates.anim6.agent.r * GRID_SIZE_6 + GRID_SIZE_6 / 2, GRID_SIZE_6 / 2 - 5, 0, Math.PI * 2);
+            ctx6.fill();
+
+            // Draw Path (if planned)
+            if (animationStates.anim6.path.length > 0) {
+                ctx6.strokeStyle = '#2ecc71';
+                ctx6.lineWidth = 3;
+                ctx6.beginPath();
+                ctx6.moveTo(animationStates.anim6.path[0].c * GRID_SIZE_6 + GRID_SIZE_6 / 2, animationStates.anim6.path[0].r * GRID_SIZE_6 + GRID_SIZE_6 / 2);
+                for (let i = 1; i < animationStates.anim6.path.length; i++) {
+                    ctx6.lineTo(animationStates.anim6.path[i].c * GRID_SIZE_6 + GRID_SIZE_6 / 2, animationStates.anim6.path[i].r * GRID_SIZE_6 + GRID_SIZE_6 / 2);
+                }
+                ctx6.stroke();
+                ctx6.lineWidth = 1;
+            }
+            
+            if (animationStates.anim6.planning) {
+                ctx6.fillStyle = "rgba(0,0,0,0.5)";
+                ctx6.fillRect(0,0,canvas6.width, canvas6.height);
+                ctx6.fillStyle = "white";
+                ctx6.textAlign = "center";
+                ctx6.fillText("Planning...", canvas6.width/2, canvas6.height/2);
+            }
+        }
+
+        // Simple A* or BFS for planning (very simplified for demo)
+        function planPathAnim6() {
+            animationStates.anim6.planning = true;
+            drawAnim6(); // Show "Planning..."
+
+            // Simulate planning delay
+            setTimeout(() => {
+                const q = [{ ...animationStates.anim6.agent, p: [] }]; // p is path
+                const visited = new Set();
+                visited.add(`${animationStates.anim6.agent.r}-${animationStates.anim6.agent.c}`);
+                let foundPath = [];
+
+                while (q.length > 0) {
+                    const curr = q.shift();
+                    const currentPath = [...curr.p, { r: curr.r, c: curr.c }];
+
+                    if (curr.r === animationStates.anim6.goal.r && curr.c === animationStates.anim6.goal.c) {
+                        foundPath = currentPath;
+                        break;
+                    }
+
+                    const moves = [[-1, 0], [1, 0], [0, -1], [0, 1]]; // Up, Down, Left, Right
+                    for (const move of moves) {
+                        const nr = curr.r + move[0];
+                        const nc = curr.c + move[1];
+                        const key = `${nr}-${nc}`;
+
+                        if (nr >= 0 && nr < ROWS_6 && nc >= 0 && nc < COLS_6 &&
+                            animationStates.anim6.grid[nr][nc] === 0 && !visited.has(key)) {
+                            visited.add(key);
+                            q.push({ r: nr, c: nc, p: currentPath });
+                        }
+                    }
+                }
+                animationStates.anim6.path = foundPath;
+                animationStates.anim6.planning = false;
+                animationStates.anim6.executing = true;
+                animationStates.anim6.pathIndex = 0;
+                if(animationStates.anim6.animationFrameId) cancelAnimationFrame(animationStates.anim6.animationFrameId);
+                executePathAnim6();
+            }, 500); // Simulate planning time
+        }
+
+        function executePathAnim6() {
+            if (!animationStates.anim6.executing || animationStates.anim6.path.length === 0 || animationStates.anim6.pathIndex >= animationStates.anim6.path.length) {
+                animationStates.anim6.executing = false;
+                anim6PlanBtn.disabled = false;
+                drawAnim6();
+                return;
+            }
+            animationStates.anim6.agent = animationStates.anim6.path[animationStates.anim6.pathIndex];
+            animationStates.anim6.pathIndex++;
+            drawAnim6();
+            animationStates.anim6.animationFrameId = requestAnimationFrame(() => setTimeout(executePathAnim6, 200)); // Slow down execution
+        }
+
+        anim6SetGoalBtn.addEventListener('click', () => {
+            // For simplicity, goal is fixed in this demo, or randomly set a new valid goal.
+            let gr, gc;
+            do {
+                gr = Math.floor(Math.random() * ROWS_6);
+                gc = Math.floor(Math.random() * COLS_6);
+            } while (animationStates.anim6.grid[gr][gc] === 1 || (gr === animationStates.anim6.agent.r && gc === animationStates.anim6.agent.c));
+            animationStates.anim6.goal = {r: gr, c: gc};
+            animationStates.anim6.path = []; // Clear old path
+            drawAnim6();
+        });
+
+        anim6PlanBtn.addEventListener('click', () => {
+            if (animationStates.anim6.planning || animationStates.anim6.executing) return;
+            anim6PlanBtn.disabled = true;
+            animationStates.anim6.path = [];
+            planPathAnim6();
+        });
+
+        anim6ResetBtn.addEventListener('click', () => {
+            setupAnim6();
+        });
+
+        setupAnim6(); // Initial call for anim6
+
+    </script>
+</body>
+</html>
