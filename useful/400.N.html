@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的导航页</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+            width: 100%;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .container {
+            width: 90%;
+            max-width: 1000px; /* 最大宽度 */
+            margin: 0 auto;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* 响应式网格布局 */
+            gap: 20px; /* 网格间距 */
+            padding: 0;
+            list-style: none;
+        }
+        .grid-item {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .grid-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .grid-item a {
+            display: block;
+            padding: 20px;
+            text-decoration: none;
+            color: #333;
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+        }
+        .grid-item a:hover {
+            color: #007bff;
+        }
+        .grid-item .description {
+            font-size: 0.9em;
+            color: #666;
+            padding: 0 20px 20px;
+            text-align: center;
+            min-height: 40px; /* 给描述留出一些空间 */
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 2em;
+            }
+            .grid-item a {
+                font-size: 1em;
+            }
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            font-size: 0.9em;
+            color: #777;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>我的个人导航</h1>
+    </header>
+
+    <div class="container">
+        <ul class="grid-container">
+            <li class="grid-item">
+                <a href="https://www.google.com" target="_blank">谷歌搜索</a>
+                <p class="description">强大的搜索引擎</p>
+            </li>
+            <li class="grid-item">
+                <a href="https://www.bilibili.com" target="_blank">哔哩哔哩</a>
+                <p class="description">国内知名的视频弹幕网站</p>
+            </li>
+            <li class="grid-item">
+                <a href="https://github.com" target="_blank">GitHub</a>
+                <p class="description">代码托管与协作平台
