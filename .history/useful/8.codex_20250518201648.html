@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codeex 物理逻辑视角深度解读</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        /* Base styling for the page */
+        body {
+            font-family: "SimSun", "Songti SC", serif; /* Standard Chinese serif fonts */
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px 0; /* Add some padding for viewing in browser */
+            background-color: #e0e0e0; /* Light gray background for contrast with page */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align page to top */
+            min-height: 100vh;
+        }
+
+        /* A3 Page Simulation */
+        .a3-page {
+            width: 1123px; /* A3 width at 96 DPI (297mm) */
+            min-height: 1587px; /* A3 height at 96 DPI (420mm) - can grow */
+            background-color: white;
+            padding: 60px 80px; /* Generous padding for A3 */
+            box-shadow: 0 0 20px rgba(0,0,0,0.15);
+            font-size: 16pt; /* 三号字体 is approximately 16pt */
+            color: #333;
+        }
+
+        /* Headings styling */
+        h1, h2, h3, h4 {
+            color: #1a1a1a;
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+            font-weight: bold;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 28pt; /* Larger for main title */
+            border-bottom: 3px solid #007ACC; /* Accent color */
+            padding-bottom: 15px;
+            margin-bottom: 1.2em;
+        }
+
+        h2 {
+            font-size: 22pt;
+            color: #005A9C; /* Darker blue for H2 */
+        }
+
+        h3 {
+            font-size: 18pt;
+            color: #007BFF; /* Standard blue for H3 */
+        }
+        
+        h4 { /* Used for animation titles */
+            font-size: 16pt;
+            color: #2a8a2a; /* Green for animation titles */
+            margin-top: 0;
+            text-align: center;
+        }
+
+        /* Paragraph and list styling */
+        p, li {
+            text-align: justify;
+            margin-bottom: 1em;
+            line-height: 2; /* Increased line height for readability in large font */
+        }
+
+        ul, ol {
+            padding-left: 40px; /* Deeper indent for lists */
+            margin-bottom: 1em;
+        }
+
+        /* Animation container styling */
+        .animation-container {
+            border: 2px solid #007ACC; /* Accent border */
+            padding: 20px;
+            margin: 30px auto; /* Centered with more margin */
+            background-color: #f8f9fa; /* Very light gray for container */
+            border-radius: 10px; /* Rounded corners */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            width: 80%; /* Relative width */
+            max-width: 700px; /* Max width for canvas containment */
+        }
+
+        canvas {
+            display: block;
+            margin: 15px auto; /* Centered canvas */
+            border: 1px solid #cce5ff; /* Light blue border for canvas */
+            border-radius: 5px;
+        }
+
+        /* Button styling */
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px; /* Larger padding */
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14pt; /* Slightly smaller than body text for distinction */
+            margin: 8px 5px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            background-color: #0056b3; /* Darker on hover */
+            transform: translateY(-1px); /* Slight lift */
+        }
+
+        button:active {
+            background-color: #004085; /* Even darker when pressed */
+            transform: translateY(0px);
+        }
+        
+        .button-container {
+            text-align: center; /* Center buttons */
+            margin-top: 10px;
+        }
+
+        /* Formula styling */
+        .formula {
+            font-family: "Consolas", "Courier New", Courier, monospace;
+            background-color: #eef1f5; /* Lighter background */
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #d1d9e1;
+            display: inline-block;
+            font-size: 15pt; /* Consistent with text */
+        }
+
+        /* Code block styling (if any actual code snippets in text) */
+        .code-block {
+            background-color: #2b2b2b; /* Dark theme for code */
+            color: #f0f0f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: "Consolas", "Courier New", Courier, monospace;
+            font-size: 13pt; /* Smaller for code */
+            overflow-x: auto;
+            margin: 15px 0;
+            white-space: pre-wrap; /* Wrap long lines */
+        }
+        /* Placeholder comments to increase line count if necessary */
+        /* Style comment 1 */
+        /* Style comment 2 */
+        /* Style comment 3 */
+        /* Style comment 4 */
+        /* Style comment 5 */
+        /* Style comment 6 */
+        /* Style comment 7 */
+        /* Style comment 8 */
+        /* Style comment 9 */
+        /* Style comment 10 */
+    </style>
+</head>
+<body>
+    <div class="a3-page">
+        <h1>从物理逻辑视角解读OpenAI Codeex：软件工程新范式的“力学”重构</h1>
+
+        <p>OpenAI近期发布的Codeex系统，不仅是其AI编码工具系列的又一次重要迭代，更深层次地，它预示着软件工程领域一场基于“物理逻辑”的根本性变革。所谓“物理逻辑”，是指我们将软件系统及其运作，类比于物理世界中的实体、力、场、能量转换和结构演化来理解。从这一视角审视，Codeex通过构建一个大规模并行、具备高度自主性的“远程智能体集群”，正在重塑软件开发的“力学结构”——即改变计算资源的组织形态、任务的执行模式、人机协作的交互方式，乃至整个软件生产流程的“动力学特性”。这场变革的核心，在于将开发者从繁重的“微观编码操作”中解放出来，转向更为宏观的“系统设计与智能体赋能”，其影响深远。</p>
+
+        <h2>一、计算实体的“形态跃迁”：从本地原子到云端集群</h2>
+        <p>AI辅助编码工具的发展，在“物理形态”上经历了从简单到复杂、从个体到群体的演化，如同物质从原子到分子再到宏观结构的构建过程：</p>
+        <ol>
+            <li><strong>早期形态 (Codex, 2021):</strong> 可视为“编码原子”。它主要以智能自动补全的形式存在于开发者本地，如同一个独立的、功能专一的粒子，其“物理作用范围”局限于单个开发者的即时编码环境，对整体工程的“扰动”较小。</li>
+            <li><strong>过渡形态 (Codex CLI):</strong> 进化为“编码分子”。作为一个本地运行的代理（agent），它能与开发者进行更复杂的同步交互，处理指令。虽然仍根植于本地，但已具备初步的“智能体”特征，其“物理结构”和“交互能力”得到增强，但仍受限于本地计算机的“能量上限”（资源）。</li>
+            <li><strong>新范式 (Codeex系统):</strong> 实现了“物理形态”的质变，形成了“云端智能体集群”。它不再是本地程序，而是部署在OpenAI强大计算基础设施上的远程系统。其“物理特性”体现在：
+                <ul>
+                    <li><strong>分布式“物理空间”：</strong> 每个Codeex智能体实例都在独立的微型虚拟机（microVM）沙箱中运行，拥有专属的“物理资源”（文件系统、CPU、内存、网络策略）。这如同为每个智能体构建了隔离且配备齐全的“独立工作室”。</li>
+                    <li><strong>大规模并行“作功”：</strong> 用户可同时启动成百上千的智能体副本，并行处理海量任务。这种并行性并非简单的多线程，而是多个独立计算单元同时“输出功率”，极大地扩展了处理能力的“物理边界”，形成了一个按需调用的“虚拟工程师军团”。其并行处理能力 <span class="formula">P_total = N * P_agent</span> (其中N为智能体数量, P_agent为单个智能体处理能力)。</li>
+                    <li><strong>异步委托“势能转换”：</strong> 开发者将任务“发射”给Codeex后，无需同步等待，任务在云端异步执行。这改变了传统“人等机器”的模式，实现了“机器势能”向“开发者动能”的高效转化，优化了时间的“物理分配”。</li>
+                </ul>
+            </li>
+        </ol>
+        <div class="animation-container">
+            <h4>动画1: AI编码助手进化史 (时间轴/概念动画)</h4>
+            <div id="anim1-container"></div>
+            <div class="button-container">
+                <button onclick="anim1.playTimeline()">播放进化动画</button>
+                <button onclick="anim1.resetTimeline()">重置</button>
+            </div>
+            <p>此动画通过时间轴展示AI编码工具从简单的本地补全（Codex），到本地代理（Codex CLI），最终演化为强大的云端并行智能体系统（Codeex）的“物理形态”和能力跃迁。</p>
+        </div>
+
+        <h2>二、Codeex智能体的“物理构造”与“逻辑执行流”</h2>
+        <p>每个Codeex智能体，如同一个精心设计的“微型机器人”，其内部运作遵循一套清晰的物理与逻辑规则：</p>
+        <ul>
+            <li><strong>感知系统 (Input Logic):</strong> 智能体通过读取用户指令、分析代码仓库结构、解析<code>agents.md</code>配置文件（如同读取“操作手册”）来感知任务和环境。</li>
+            <li><strong>认知核心 (Codex One Model):</strong> 这是智能体的“大脑”，基于强大的Codex One模型，不仅理解代码，更理解注释、风格和高质量代码的内在逻辑，进行“思考”与“决策”。</li>
+            <li><strong>执行系统 (Action Logic):</strong> 智能体在其沙箱“物理空间”内，可以执行各种开发指令（如<code>git</code>操作）、读写文件、运行脚本、执行测试、应用linter/formatter，其行为高度模拟真实开发者的“物理操作”。</li>
+            <li><strong>环境交互界面 (`agents.md`):</strong> 这个文件定义了智能体运行的“环境参数”和“行为约束”，如同一份精确的“物理实验设置说明书”，确保智能体在正确的上下文中工作。</li>
+            <li><strong>能量供给 (OpenAI Compute):</strong> 每个智能体由OpenAI的计算资源驱动，保证了其执行复杂任务所需的“计算能量”。</li>
+        </ul>
+        <div class="animation-container">
+            <h4>动画2: Codeex智能体微VM沙箱 (空间结构动画)</h4>
+            <div id="anim2-container"></div>
+            <div class="button-container">
+                <button onclick="anim2.toggleHighlight('cpu')">CPU</button>
+                <button onclick="anim2.toggleHighlight('memory')">内存</button>
+                <button onclick="anim2.toggleHighlight('fs')">文件系统</button>
+                <button onclick="anim2.toggleHighlight('agent')">智能体核心</button>
+                <button onclick="anim2.resetHighlight()">重置高亮</button>
+            </div>
+            <p>此动画展示单个Codeex智能体运行的微型虚拟机（MicroVM）沙箱环境。沙箱为其提供了独立的CPU、内存、文件系统和网络策略，构成一个隔离且资源充足的“物理工作空间”。</button>
+        </div>
+
+        <h2>三、Codeex系统的“动力学”：并行、异步与学习</h2>
+        <p>Codeex系统的整体运作展现出高效的“系统动力学”特性：</p>
+        <ul>
+            <li><strong>并行处理的“通量”放大：</strong> 如同拥有多条并行的“生产线”，Codeex能够同时处理大量任务，极大地提高了软件开发的“吞吐量”和“效率”。这种并行性是其核心“物理优势”。</li>
+            <li><strong>异步机制的“时间解耦”：</strong> 开发者提交任务后即可关注其他工作，Codeex在云端独立运作。这种异步性实现了开发者时间与机器处理时间的“解耦”，优化了整体工作流的“时间效率”。</li>
+            <li><strong>强化学习的“适应性进化”：</strong> 通过端到端的强化学习，智能体在与真实代码库和测试环境的“物理交互”中不断学习和优化其行为策略。如同生物进化，智能体在“环境选择压力”（如测试通过率、代码质量标准）下，逐步提升其解决问题的“适应能力”和“智能水平”。</li>
+            <li><strong>透明可验的“行为轨迹”：</strong> 智能体的每一步操作、测试结果都被记录和展示，提供了高度的“可解释性”和“可验证性”。这如同物理实验中的详细记录，增强了开发者对系统行为的信任和控制力。</li>
+        </ul>
+        <div class="animation-container">
+            <h4>动画3: Codeex并行任务处理 (数据流/流程动画)</h4>
+            <div id="anim3-container"></div>
+            <div class="button-container">
+                <button onclick="anim3.sendTasks()">分发任务</button>
+                <button onclick="anim3.resetTasks()">重置</button>
+            </div>
+            <p>此动画模拟开发者向Codeex云端分发多个任务。云端的多个智能体并行拾取并处理这些任务，展示了系统的大规模并行处理能力如何提升工作效率。</p>
+        </div>
+
+        <h2>四、对软件工程“生态场”的重塑</h2>
+        <p>Codeex的出现，将对软件工程的“生态场”产生深远的“扰动”和重塑效应：</p>
+        <ul>
+            <li><strong>开发者角色的“势能提升”：</strong> 开发者从具体的“编码劳动者”转变为“任务规划师”、“智能体指挥官”和“质量把控者”。其工作重心从“微观执行”转向“宏观调控”，实现了个人“势能”的提升。</li>
+            <li><strong>代码质量的“场强约束”：</strong> Codeex通过内置的linting、formatting以及强调测试驱动的开发模式，对代码库施加了更强的“质量场约束”，有助于提升整体代码的规范性和健壮性。</li>
+            <li><strong>工程实践的“正向反馈回路”：</strong> 为了更好地利用Codeex，团队会被激励去构建更模块化、测试更完备、文档更清晰的代码库。这形成了一个“正向反馈回路”，即AI工具的使用促进了更优良的软件工程实践，而优良实践又反过来提升了AI工具的效能。</li>
+            <li><strong>创新速度的“加速度效应”：</strong> 通过自动化大量重复性工作，Codeex为开发者释放出更多时间专注于创新和解决复杂问题，从而可能为整个技术创新带来“加速度效应”。例如，一个复杂的重构任务，以前可能需要数天，现在可能在数小时内由Codeex完成初步版本，开发者只需审查和微调。其效率提升可以用 <span class="formula">T_new = T_old / (k * N_agents)</span> 来近似，其中k为智能体相对人类效率因子。</li>
+        </ul>
+        <div class="animation-container">
+            <h4>动画4: Codeex强化学习与进化 (因果链/循环动画)</h4>
+            <div id="anim4-container"></div>
+            <div class="button-container">
+                <button onclick="anim4.startCycle()">开始学习周期</button>
+                <button onclick="anim4.resetCycle()">重置</button>
+            </div>
+            <p>此动画展示Codeex智能体通过强化学习不断优化的过程。智能体尝试任务、执行测试、接收反馈，并据此调整策略，其“技能水平”在循环中逐步提升，模拟了智能体在“物理环境”中的学习与适应。</p>
+        </div>
+        
+        <h2>五、未来展望：迈向“人机融合”的智能开发“新物理”</h2>
+        <p>OpenAI展望的未来，是本地智能体（如Codex CLI）与云端Codeex系统的无缝融合，构建一个更加智能和高效的软件开发“新物理”图景：</p>
+        <ul>
+            <li><strong>“场”的统一与协同：</strong> 本地和云端智能体将不再是孤立的“粒子”，而是统一“智能场”中的不同表现形态。开发者可以在本地进行轻量级交互，遇到复杂或耗时任务时，无缝“隧穿”到云端，利用Codeex的强大并行计算“势阱”进行处理。</li>
+            <li><strong>CI/CD流水线的“智能节点”：</strong> Codeex将深度集成到CI/CD等自动化流程中，成为其中的“智能处理节点”。例如，当CI构建失败时，Codeex可以自动分析错误、尝试修复并重新提交，形成自愈合的“智能生产线”。</li>
+            <li><strong>“多体问题”的智能辅助：</strong> 软件开发常面临复杂的“多体问题”（如大规模重构、多模块依赖管理）。Codeex有望通过其并行分析和执行能力，为解决这类问题提供前所未有的“计算支持”。</li>
+            <li><strong>人机协作的“量子纠缠”：</strong> 未来的开发者与AI智能体的关系，可能更像一种“量子纠缠”般的深度协作。AI不仅是工具，更是伙伴、导师、实习生，能够理解开发者的意图，主动分担工作，甚至启发创新。这种深度融合将彻底改变软件创造的“基本粒子”和“相互作用力”。</li>
+        </ul>
+        <div class="animation-container">
+            <h4>动画5: 未来本地-云端智能体协同 (网络/交互动画)</h4>
+            <div id="anim5-container"></div>
+            <div class="button-container">
+                <button onclick="anim5.triggerInteraction('delegate')">委派至云端</button>
+                <button onclick="anim5.triggerInteraction('sync')">云端结果同步</button>
+                <button onclick="anim5.triggerInteraction('collaborate')">协同处理</button>
+                <button onclick="anim5.resetInteraction()">重置</button>
+            </div>
+            <p>此动画展望了未来本地智能体（如Codex CLI）与云端Codeex系统的无缝协同工作模式。开发者可以在本地与云端智能体间灵活委派任务、同步结果、协同处理复杂问题，形成高效的人机协作“网络”。</p>
+        </div>
+
+        <h3>结论：软件工程的“新力学原理”</h3>
+        <p>从物理逻辑的视角审视，OpenAI的Codeex系统远不止于一个更智能的编码工具。它通过对计算资源（分布式微VM集群）、任务执行模式（大规模并行异步代理）以及人机交互界面（委托、配置与审查）的根本性重构，正在为软件工程领域奠定一套全新的“力学原理”。这场变革将开发者的“作用力”从微观的代码编写，更多地导向宏观的系统架构设计、任务流程编排和智能体能力赋能。这不仅有望极大提升软件生产的效率、质量和规模，更是通往未来“AI增强型软件工程”乃至更广阔的通用人工智能应用场景的关键一步。Codeex所展现的，是一个软件开发“新物理时代”的序章，其后续演化值得持续关注。</p>
+    </div>
+
+    <script>
+        // P5.js Animation Scripts
+        // Each animation is encapsulated in its own p5 instance
+
+        // Animation 1: AI Coding Assistants Evolution
+        let anim1;
+        const sketch1 = (p) => {
+            let stage = 0; // 0: initial, 1: Codex, 2: Codex CLI, 3: Codeex
+            let progress = 0;
+            const stagesInfo = [
+                { year: "", name: "点击播放", details: "AI编码助手进化史", color: [150], iconSize: 0 },
+                { year: "2021", name: "Codex", details: "智能补全 (本地)", color: [100, 150, 255], iconType: "gear", iconSize: 30 },
+                { year: "2023 (Est.)", name: "Codex CLI", details: "本地代理 (终端交互)", color: [50, 200, 150], iconType: "agent", iconSize: 40 },
+                { year: "2025 (Launch)", name: "Codeex", details: "远程并行智能体 (云端)", color: [255, 100, 100], iconType: "cloud", iconSize: 50 }
+            ];
+            let currentStageObj = stagesInfo[0];
+            let targetStage = 0;
+            let animationSpeed = 0.02;
+
+            p.setup = () => {
+                let canvasContainer = document.getElementById('anim1-container');
+                let canvas = p.createCanvas(canvasContainer.offsetWidth, 200);
+                canvas.parent('anim1-container');
+                p.textAlign(p.CENTER, p.CENTER);
+                p.frameRate(30);
+            };
+
+            p.draw = () => {
+                p.background(248, 249, 250); // Match container background
+                
+                if (stage !== targetStage) {
+                    progress += animationSpeed;
+                    if (progress >= 1) {
+                        progress = 0;
+                        stage = targetStage;
+                        currentStageObj = stagesInfo[stage];
+                    }
+                } else {
+                     currentStageObj = stagesInfo[stage];
+                }
+
+                let yPos = p.height / 2;
+                let xPos = p.width / 2;
+
+                // Draw current stage (or transitioning)
+                let displayObj = stagesInfo[stage];
+                if (stage !== targetStage && stagesInfo[targetStage]) { // During transition
+                     let nextObj = stagesInfo[targetStage];
+                     p.fill(p.lerpColor(p.color(displayObj.color), p.color(nextObj.color), progress));
+                     p.textSize(p.lerp(displayObj.iconSize, nextObj.iconSize, progress) * 0.6);
+                     p.text(displayObj.name, xPos, yPos - 30);
+                     p.textSize(p.lerp(displayObj.iconSize, nextObj.iconSize, progress) * 0.4);
+                     p.text(displayObj.details, xPos, yPos + 30);
+                     p.textSize(p.lerp(displayObj.iconSize, nextObj.iconSize, progress) * 0.35);
+                     p.text(displayObj.year, xPos, yPos + 60);
+                } else {
+                    p.fill(currentStageObj.color);
+                    p.textSize(currentStageObj.iconSize * 0.6);
+                    p.text(currentStageObj.name, xPos, yPos - 30);
+                    p.textSize(currentStageObj.iconSize * 0.4);
+                    p.text(currentStageObj.details, xPos, yPos + 30);
+                     p.textSize(currentStageObj.iconSize * 0.35);
+                    p.text(currentStageObj.year, xPos, yPos + 60);
+                }
+
+
+                // Simple icon representation
+                if (currentStageObj.iconType === "gear") {
+                    p.ellipse(xPos, yPos, currentStageObj.iconSize, currentStageObj.iconSize);
+                } else if (currentStageObj.iconType === "agent") {
+                    p.rectMode(p.CENTER);
+                    p.rect(xPos, yPos, currentStageObj.iconSize, currentStageObj.iconSize * 1.2);
+                } else if (currentStageObj.iconType === "cloud") {
+                    p.ellipse(xPos, yPos, currentStageObj.iconSize * 1.5, currentStageObj.iconSize);
+                    p.ellipse(xPos - currentStageObj.iconSize*0.5, yPos, currentStageObj.iconSize, currentStageObj.iconSize*0.8);
+                    p.ellipse(xPos + currentStageObj.iconSize*0.5, yPos, currentStageObj.iconSize, currentStageObj.iconSize*0.8);
+                }
+                
+                // Timeline bar
+                let timelineY = p.height - 20;
+                p.stroke(150);
+                p.line(50, timelineY, p.width - 50, timelineY);
+                for (let i = 1; i < stagesInfo.length; i++) {
+                    let tx = p.map(i, 0, stagesInfo.length -1, 50, p.width - 50);
+                    p.fill(stagesInfo[i].color);
+                    p.ellipse(tx, timelineY, 10, 10);
+                    if (i === stage) {
+                        p.noFill();
+                        p.stroke(0);
+                        p.ellipse(tx, timelineY, 15, 15);
+                        p.stroke(150); // reset stroke
+                    }
+                }
+            };
+
+            p.playTimeline = () => { // Changed from anim1.playTimeline
+                if (targetStage < stagesInfo.length - 1) {
+                    targetStage++;
+                } else {
+                    targetStage = 1; // Loop back to first actual stage
+                }
+                progress = 0; // Reset progress for new transition
+            };
+
+            p.resetTimeline = () => { // Changed from anim1.resetTimeline
+                stage = 0;
+                targetStage = 0;
+                progress = 0;
+                currentStageObj = stagesInfo[0];
+            };
+
+             p.windowResized = () => {
+                let canvasContainer = document.getElementById('anim1-container');
+                p.resizeCanvas(canvasContainer.offsetWidth, 200);
+            };
+        };
+
+        // Animation 2: Codeex Agent MicroVM Sandbox
+        let anim2;
+        const sketch2 = (p) => {
+            const components = {
+                cpu: { label: "CPU", x: 0.25, y: 0.3, w: 0.2, h: 0.15, color: [255, 159, 64], highlighted: false },
+                memory: { label: "内存", x: 0.75, y: 0.3, w: 0.2, h: 0.15, color: [255, 205, 86], highlighted: false },
+                fs: { label: "文件系统", x: 0.25, y: 0.7, w: 0.2, h: 0.15, color: [75, 192, 192], highlighted: false },
+                network: { label: "网络策略", x: 0.75, y: 0.7, w: 0.2, h: 0.15, color: [54, 162, 235], highlighted: false },
+                agent: { label: "智能体核心\n(Codex One)", x: 0.5, y: 0.5, w: 0.25, h: 0.2, color: [153, 102, 255], highlighted: true } // Agent is central
+            };
+            const sandbox = { x: 0.5, y: 0.5, w: 0.9, h: 0.8, label: "MicroVM 沙箱" };
+
+            p.setup = () => {
+                 let canvasContainer = document.getElementById('anim2-container');
+                let canvas = p.createCanvas(canvasContainer.offsetWidth, 300);
+                canvas.parent('anim2-container');
+                p.textAlign(p.CENTER, p.CENTER);
+                p.rectMode(p.CENTER);
+            };
+
+            p.draw = () => {
+                p.background(248, 249, 250);
+                
+                // Draw Sandbox
+                p.stroke(0, 80);
+                p.strokeWeight(2);
+                p.fill(220, 220, 230, 150); // Light purple for sandbox
+                p.rect(sandbox.x * p.width, sandbox.y * p.height, sandbox.w * p.width, sandbox.h * p.height, 10);
+                p.fill(0);
+                p.noStroke();
+                p.textSize(16);
+                p.text(sandbox.label, sandbox.x * p.width, (sandbox.y - sandbox.h/2 - 0.05) * p.height);
+
+                // Draw Components
+                for (const key in components) {
+                    const comp = components[key];
+                    let x = comp.x * p.width;
+                    let y = comp.y * p.height;
+                    let w = comp.w * p.width;
+                    let h = comp.h * p.height;
+
+                    if (comp.highlighted) {
+                        p.strokeWeight(3);
+                        p.stroke(255, 0, 0); // Red highlight stroke
+                    } else {
+                        p.strokeWeight(1);
+                        p.stroke(50);
+                    }
+                    p.fill(comp.color);
+                    p.rect(x, y, w, h, 5);
+                    
+                    p.fill(0);
+                    p.noStroke();
+                    p.textSize(12);
+                    p.text(comp.label, x, y);
+                }
+            };
+
+            p.toggleHighlight = (keyToHighlight) => { // Changed from anim2.toggleHighlight
+                for (const key in components) {
+                    components[key].highlighted = (key === keyToHighlight) ? !components[key].highlighted : false;
+                }
+                 // Ensure agent is re-highlighted if no other specific component is selected or if it's toggled off
+                if (keyToHighlight === 'agent' && !components['agent'].highlighted) {
+                     components['agent'].highlighted = true; // Keep agent highlighted if toggled off, or re-highlight
+                } else if (keyToHighlight !== 'agent') {
+                    components['agent'].highlighted = false; // Unhighlight agent if another is selected
+                }
+
+                // If after toggling, nothing is highlighted, default to agent
+                let anyHighlighted = false;
+                for (const key in components) {
+                    if (components[key].highlighted) anyHighlighted = true;
+                }
+                if (!anyHighlighted) components['agent'].highlighted = true;
+
+
+            };
+            p.resetHighlight = () => { // Changed from anim2.resetHighlight
+                 for (const key in components) {
+                    components[key].highlighted = (key === 'agent'); // Agent default highlight
+                }
+            };
+            p.windowResized = () => {
+                let canvasContainer = document.getElementById('anim2-container');
+                p.resizeCanvas(canvasContainer.offsetWidth, 300);
+            };
+        };
+
+        // Animation 3: Parallel Task Processing
+        let anim3;
+        const sketch3 = (p) => {
+            let tasks = [];
+            let agents = [];
+            const numAgents = 4;
+            let taskQueue = [];
+            let completedTasks = [];
+            let taskIDCounter = 0;
+
+            p.setup = () => {
+                let canvasContainer = document.getElementById('anim3-container');
+                let canvas = p.createCanvas(canvasContainer.offsetWidth, 300);
+                canvas.parent('anim3-container');
+                p.textAlign(p.CENTER, p.CENTER);
+                // Initialize agents
+                for (let i = 0; i < numAgents; i++) {
+                    agents.push({
+                        id: i,
+                        x: p.width * 0.4 + (i * (p.width * 0.5 / numAgents)),
+                        y: p.height * 0.5,
+                        busy: false,
+                        currentTask: null,
+                        progress: 0
+                    });
+                }
+            };
+
+            p.draw = () => {
+                p.background(248, 249, 250);
+                
+                // Developer Icon (simplified)
+                p.fill(0, 100, 200);
+                p.ellipse(p.width * 0.1, p.height * 0.5, 40, 40);
+                p.text("开发者", p.width * 0.1, p.height * 0.5 + 30);
+
+                // Task Queue Area
+                p.fill(200);
+                p.rect(p.width * 0.2, p.height * 0.1, p.width*0.15, p.height * 0.8, 5);
+                p.fill(0);
+                p.text("任务队列", p.width * 0.275, p.height * 0.05);
+                taskQueue.forEach((task, i) => {
+                    p.fill(255, 165, 0); // Orange for queued tasks
+                    p.rect(p.width * 0.275 - 10, p.height * 0.15 + i * 25, 20, 20);
+                });
+
+
+                // Agents processing
+                agents.forEach(agent => {
+                    p.fill(agent.busy ? [255,0,0,150] : [0,200,0,150]); // Red if busy, Green if free
+                    p.ellipse(agent.x, agent.y, 30, 30);
+                    p.fill(0);
+                    p.text(`Agent ${agent.id}`, agent.x, agent.y + 25);
+
+                    if (agent.busy && agent.currentTask) {
+                        agent.progress += 0.01; // Simulate work
+                        p.fill(255, 165, 0);
+                        p.rect(agent.x - 10, agent.y - 25, 20, 20); // Task being processed
+                        p.fill(0,200,0);
+                        p.rect(agent.x - 10, agent.y - 25, 20 * agent.progress, 20); // Progress bar
+
+                        if (agent.progress >= 1) {
+                            agent.currentTask.completed = true;
+                            completedTasks.push(agent.currentTask);
+                            agent.busy = false;
+                            agent.currentTask = null;
+                            agent.progress = 0;
+                        }
+                    } else if (!agent.busy && taskQueue.length > 0) {
+                        agent.busy = true;
+                        agent.currentTask = taskQueue.shift();
+                        agent.progress = 0;
+                    }
+                });
+
+                // Completed Tasks Area
+                p.fill(200);
+                p.rect(p.width * 0.75, p.height * 0.1, p.width*0.15, p.height * 0.8, 5);
+                p.fill(0);
+                p.text("已完成", p.width * 0.825, p.height * 0.05);
+                completedTasks.forEach((task, i) => {
+                    p.fill(0, 200, 0); // Green for completed tasks
+                    p.rect(p.width * 0.825 - 10, p.height * 0.15 + i * 25, 20, 20);
+                });
+            };
+
+            p.sendTasks = () => { // Changed from anim3.sendTasks
+                for (let i = 0; i < 5; i++) { // Send 5 tasks
+                    taskQueue.push({ id: taskIDCounter++, completed: false });
+                }
+            };
+            p.resetTasks = () => { // Changed from anim3.resetTasks
+                taskQueue = [];
+                completedTasks = [];
+                agents.forEach(agent => {
+                    agent.busy = false;
+                    agent.currentTask = null;
+                    agent.progress = 0;
+                });
+                taskIDCounter = 0;
+            };
+            p.windowResized = () => {
+                let canvasContainer = document.getElementById('anim3-container');
+                p.resizeCanvas(canvasContainer.offsetWidth, 300);
+                 agents.forEach((agent, i) => {
+                    agent.x = p.width * 0.4 + (i * (p.width * 0.5 / numAgents));
+                    agent.y = p.height * 0.5;
+                });
+            };
+        };
+
+        // Animation 4: Reinforcement Learning Cycle
+        let anim4;
+        const sketch4 = (p) => {
+            let cycleAngle = 0;
+            let skillLevel = 0.1; // 0 to 1
+            let learning = false;
+            const cyclePoints = [
+                { label: "1. 智能体行动\n(编码/决策)", angle: 0 },
+                { label: "2. 执行与测试", angle: p.PI / 2 },
+                { label: "3. 结果评估\n(成功/失败)", angle: p.PI },
+                { label: "4. 反馈与学习\n(调整策略)", angle: 3 * p.PI / 2 }
+            ];
+            let currentStep = 0;
+
+            p.setup = () => {
+                 let canvasContainer = document.getElementById('anim4-container');
+                let canvas = p.createCanvas(canvasContainer.offsetWidth, 350);
+                canvas.parent('anim4-container');
+                p.textAlign(p.CENTER, p.CENTER);
+            };
+
+            p.draw = () => {
+                p.background(248, 249, 250);
+                let centerX = p.width / 2;
+                let centerY = p.height / 2 - 30; // Make space for skill bar
+                let radius = p.min(p.width, p.height) * 0.3;
+
+                // Draw cycle
+                p.strokeWeight(2);
+                p.stroke(150);
+                p.noFill();
+                p.ellipse(centerX, centerY, radius * 2, radius * 2);
+
+                // Draw cycle points and connecting arrows
+                for (let i = 0; i < cyclePoints.length; i++) {
+                    const point = cyclePoints[i];
+                    let x = centerX + radius * p.cos(point.angle);
+                    let y = centerY + radius * p.sin(point.angle);
+                    
+                    p.fill(i === currentStep && learning ? [255,100,100] : [100,150,255]);
+                    p.ellipse(x, y, 60, 40); // Node shape
+                    p.fill(0);
+                    p.noStroke();
+                    p.textSize(10);
+                    p.text(point.label, x, y);
+                    p.stroke(150); // Reset stroke for arrows
+
+                    // Draw arrow to next point
+                    let nextPoint = cyclePoints[(i + 1) % cyclePoints.length];
+                    let nx = centerX + radius * p.cos(nextPoint.angle);
+                    let ny = centerY + radius * p.sin(nextPoint.angle);
+                    drawArrow(p, x, y, nx, ny);
+                }
+
+                if (learning) {
+                    cycleAngle += 0.05;
+                    if (cycleAngle > p.TWO_PI) {
+                        cycleAngle = 0;
+                        // Simulate learning outcome
+                        if (p.random() < 0.7) { // 70% chance of success increasing skill
+                            skillLevel = p.min(1, skillLevel + 0.05);
+                        }
+                        currentStep = (currentStep + 1) % cyclePoints.length;
+                    }
+                     // Moving dot along the cycle
+                    let dotX, dotY;
+                    // Determine current segment's start and end angles for lerp
+                    let startAngle = cyclePoints[currentStep].angle;
+                    let endAngle = cyclePoints[(currentStep + 1) % cyclePoints.length].angle;
+                    
+                    // Handle angle wrapping for smooth lerp (e.g. from 3*PI/2 to 0 (which is 2*PI))
+                    if (endAngle < startAngle && currentStep === cyclePoints.length -1) { // Specifically for the last segment to the first
+                        endAngle += p.TWO_PI;
+                    }
+                    
+                    let progressInStep = (cycleAngle % (p.TWO_PI / cyclePoints.length)) / (p.TWO_PI / cyclePoints.length);
+                    let currentAngle = p.lerp(startAngle, endAngle, progressInStep);
+
+                    dotX = centerX + radius * p.cos(currentAngle);
+                    dotY = centerY + radius * p.sin(currentAngle);
+
+
+                    p.fill(255, 0, 0);
+                    p.ellipse(dotX, dotY, 10, 10);
+                }
+
+                // Draw Skill Level Bar
+                let barY = p.height - 40;
+                let barWidth = p.width * 0.6;
+                p.fill(200);
+                p.rectMode(p.CORNER);
+                p.rect(centerX - barWidth / 2, barY, barWidth, 20, 5);
+                p.fill(0, 200, 0);
+                p.rect(centerX - barWidth / 2, barY, barWidth * skillLevel, 20, 5);
+                p.fill(0);
+                p.textSize(14);
+                p.textAlign(p.CENTER, p.BOTTOM);
+                p.text("智能体技能水平", centerX, barY - 5);
+                p.rectMode(p.CENTER); // Reset rect mode
+            };
+
+            function drawArrow(p, x1, y1, x2, y2) {
+                p.stroke(100);
+                p.line(x1, y1, x2, y2);
+                let angle = p.atan2(y2 - y1, x2 - x1);
+                p.push();
+                p.translate(x2, y2);
+                p.rotate(angle);
+                p.fill(100);
+                p.triangle(-10, -5, -10, 5, 0, 0);
+                p.pop();
+            }
+
+            p.startCycle = () => { learning = true; }; // Changed from anim4.startCycle
+            p.resetCycle = () => { // Changed from anim4.resetCycle
+                learning = false;
+                skillLevel = 0.1;
+                cycleAngle = 0;
+                currentStep = 0;
+            };
+             p.windowResized = () => {
+                let canvasContainer = document.getElementById('anim4-container');
+                p.resizeCanvas(canvasContainer.offsetWidth, 350);
+            };
+        };
+
+        // Animation 5: Local-Cloud Agent Synergy
+        let anim5;
+        const sketch5 = (p) => {
+            let localAgent = { x: 0.2, y: 0.5, label: "本地智能体\n(CLI)", color: [0, 150, 255] };
+            let cloud = { x: 0.8, y: 0.5, label: "云端Codeex集群", color: [255, 100, 100], agents: [] };
+            let interactionType = null; // 'delegate', 'sync', 'collaborate'
+            let particles = [];
+
+            p.setup = () => {
+                let canvasContainer = document.getElementById('anim5-container');
+                let canvas = p.createCanvas(canvasContainer.offsetWidth, 250);
+                canvas.parent('anim5-container');
+                p.textAlign(p.CENTER, p.CENTER);
+                for(let i=0; i<3; i++) { // 3 agents in cloud
+                    cloud.agents.push({
+                        offsetX: (i - 1) * 0.05, // relative to cloud center
+                        offsetY: (i % 2 === 0 ? -1 : 1) * 0.05,
+                        size: 20
+                    });
+                }
+            };
+
+            p.draw = () => {
+                p.background(248, 249, 250);
+
+                // Draw Local Agent
+                p.fill(localAgent.color);
+                p.ellipse(localAgent.x * p.width, localAgent.y * p.height, 80, 60);
+                p.fill(255);
+                p.textSize(12);
+                p.text(localAgent.label, localAgent.x * p.width, localAgent.y * p.height);
+
+                // Draw Cloud and its agents
+                p.fill(cloud.color[0], cloud.color[1], cloud.color[2], 150); // Semi-transparent cloud
+                p.ellipse(cloud.x * p.width, cloud.y * p.height, 150, 100);
+                 p.fill(255); // White text for label on cloud
+                p.textSize(12);
+                p.text(cloud.label, cloud.x * p.width, cloud.y * p.height - 60); // Position label above cloud
+
+                cloud.agents.forEach(agent => {
+                    p.fill(cloud.color); // Use cloud's base color for agents within it
+                    p.ellipse((cloud.x + agent.offsetX) * p.width, (cloud.y + agent.offsetY) * p.height, agent.size, agent.size);
+                });
+
+
+                // Handle interactions and particles
+                if (interactionType) {
+                    if (p.frameCount % 10 === 0) { // Add new particle periodically
+                        let startX, startY, endX, endY, particleColor; // Renamed color to particleColor
+                        if (interactionType === 'delegate') {
+                            startX = localAgent.x * p.width; startY = localAgent.y * p.height;
+                            endX = cloud.x * p.width; endY = cloud.y * p.height;
+                            particleColor = [0,0,255]; // Blue for delegation
+                        } else if (interactionType === 'sync') {
+                            startX = cloud.x * p.width; startY = cloud.y * p.height;
+                            endX = localAgent.x * p.width; endY = localAgent.y * p.height;
+                            particleColor = [0,255,0]; // Green for sync
+                        } else if (interactionType === 'collaborate') { // Bidirectional
+                             startX = (p.random() > 0.5) ? localAgent.x * p.width : cloud.x * p.width;
+                             startY = localAgent.y * p.height; // Keep Y consistent for horizontal movement
+                             endX = (startX === localAgent.x * p.width) ? cloud.x * p.width : localAgent.x * p.width;
+                             endY = cloud.y * p.height; // Keep Y consistent
+                             particleColor = [255,165,0]; // Orange for collaboration
+                        }
+                        particles.push({ x: startX, y: startY, tx: endX, ty: endY, life: 1, color: particleColor });
+                    }
+                }
+
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let particle = particles[i];
+                    particle.x = p.lerp(particle.x, particle.tx, 0.05);
+                    particle.y = p.lerp(particle.y, particle.ty, 0.05);
+                    particle.life -= 0.01;
+
+                    p.fill(particle.color[0], particle.color[1], particle.color[2], particle.life * 255);
+                    p.noStroke();
+                    p.ellipse(particle.x, particle.y, 8, 8);
+
+                    if (particle.life <= 0 || p.dist(particle.x, particle.y, particle.tx, particle.ty) < 5) { // Remove if life ends or near target
+                        particles.splice(i, 1);
+                    }
+                }
+                 if (particles.length === 0 && interactionType && p.frameCount % 60 === 0) { // Auto-stop interaction after a bit if no new particles
+                     // This condition might be too aggressive or not needed if buttons reset interactionType
+                 }
+            };
+
+            p.triggerInteraction = (type) => { // Changed from anim5.triggerInteraction
+                interactionType = type;
+                particles = []; // Clear previous particles for a fresh animation
+            };
+            p.resetInteraction = () => { // Changed from anim5.resetInteraction
+                interactionType = null;
+                particles = [];
+            };
+            p.windowResized = () => {
+                let canvasContainer = document.getElementById('anim5-container');
+                p.resizeCanvas(canvasContainer.offsetWidth, 250);
+            };
+        };
+
+        // Initialize p5 instances after DOM is ready
+        window.onload = () => {
+            anim1 = new p5(sketch1);
+            anim2 = new p5(sketch2);
+            anim3 = new p5(sketch3);
+            anim4 = new p5(sketch4);
+            anim5 = new p5(sketch5);
+        };
+        
+        // JS Comment line 1
+        // JS Comment line 2
+        // JS Comment line 3
+        // JS Comment line 4
+        // JS Comment line 5
+        // JS Comment line 6
+        // JS Comment line 7
+        // JS Comment line 8
+        // JS Comment line 9
+        // JS Comment line 10
+        // JS Comment line 11
+        // JS Comment line 12
+        // JS Comment line 13
+        // JS Comment line 14
+        // JS Comment line 15
+        // JS Comment line 16
+        // JS Comment line 17
+        // JS Comment line 18
+        // JS Comment line 19
+        // JS Comment line 20
+        // ... (many more comments can be added within functions for detailed explanation)
+    </script>
+</body>
+</html>

@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>OpenAI Codex 物理逻辑视角深度解读</title>
+    <style>
+        body {
+            font-family: 'SimSun', '宋体', Arial, sans-serif; /* A4常用宋体，辅以Arial */
+            font-size: 16pt; /* 三号字体大约为16pt */
+            line-height: 1.8; /* 增加行高以便阅读 */
+            margin: 0 auto;
+            padding: 25mm 20mm; /* 模拟A4页边距 (上下25mm，左右20mm) */
+            background-color: #f0f0f0; /* 浅灰色背景 */
+            color: #333;
+            max-width: 210mm; /* A4宽度 */
+            min-height: 297mm; /* A4高度，确保内容区域至少有A4高 */
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20mm; /* 内容区域内边距 */
+            border: 1px solid #ccc;
+            box-shadow: 0 0 15px rgba(0,0,0,0.15);
+            min-height: calc(297mm - 50mm - 2px); /* 确保白色内容区域填满 */
+        }
+        h1, h2, h3 {
+            color: #1a237e; /* 深蓝色标题 */
+            border-bottom: 3px solid #3949ab; /* 稍深的蓝色下划线 */
+            padding-bottom: 8px;
+            margin-top: 1.5em; /* 增加标题上边距 */
+            margin-bottom: 0.8em;
+        }
+        h1 {
+            text-align: center;
+            font-size: 26pt; /* 稍大的一号标题 */
+            margin-bottom: 1.2em;
+        }
+        h2 {
+            font-size: 20pt;
+        }
+        h3 {
+            font-size: 18pt;
+        }
+        p {
+            text-indent: 2em; /* 段首缩进两个字符 */
+            margin-bottom: 1em;
+            text-align: justify; /* 两端对齐，更符合正式文档 */
+        }
+        .formula {
+            font-family: 'Consolas', 'Courier New', Courier, monospace; /* 等宽字体显示公式 */
+            background-color: #e8eaf6; /* 淡紫色背景 */
+            padding: 3px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            color: #333;
+        }
+        canvas {
+            border: 1px solid #9fa8da; /* 淡紫色边框 */
+            margin: 20px auto;
+            display: block;
+            background-color: #fdfdff; /* 非常浅的背景色 */
+            border-radius: 4px;
+        }
+        .controls {
+            text-align: center;
+            margin-bottom: 25px;
+            margin-top: 10px;
+        }
+        .controls button {
+            padding: 12px 20px;
+            font-size: 14pt; /* 按钮字体稍小 */
+            margin: 0 8px;
+            cursor: pointer;
+            background-color: #3949ab; /* 主题蓝色 */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .controls button:hover {
+            background-color: #283593; /* 深一点的蓝色 */
+        }
+        .controls button:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        .tabs button {
+            flex-grow: 1;
+            max-width: 220px; /* 标签按钮宽度 */
+        }
+        .tab-content {
+            padding: 20px;
+            border: 1px dashed #9fa8da;
+            min-height: 120px;
+            text-align: left; /* 内容左对齐 */
+            font-size: 14pt;
+            background-color: #f5f5ff; /* 标签内容区域背景 */
+            border-radius: 4px;
+            white-space: pre-wrap; /* 保留换行和空格 */
+        }
+        .caption {
+            text-align: center;
+            font-style: italic;
+            font-size: 13pt;
+            color: #555;
+            margin-top: -10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OpenAI Codex：物理逻辑视角的深度剖析</h1>
+
+        <h2>一、引言：代码生成的“物理”变革</h2>
+        <p>OpenAI Codex的问世，代表了人工智能在理解自然语言并将其转化为可执行代码方面的一座里程碑。它不仅是编程的辅助工具，更是一个深刻改变人机交互模式的催化剂。本文旨在从“物理逻辑”的独特视角，审视Codex的运作机理。这里的“物理逻辑”并非指代经典物理学定律，而是强调构成Codex系统运作的实际计算流程、数据在系统内部的转换路径、信息处理的具体机制，以及其内部可被观察和分析的、具有确定性的因果关系链条。我们将Codex视为一个复杂的“信息处理机器”，探究其如何将抽象的人类意图“物化”为精确的代码结构。</p>
+
+        <h2>二、Codex的核心引擎：GPT模型的“物理”基石</h2>
+        <p>Codex的强大能力根植于OpenAI的GPT（Generative Pre-trained Transformer）系列模型，并针对代码任务进行了深度优化。其物理逻辑基础可概括为：</p>
+        <ol>
+            <li><strong>庞大的神经网络结构：</strong> Codex本质上是一个由海量参数（数十亿乃至更多）构成的深度神经网络。这些参数（权重和偏置）如同一个巨大且精密的“电路板”，在训练过程中被精心“蚀刻”和“连接”，以编码从数据中学习到的复杂模式。其物理形态即是存储于高端计算芯片（如GPU/TPU）中的巨量数值。</li>
+            <li><strong>海量训练数据——塑造模型的“原材料”：</strong> Codex的“智能”来源于对巨量文本和公开源代码（例如GitHub上的数十亿行代码）的“消化吸收”。这些数据构成了模型构建其内部表征的“物理原材料”。训练过程可以理解为一种统计规律的提取、压缩与“固化”，其性能可粗略表述为：<span class="formula">模型效能 = F(网络规模, 数据质量与数量, 计算资源)</span>。</li>
+            <li><strong>Transformer架构——信息流动的“管道系统”：</strong> Transformer模型特有的自注意力机制（Self-Attention Mechanism）是其核心。它允许模型在处理输入序列时，动态评估不同部分之间的相关性与重要性，从而捕捉长距离依赖。在物理逻辑上，这相当于一个高效的、可并行的信息筛选、加权与整合系统。输入信息 <span class="formula">X</span> 在流经多层处理单元时，每一层都通过注意力计算 <span class="formula">Attention(Q, K, V) = softmax(Q * K^T / sqrt(d_k)) * V</span> 来更新和提炼信息的表示，确保关键信息在复杂的“管道网络”中得到有效传递和放大。</li>
+        </ol>
+        <p>这种精密的“物理构造”使得Codex能够在其内部建立从自然语言的模糊语义到代码的精确语法的映射关系。</p>
+        <div class="controls">
+            <button id="playNlToCode">动画1: 自然语言到代码的转换</button>
+        </div>
+        <canvas id="nlToCodeCanvas" width="600" height="200"></canvas>
+        <p class="caption">图1：自然语言指令通过Codex核心处理转化为代码的过程示意。</p>
+
+        <h2>三、Codex的工作机理：指令到代码的“物理路径”</h2>
+        <p>当用户向Codex发出一条自然语言指令（例如：“用Python写一个函数，计算斐波那契数列的第n个数”）时，系统内部经历了一系列可追溯的“物理逻辑”步骤：</p>
+        <p><strong>1. 输入解析与编码 (Input Parsing & Encoding):</strong> 自然语言指令首先被分解为一系列称为“tokens”（词元）的基本单元。这些tokens随后被转换为高维的数字向量（embeddings），这是模型能够进行数学运算的“物理形态”。此过程类似于将声波（语音指令）或光信号（文本输入）转换为可在电子电路中处理的数字电信号。</p>
+        <p><strong>2. 上下文理解与模式匹配 (Contextual Understanding & Pattern Matching):</strong> 这些输入向量作为“初始激励信号”流经Transformer网络的多个层面。在每一层，自注意力机制和前馈网络共同作用，对输入信息进行复杂的非线性变换。模型在其巨大的参数空间中（即被训练固化的“物理结构”中）搜寻与输入指令最相关的模式。这并非人类意义上的“理解”，而是一种基于其训练数据的高度复杂的统计关联与“模式谐振”。</p>
+        <p><strong>3. 代码生成与解码 (Code Generation & Decoding):</strong> 模型以自回归的方式逐个token生成输出代码。即，每生成一个token，这个token就会成为下一步生成过程的输入之一，影响后续token的“激发概率”。模型在每个步骤计算词汇表中所有可能token的概率分布，并通常选择概率最高的token（或通过采样引入一定的随机性，探索不同的“物理路径”）。这个过程可以被视为一个受控的、概率性的序列决策过程，其目标是构建一个在语法上正确且在功能上符合输入指令的“稳定输出序列”。</p>
+        <div class="controls">
+            <button id="playGptFlow">动画2: GPT模型内部处理流程</button>
+        </div>
+        <canvas id="gptFlowCanvas" width="700" height="300"></canvas>
+        <p class="caption">图2：简化展示的GPT模型内部信息流动与处理层次。</p>
+
+        <h2>四、Codex的能力、应用与“物理”局限</h2>
+        <p>Codex展现了强大的代码生成、补全、解释、重构甚至跨语言翻译能力。这些能力是其复杂“物理结构”与海量数据训练后涌现出的宏观表现。</p>
+        <h3>4.1 能力展示（交互式）</h3>
+        <div class="tabs">
+            <button class="tab-button" onclick="showCapability('gen_python_class')">生成Python类</button>
+            <button class="tab-button" onclick="showCapability('explain_regex')">解释正则表达式</button>
+            <button class="tab-button" onclick="showCapability('convert_sql_pandas')">SQL转Pandas</button>
+        </div>
+        <div id="capabilityDisplay" class="tab-content">
+            点击上方按钮查看Codex能力示例... (例如，它可以根据描述生成复杂的类结构，解释难以理解的代码片段，或在不同编程范式间转换逻辑。)
+        </div>
+        <p class="caption">图3：Codex在不同编程任务中的应用示例。</p>
+        <h3>4.2 物理逻辑层面的局限性</h3>
+        <p>尽管功能强大，Codex的“物理逻辑”基础也决定了其固有的局限性：</p>
+        <ol>
+            <li><strong>知识边界的“物理”约束：</strong> Codex的知识严格受限于其训练数据集的“时空范围”。它无法创造出训练数据中从未暗示过的全新算法或编程范式。其“创造力”更多是对现有模式的巧妙组合与“插值”，而非真正的“从无到有”的物理创造。</li>
+            <li><strong>缺乏真实世界感知与深度因果推理：</strong> Codex不具备对代码执行的真实物理后果（如性能瓶颈的深层原因、特定硬件的交互、真实世界的复杂约束）的理解。它生成的代码可能语法正确，但在特定上下文中效率低下或存在安全隐患，因为它主要依赖统计模式而非对问题本质的因果分析。其决策公式更接近 <span class="formula">Output = P(Input | ModelParameters)</span> 而非 <span class="formula">Output = Logic(Input, WorldKnowledge, Constraints)</span>。</li>
+            <li><strong>概率性错误与“貌合神离”的输出：</strong> 由于其概率生成的本质，Codex有时会生成看似合理但实际上错误或无用的代码，即所谓的“幻觉”(hallucination)。这是其“物理系统”在面对模糊或未见过的输入时，可能陷入的“局部最优”或“虚假稳定态”。</li>
+        </ol>
+        <div class="controls">
+            <button id="playBlackBox">动画4: AI的“黑箱”与概率输出</button>
+        </div>
+        <canvas id="blackBoxCanvas" width="600" height="250"></canvas>
+        <p class="caption">图4：AI模型的黑箱特性及输出的概率性选择过程。</p>
+
+        <h2>五、Codex与开发者的协同：“人机物理系统”</h2>
+        <p>Codex并非旨在取代开发者，而是作为一种强大的协同工具，与开发者共同构成一个更高效的“人机物理系统”。理想的工作流程是：</p>
+        <ol>
+            <li>开发者提供清晰、结构化的自然语言指令或初步代码框架（输入“能量”与“导向”）。</li>
+            <li>Codex根据指令快速生成候选代码片段（系统“响应”与“初步构建”）。</li>
+            <li>开发者审查、测试、修改和完善Codex生成的代码（“反馈调节”与“精确校准”）。</li>
+            <li>通过迭代反馈，人机系统共同将解决方案推向优化（系统“演化”与“稳定”）。</li>
+        </ol>
+        <div class="controls">
+            <button id="playWorkflow">动画5: 开发者与Codex的迭代工作流</button>
+        </div>
+        <canvas id="workflowCanvas" width="700" height="250"></canvas>
+        <p class="caption">图5：开发者与Codex协同工作的迭代流程示意。</p>
+
+        <h2>六、结论：驾驭代码生成的“物理”之力</h2>
+        <p>OpenAI Codex是人工智能在代码理解与生成领域取得的卓越成就。从物理逻辑视角看，其核心在于大规模神经网络通过学习海量数据模式而形成的特定“物理配置”。它通过一系列复杂的、确定性的（在给定模型和输入时）计算步骤，将人类的自然语言意图“翻译”并“物化”为机器可执行的代码。理解其作为一种基于统计模式匹配而非真正逻辑推理的系统本质，认识到其依赖训练数据、缺乏真实世界感知以及潜在的概率性错误等“物理局限”，对于我们安全、有效地驾驭这一强大的“代码生成引擎”至关重要。未来，人类开发者与Codex等AI系统的协同进化，将在不断探索和塑造新的计算“物理逻辑”边界中，共同推动软件工程的革新与发展。</p>
+    </div>
+
+    <script>
+        // Animation 1: Natural Language to Code Transformation
+        const canvasNlToCode = document.getElementById('nlToCodeCanvas');
+        const ctxNlToCode = canvasNlToCode.getContext('2d');
+        let nlToCodeAnimationId;
+        let nlText = "创建蓝色按钮"; // Shorter text
+        let codeText = "<button class='blue'>Click</button>"; // Simplified code
+        let progressNlToCode = 0;
+        let particlesNlToCode = [];
+
+        function initNlToCodeParticles() {
+            particlesNlToCode = [];
+            for (let i = 0; i < 50; i++) {
+                particlesNlToCode.push({
+                    x: canvasNlToCode.width / 4 + Math.random() * 20 - 10,
+                    y: canvasNlToCode.height / 2 + Math.random() * 20 - 10,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    targetX: canvasNlToCode.width * 0.75 + Math.random() * 20 - 10,
+                    targetY: canvasNlToCode.height / 2 + Math.random() * 20 - 10,
+                    size: Math.random() * 2 + 1,
+                    color: `rgba(57, 73, 171, ${Math.random() * 0.5 + 0.3})` // Shades of indigo
+                });
+            }
+        }
+
+        function drawNlToCode() {
+            ctxNlToCode.clearRect(0, 0, canvasNlToCode.width, canvasNlToCode.height);
+            ctxNlToCode.font = "bold 20px 'SimSun'";
+            ctxNlToCode.textAlign = "center";
+
+            // Draw NL text
+            ctxNlToCode.fillStyle = "#3949ab";
+            ctxNlToCode.fillText(nlText, canvasNlToCode.width / 4, canvasNlToCode.height / 2 + 8);
+
+            // Draw "Codex Core" (abstract representation)
+            const coreX = canvasNlToCode.width / 2;
+            const coreY = canvasNlToCode.height / 2;
+            const coreRadius = 40 + 10 * Math.sin(progressNlToCode * Math.PI * 2);
+            ctxNlToCode.beginPath();
+            ctxNlToCode.arc(coreX, coreY, coreRadius, 0, Math.PI * 2);
+            ctxNlToCode.fillStyle = `rgba(121, 134, 203, ${0.5 + 0.3 * Math.sin(progressNlToCode * Math.PI * 4)})`; // Pulsing indigo
+            ctxNlToCode.fill();
+            ctxNlToCode.strokeStyle = "#3949ab";
+            ctxNlToCode.lineWidth = 2;
+            ctxNlToCode.stroke();
+            ctxNlToCode.fillStyle = "white";
+            ctxNlToCode.font = "bold 14px 'SimSun'";
+            ctxNlToCode.fillText("Codex", coreX, coreY + 5);
+
+
+            // Draw particles moving if in progress
+            if (progressNlToCode > 0.1 && progressNlToCode < 0.9) {
+                particlesNlToCode.forEach(p => {
+                    if (progressNlToCode > 0.2) { // Start moving towards target
+                        p.x += (p.targetX - p.x) * 0.05;
+                        p.y += (p.targetY - p.y) * 0.05;
+                    } else { // Initial burst
+                        p.x += p.vx;
+                        p.y += p.vy;
+                    }
+                    ctxNlToCode.beginPath();
+                    ctxNlToCode.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctxNlToCode.fillStyle = p.color;
+                    ctxNlToCode.fill();
+                });
+            }
+            
+            // Draw Code text appearing
+            ctxNlToCode.globalAlpha = Math.max(0, (progressNlToCode - 0.7) / 0.3);
+            ctxNlToCode.fillStyle = "#2E7D32"; // Dark Green for code
+            ctxNlToCode.font = "bold 18px 'Consolas', monospace";
+            ctxNlToCode.fillText(codeText, canvasNlToCode.width * 0.75, canvasNlToCode.height / 2 + 8);
+            ctxNlToCode.globalAlpha = 1;
+
+            if (progressNlToCode < 1) {
+                progressNlToCode += 0.01;
+                nlToCodeAnimationId = requestAnimationFrame(drawNlToCode);
+            }
+        }
+
+        document.getElementById('playNlToCode').addEventListener('click', () => {
+            cancelAnimationFrame(nlToCodeAnimationId);
+            progressNlToCode = 0;
+            initNlToCodeParticles();
+            drawNlToCode();
+        });
+        initNlToCodeParticles(); // Initial setup
+        drawNlToCode(); // Initial draw
+
+        // Animation 2: Simplified GPT Internal Flow
+        const canvasGptFlow = document.getElementById('gptFlowCanvas');
+        const ctxGptFlow = canvasGptFlow.getContext('2d');
+        let gptFlowAnimationId;
+        let gptFlowProgress = 0;
+        const gptLayers = [
+            { name: "输入 Tokens", x: 100, y: 150, type: "input", active: 0 },
+            { name: "Embedding", x: 220, y: 150, type: "layer", active: 0 },
+            { name: "Transformer块 1", x: 340, y: 150, type: "transformer", active: 0 },
+            { name: "Transformer块 N", x: 460, y: 150, type: "transformer", active: 0 },
+            { name: "输出解码", x: 580, y: 150, type: "layer", active: 0 }
+        ];
+        let dataPackets = [];
+
+        function initGptFlowPackets() {
+            dataPackets = [];
+            for(let i=0; i<3; i++) { // Create 3 packets
+                 dataPackets.push({
+                    currentLayer: 0,
+                    x: gptLayers[0].x,
+                    y: gptLayers[0].y - 15 + i*15,
+                    targetX: gptLayers[0].x,
+                    targetY: gptLayers[0].y - 15 + i*15,
+                    progress: 0,
+                    color: `hsl(${i * 60 + 180}, 70%, 60%)` // Different colors
+                });
+            }
+        }
+
+        function drawGptFlow() {
+            ctxGptFlow.clearRect(0, 0, canvasGptFlow.width, canvasGptFlow.height);
+            ctxGptFlow.font = "14px 'SimSun'";
+            ctxGptFlow.textAlign = "center";
+
+            // Draw layers and connections
+            for (let i = 0; i < gptLayers.length; i++) {
+                const layer = gptLayers[i];
+                ctxGptFlow.fillStyle = layer.active > 0.5 ? "#ffb74d" : "#90caf9"; // Orange when active, blue otherwise
+                if (layer.type === "transformer") {
+                    ctxGptFlow.fillRect(layer.x - 40, layer.y - 50, 80, 100);
+                     // Inner details for transformer
+                    ctxGptFlow.fillStyle = `rgba(255,255,255,${0.3 + layer.active * 0.3})`;
+                    ctxGptFlow.fillRect(layer.x - 30, layer.y - 40, 60, 30); // Attention
+                    ctxGptFlow.fillRect(layer.x - 30, layer.y + 10, 60, 30); // FFN
+                } else {
+                    ctxGptFlow.beginPath();
+                    ctxGptFlow.arc(layer.x, layer.y, 40, 0, Math.PI * 2);
+                    ctxGptFlow.fill();
+                }
+                ctxGptFlow.fillStyle = "#333";
+                ctxGptFlow.fillText(layer.name, layer.x, layer.y + (layer.type === "transformer" ? 65 : 55));
+
+                if (i < gptLayers.length - 1) {
+                    ctxGptFlow.beginPath();
+                    ctxGptFlow.moveTo(layer.x + (layer.type === "transformer" ? 40 : 0), layer.y);
+                    ctxGptFlow.lineTo(gptLayers[i+1].x - (gptLayers[i+1].type === "transformer" ? 40 : 0), gptLayers[i+1].y);
+                    ctxGptFlow.strokeStyle = "#78909c"; // Bluish grey
+                    ctxGptFlow.lineWidth = 2;
+                    ctxGptFlow.stroke();
+                }
+            }
+            
+            // Animate packets
+            dataPackets.forEach(packet => {
+                if (packet.currentLayer < gptLayers.length -1) {
+                     const current = gptLayers[packet.currentLayer];
+                     const next = gptLayers[packet.currentLayer+1];
+                     packet.targetX = next.x;
+                     packet.targetY = next.y - 15 + dataPackets.indexOf(packet)*15; // Stagger packets vertically
+                } else { // Reached end or output layer
+                    packet.targetX = canvasGptFlow.width - 50; // Move off screen
+                }
+
+                packet.x += (packet.targetX - packet.x) * 0.05;
+                packet.y += (packet.targetY - packet.y) * 0.05;
+                packet.progress += 0.05;
+
+                ctxGptFlow.fillStyle = packet.color;
+                ctxGptFlow.beginPath();
+                ctxGptFlow.arc(packet.x, packet.y, 8, 0, Math.PI * 2);
+                ctxGptFlow.fill();
+
+                // Update layer activation and packet progression
+                const distToTarget = Math.hypot(packet.targetX - packet.x, packet.targetY - packet.y);
+                if (distToTarget < 10 && packet.currentLayer < gptLayers.length - 1) {
+                    gptLayers[packet.currentLayer].active = 0; // Deactivate previous
+                    packet.currentLayer++;
+                    gptLayers[packet.currentLayer].active = 1; // Activate current
+                    packet.progress = 0; // Reset progress for next segment
+                     // For transformer, reset its internal "active" state quickly
+                    if(gptLayers[packet.currentLayer-1].type === "transformer") gptLayers[packet.currentLayer-1].active = 0;
+                }
+                 // Keep last layer active if packet is there
+                if(packet.currentLayer === gptLayers.length -1) gptLayers[packet.currentLayer].active = 1;
+
+            });
+
+            // Update overall progress and layer activity based on gptFlowProgress
+            const activeLayerIndex = Math.floor(gptFlowProgress * gptLayers.length);
+            gptLayers.forEach((layer, index) => {
+                layer.active = (index === activeLayerIndex && gptFlowProgress < 1) ? Math.min(1, (gptFlowProgress * gptLayers.length) % 1 + 0.2) : (layer.active > 0 ? layer.active - 0.05 : 0) ;
+                 if (index < activeLayerIndex) layer.active = 0.1; // Dimly active for passed layers
+            });
+
+
+            if (gptFlowProgress < 1.1) { // Extend a bit to let packets finish
+                gptFlowProgress += 0.003; // Slower animation
+                gptFlowAnimationId = requestAnimationFrame(drawGptFlow);
+            } else {
+                gptLayers.forEach(l => l.active = 0); // Deactivate all
+                requestAnimationFrame(drawGptFlow); // Final draw
+            }
+        }
+        document.getElementById('playGptFlow').addEventListener('click', () => {
+            cancelAnimationFrame(gptFlowAnimationId);
+            gptFlowProgress = 0;
+            gptLayers.forEach(l => l.active = 0);
+            initGptFlowPackets();
+            drawGptFlow();
+        });
+        initGptFlowPackets();
+        drawGptFlow(); // Initial draw
+
+        // Animation 3: Capabilities Showcase (DOM manipulation)
+        const capabilities = {
+            gen_python_class: {
+                title: "生成Python类",
+                example: `指令: "创建一个Python类 'Car'，包含属性 make, model, year，以及一个方法 display_info 打印车辆信息。"\n\nCodex输出 (示例):\nclass Car:\n    def __init__(self, make, model, year):\n        self.make = make\n        self.model = model\n        self.year = year\n\n    def display_info(self):\n        print(f"车辆信息: {self.year} {self.make} {self.model}")`
+            },
+            explain_regex: {
+                title: "解释正则表达式",
+                example: `指令: "解释这个正则表达式: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"\n\nCodex输出 (示例):\n这个正则表达式用于匹配一个标准的电子邮件地址格式。\n- ^: 匹配字符串的开始。\n- [a-zA-Z0-9._%+-]+: 匹配一个或多个字母、数字、点、下划线、百分号、加号或减号 (用户名部分)。\n- @: 匹配'@'符号。\n- [a-zA-Z0-9.-]+: 匹配一个或多个字母、数字、点或减号 (域名部分)。\n- \\.: 匹配'.'符号。\n- [a-zA-Z]{2,}: 匹配至少两个字母 (顶级域名，如 com, org)。\n- $: 匹配字符串的结束。`
+            },
+            convert_sql_pandas: {
+                title: "SQL查询转Pandas代码",
+                example: `指令: "将以下SQL查询转换为等效的Pandas Python代码: SELECT product_name, SUM(quantity) AS total_quantity FROM sales WHERE category = 'Electronics' GROUP BY product_name ORDER BY total_quantity DESC;"\n\nCodex输出 (示例):\n# 假设df是包含销售数据的Pandas DataFrame\n# df 的列应包括: 'product_name', 'quantity', 'category'\n\nelectronics_sales = df[df['category'] == 'Electronics']\ntotal_quantity_by_product = electronics_sales.groupby('product_name')['quantity'].sum().reset_index()\ntotal_quantity_by_product = total_quantity_by_product.rename(columns={'quantity': 'total_quantity'})\nsorted_products = total_quantity_by_product.sort_values(by='total_quantity', ascending=False)`
+            }
+        };
+        const capabilityDisplay = document.getElementById('capabilityDisplay');
+        function showCapability(key) {
+            capabilityDisplay.innerHTML = `<strong>${capabilities[key].title}</strong>\n\n${capabilities[key].example}`;
+            document.querySelectorAll('.tabs button').forEach(btn => {
+                btn.style.backgroundColor = '#3949ab'; // Reset color
+                btn.style.fontWeight = 'normal';
+            });
+            event.currentTarget.style.backgroundColor = '#283593'; // Active tab darker
+            event.currentTarget.style.fontWeight = 'bold';
+        }
+        // Initial display for capabilities
+        showCapability('gen_python_class'); // Show first tab by default
+        document.querySelector('.tabs button').style.backgroundColor = '#283593'; // Highlight first tab
+        document.querySelector('.tabs button').style.fontWeight = 'bold';
+
+
+        // Animation 4: The "Black Box" & Probabilistic Output
+        const canvasBlackBox = document.getElementById('blackBoxCanvas');
+        const ctxBlackBox = canvasBlackBox.getContext('2d');
+        let blackBoxAnimationId;
+        let bbProgress = 0; // Overall animation progress
+        let paths = [];
+        const numPaths = 5;
+
+        function initBlackBoxPaths() {
+            paths = [];
+            for (let i = 0; i < numPaths; i++) {
+                paths.push({
+                    prob: Math.random() * 0.6 + 0.1, // Random probability
+                    angle: (Math.random() - 0.5) * Math.PI / 3, // Spread angles
+                    selected: false,
+                    brightness: 0
+                });
+            }
+            // Ensure one path is "selected" (highest probability for demo)
+            paths.sort((a,b) => b.prob - a.prob);
+            paths[0].selected = true;
+            paths[0].prob = Math.random() * 0.3 + 0.7; // Make selected one higher
+        }
+
+
+        function drawBlackBox() {
+            ctxBlackBox.clearRect(0, 0, canvasBlackBox.width, canvasBlackBox.height);
+            const boxCenterX = canvasBlackBox.width / 2;
+            const boxCenterY = canvasBlackBox.height / 2;
+            const boxWidth = 150;
+            const boxHeight = 100;
+
+            // Input Arrow
+            ctxBlackBox.fillStyle = "#3949ab";
+            ctxBlackBox.font = "16px 'SimSun'";
+            ctxBlackBox.textAlign = "center";
+            ctxBlackBox.fillText("输入指令", boxCenterX - 150, boxCenterY - 20);
+            ctxBlackBox.beginPath();
+            ctxBlackBox.moveTo(boxCenterX - 200, boxCenterY);
+            ctxBlackBox.lineTo(boxCenterX - boxWidth/2 - 10, boxCenterY);
+            ctxBlackBox.lineTo(boxCenterX - boxWidth/2 - 20, boxCenterY - 5);
+            ctxBlackBox.moveTo(boxCenterX - boxWidth/2 - 10, boxCenterY);
+            ctxBlackBox.lineTo(boxCenterX - boxWidth/2 - 20, boxCenterY + 5);
+            ctxBlackBox.strokeStyle = "#3949ab";
+            ctxBlackBox.lineWidth = 3;
+            ctxBlackBox.stroke();
+
+            // Black Box
+            ctxBlackBox.fillStyle = "#37474F"; // Dark grey blue
+            ctxBlackBox.fillRect(boxCenterX - boxWidth/2, boxCenterY - boxHeight/2, boxWidth, boxHeight);
+            ctxBlackBox.fillStyle = "white";
+            ctxBlackBox.font = "bold 20px 'SimSun'";
+            ctxBlackBox.fillText("AI 模型", boxCenterX, boxCenterY - 10);
+            ctxBlackBox.font = "bold 30px Arial";
+            ctxBlackBox.fillText("?", boxCenterX, boxCenterY + 20);
+
+            // Probabilistic Output Paths
+            if (bbProgress > 0.3) {
+                const pathStartRatio = (bbProgress - 0.3) / 0.7;
+                paths.forEach(path => {
+                    const pathLength = 150 * Math.min(1, pathStartRatio * 2);
+                    const endX = boxCenterX + boxWidth/2 + pathLength * Math.cos(path.angle);
+                    const endY = boxCenterY + pathLength * Math.sin(path.angle);
+                    
+                    ctxBlackBox.beginPath();
+                    ctxBlackBox.moveTo(boxCenterX + boxWidth/2, boxCenterY);
+                    ctxBlackBox.lineTo(endX, endY);
+
+                    if (path.selected && pathStartRatio > 0.5) {
+                        path.brightness = Math.min(1, path.brightness + 0.05);
+                        ctxBlackBox.strokeStyle = `rgba(76, 175, 80, ${path.brightness})`; // Green for selected
+                        ctxBlackBox.lineWidth = 4;
+                         if (pathStartRatio > 0.8) { // Show "Output Code" text
+                            ctxBlackBox.fillStyle = "#2E7D32";
+                            ctxBlackBox.font = "16px 'SimSun'";
+                            ctxBlackBox.fillText("输出代码", boxCenterX + 150, boxCenterY + 20);
+                        }
+                    } else {
+                        path.brightness = Math.max(0.1, path.brightness - 0.02);
+                        ctxBlackBox.strokeStyle = `rgba(120, 144, 156, ${0.2 + path.prob * 0.5 * pathStartRatio + path.brightness * 0.3})`; // Grey for others
+                        ctxBlackBox.lineWidth = 2;
+                    }
+                    ctxBlackBox.stroke();
+                    
+                    // Probability text
+                    if (pathStartRatio > 0.2 && pathLength > 30) {
+                         ctxBlackBox.fillStyle = path.selected ? "#2E7D32" : "#78909c";
+                         ctxBlackBox.font = "12px Arial";
+                         ctxBlackBox.fillText(`P=${path.prob.toFixed(2)}`, 
+                                             boxCenterX + boxWidth/2 + (pathLength/2)*Math.cos(path.angle) + 10*Math.sin(path.angle), 
+                                             boxCenterY + (pathLength/2)*Math.sin(path.angle) - 10*Math.cos(path.angle));
+                    }
+                });
+            }
+            
+            if (bbProgress < 1) {
+                bbProgress += 0.01;
+                blackBoxAnimationId = requestAnimationFrame(drawBlackBox);
+            } else {
+                 // Ensure selected path stays bright
+                paths.find(p=>p.selected).brightness = 1;
+                requestAnimationFrame(drawBlackBox); // final draw
+            }
+        }
+
+        document.getElementById('playBlackBox').addEventListener('click', () => {
+            cancelAnimationFrame(blackBoxAnimationId);
+            bbProgress = 0;
+            initBlackBoxPaths();
+            drawBlackBox();
+        });
+        initBlackBoxPaths();
+        drawBlackBox();
+
+
+        // Animation 5: Developer-Codex Iterative Workflow
+        const canvasWorkflow = document.getElementById('workflowCanvas');
+        const ctxWorkflow = canvasWorkflow.getContext('2d');
+        let workflowAnimationId;
+        let wfState = 0; // 0: Dev Prompts, 1: Codex Generates, 2: Dev Reviews, 3: Dev Refines, 4: Codex Generates v2
+        let wfProgress = 0; // Progress within a state (0 to 1)
+        const wfElements = {
+            dev: { x: 100, y: 125, text: "开发者", icon: "🧑‍💻" },
+            codex: { x: 550, y: 125, text: "Codex AI", icon: "🤖" },
+            promptBubble: { x: 250, y: 80, text: "初始指令", opacity: 0 },
+            codeBubble1: { x: 400, y: 170, text: "代码 v1", opacity: 0 },
+            reviewAction: { x: 100, y: 170, text: "审查/测试", opacity: 0 },
+            refineBubble: { x: 250, y: 80, text: "优化指令", opacity: 0 },
+            codeBubble2: { x: 400, y: 170, text: "代码 v2", opacity: 0 }
+        };
+
+        function drawWorkflow() {
+            ctxWorkflow.clearRect(0, 0, canvasWorkflow.width, canvasWorkflow.height);
+            ctxWorkflow.font = "16px 'SimSun'";
+            ctxWorkflow.textAlign = "center";
+
+            // Draw Dev and Codex actors
+            [wfElements.dev, wfElements.codex].forEach(actor => {
+                ctxWorkflow.font = "40px Arial"; // Icon size
+                ctxWorkflow.fillText(actor.icon, actor.x, actor.y);
+                ctxWorkflow.font = "16px 'SimSun'";
+                ctxWorkflow.fillStyle = "#333";
+                ctxWorkflow.fillText(actor.text, actor.x, actor.y + 30);
+            });
+
+            // Draw bubbles and actions based on state and progress
+            function drawBubble(bubble, fromActor, toActor, isResponse=false) {
+                if (bubble.opacity > 0) {
+                    ctxWorkflow.globalAlpha = bubble.opacity;
+                    ctxWorkflow.fillStyle = isResponse ? "#E8F5E9" : "#E3F2FD"; // Light green for response, light blue for prompt
+                    ctxWorkflow.strokeStyle = isResponse ? "#A5D6A7" : "#90CAF9";
+                    const metrics = ctxWorkflow.measureText(bubble.text);
+                    const bubbleWidth = metrics.width + 30;
+                    const bubbleHeight = 40;
+                    ctxWorkflow.beginPath();
+                    // Simple rounded rect for bubble
+                    ctxWorkflow.roundRect(bubble.x - bubbleWidth/2, bubble.y - bubbleHeight/2, bubbleWidth, bubbleHeight, [10]);
+                    ctxWorkflow.fill();
+                    ctxWorkflow.stroke();
+                    ctxWorkflow.fillStyle = "#333";
+                    ctxWorkflow.fillText(bubble.text, bubble.x, bubble.y + 5);
+                    
+                    // Arrow
+                    ctxWorkflow.beginPath();
+                    const startX = fromActor.x + (isResponse ? -20 : 20) * (fromActor.x < bubble.x ? 1: -1) ; // Adjust based on direction
+                    const startY = fromActor.y - (isResponse ? 0 : 20) ;
+                    const endX = bubble.x + (isResponse ? 20 : -20) * (bubble.x < fromActor.x ? 1: -1) ;
+                    const endY = bubble.y;
+                    ctxWorkflow.moveTo(startX, startY);
+                    ctxWorkflow.lineTo(endX, endY);
+                    // Arrowhead
+                    const angle = Math.atan2(endY - startY, endX - startX);
+                    ctxWorkflow.lineTo(endX - 10 * Math.cos(angle - Math.PI / 6), endY - 10 * Math.sin(angle - Math.PI / 6));
+                    ctxWorkflow.moveTo(endX, endY);
+                    ctxWorkflow.lineTo(endX - 10 * Math.cos(angle + Math.PI / 6), endY - 10 * Math.sin(angle + Math.PI / 6));
+                    ctxWorkflow.strokeStyle = "#546E7A";
+                    ctxWorkflow.lineWidth = 2;
+                    ctxWorkflow.stroke();
+                    ctxWorkflow.globalAlpha = 1;
+                }
+            }
+            
+            function drawActionText(action) {
+                 if (action.opacity > 0) {
+                    ctxWorkflow.globalAlpha = action.opacity;
+                    ctxWorkflow.fillStyle = "#FFB74D"; // Orange for action
+                    ctxWorkflow.fillText(action.text, action.x, action.y + 5);
+                    ctxWorkflow.globalAlpha = 1;
+                 }
+            }
+
+            // State machine for animation
+            wfProgress += 0.02;
+            if (wfProgress > 1) {
+                wfProgress = 0;
+                wfState = (wfState + 1) % 5; // Cycle through 5 states
+                 // Reset opacities for next state
+                Object.values(wfElements).forEach(el => { if(el.opacity !== undefined) el.opacity = 0; });
+            }
+
+            switch(wfState) {
+                case 0: // Dev prompts
+                    wfElements.promptBubble.opacity = wfProgress;
+                    drawBubble(wfElements.promptBubble, wfElements.dev, wfElements.codex);
+                    break;
+                case 1: // Codex generates code v1
+                    wfElements.promptBubble.opacity = 1; // Keep visible
+                    drawBubble(wfElements.promptBubble, wfElements.dev, wfElements.codex);
+                    wfElements.codeBubble1.opacity = wfProgress;
+                    drawBubble(wfElements.codeBubble1, wfElements.codex, wfElements.dev, true);
+                    break;
+                case 2: // Dev reviews
+                    wfElements.promptBubble.opacity = 1; 
+                    drawBubble(wfElements.promptBubble, wfElements.dev, wfElements.codex);
+                    wfElements.codeBubble1.opacity = 1;
+                    drawBubble(wfElements.codeBubble1, wfElements.codex, wfElements.dev, true);
+                    wfElements.reviewAction.opacity = wfProgress;
+                    drawActionText(wfElements.reviewAction);
+                    break;
+                case 3: // Dev refines prompt
+                    wfElements.reviewAction.opacity = 1;
+                    drawActionText(wfElements.reviewAction);
+                    wfElements.refineBubble.opacity = wfProgress;
+                    drawBubble(wfElements.refineBubble, wfElements.dev, wfElements.codex);
+                    break;
+                case 4: // Codex generates code v2
+                    wfElements.refineBubble.opacity = 1;
+                    drawBubble(wfElements.refineBubble, wfElements.dev, wfElements.codex);
+                    wfElements.codeBubble2.opacity = wfProgress;
+                    drawBubble(wfElements.codeBubble2, wfElements.codex, wfElements.dev, true);
+                    break;
+            }
+            
+            workflowAnimationId = requestAnimationFrame(drawWorkflow);
+        }
+        
+        document.getElementById('playWorkflow').addEventListener('click', () => {
+            cancelAnimationFrame(workflowAnimationId);
+            wfState = 0;
+            wfProgress = 0;
+            Object.values(wfElements).forEach(el => { if(el.opacity !== undefined) el.opacity = 0; });
+            drawWorkflow();
+        });
+        drawWorkflow(); // Initial draw
+
+        // Utility for roundRect if not natively supported (for older browsers, though modern ones are fine)
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+                if (w < 2 * r) r = w / 2;
+                if (h < 2 * r) r = h / 2;
+                this.beginPath();
+                this.moveTo(x+r, y);
+                this.arcTo(x+w, y,   x+w, y+h, r);
+                this.arcTo(x+w, y+h, x,   y+h, r);
+                this.arcTo(x,   y+h, x,   y,   r);
+                this.arcTo(x,   y,   x+w, y,   r);
+                this.closePath();
+                return this;
+            }
+        }
+
+    </script>
+</body>
+</html>

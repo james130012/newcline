@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新矩阵算法</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        canvas {
+            display: block;
+            margin: 20px auto;
+            border: 1px solid #ccc;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>新矩阵算法演示</h1>
+        <div class="controls">
+            <button id="startBtn">开始</button>
+            <button id="resetBtn">重置</button>
+        </div>
+        <div id="canvasContainer"></div>
+    </div>
+
+    <script>
+        const sketch = (p) => {
+            let particles = [];
+            let running = false;
+            
+            p.setup = () => {
+                const canvas = p.createCanvas(600, 400);
+                canvas.parent('canvasContainer');
+                reset();
+            };
+            
+            p.draw = () => {
+                p.background(240);
+                if (running) {
+                    updateParticles();
+                }
+                drawParticles();
+            };
+            
+            function reset() {
+                particles = Array(100).fill().map(() => ({
+                    x: p.random(p.width),
+                    y: p.random(p.height),
+                    vx: p.random(-2, 2),
+                    vy: p.random(-2, 2),
+                    size: p.random(5, 15),
+                    color: p.color(p.random(100, 255), p.random(100, 255), p.random(100, 255))
+                }));
+            }
+            
+            function updateParticles() {
+                particles.forEach(particle => {
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    
+                    if (particle.x < 0 || particle.x > p.width) particle.vx *= -1;
+                    if (particle.y < 0 || particle.y > p.height) particle.vy *= -1;
+                });
+            }
+            
+            function drawParticles() {
+                particles.forEach(particle => {
+                    p.fill(particle.color);
+                    p.ellipse(particle.x, particle.y, particle.size);
+                });
+            }
+            
+            document.getElementById('startBtn').onclick = () => {
+                running = !running;
+            };
+            
+            document.getElementById('resetBtn').onclick = () => {
+                reset();
+            };
+        };
+        
+        new p5(sketch);
+    </script>
+</body>

@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>OpenAI Codex 物理逻辑视角深度解读</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif; /* A4常用字体 */
+            font-size: 16pt; /* 三号字体大约为16pt */
+            line-height: 1.6;
+            margin: 0 auto;
+            padding: 20mm; /* A4纸张页边距模拟 */
+            background-color: #f4f4f4;
+            color: #333;
+            max-width: 210mm; /* A4宽度 */
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 24pt;
+        }
+        h2 {
+            font-size: 20pt;
+            margin-top: 30px;
+        }
+        h3 {
+            font-size: 18pt;
+            margin-top: 20px;
+        }
+        p {
+            text-indent: 2em; /*段首缩进*/
+            margin-bottom: 1em;
+        }
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #eee;
+            padding: 5px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin: 15px auto;
+            display: block;
+            background-color: #f9f9f9;
+        }
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .controls button {
+            padding: 10px 15px;
+            font-size: 14pt;
+            margin: 0 5px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .controls button:hover {
+            background-color: #2980b9;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .tabs button {
+            flex-grow: 1;
+            max-width: 200px;
+        }
+        .tab-content {
+            padding: 15px;
+            border: 1px dashed #ccc;
+            min-height: 100px;
+            text-align: center;
+            font-size: 14pt;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OpenAI Codex 物理逻辑视角深度解读</h1>
+
+        <h2>一、引言：代码生成的新纪元</h2>
+        <p>OpenAI Codex，作为一种能够理解自然语言并将其转化为功能代码的人工智能系统，标志着人机交互与软件开发领域的一项革命性突破。它不仅仅是一个编程助手，更是一个连接人类意图与机器执行之间鸿沟的桥梁。本文将从物理逻辑的视角，深入剖析Codex的工作机理、核心技术、能力边界及其对未来计算范式可能带来的深远影响。这里的“物理逻辑”并非指代传统物理学的定律，而是指构成Codex系统运作的实际计算流程、数据转换路径、信息处理机制以及其内在的、可被观察和分析的因果关系链条。</p>
+
+        <h2>二、Codex的核心技术引擎：GPT与代码的融合</h2>
+        <p>Codex的核心构建于OpenAI的生成式预训练变换器（Generative Pre-trained Transformer, GPT）系列模型之上，特别是对其进行了针对性的优化以适应代码相关的任务。其物理逻辑基础可以概括为：</p>
+        <ol>
+            <li><strong>大规模神经网络结构：</strong> Codex是一个包含数百亿甚至更多参数的深度神经网络。这些参数（权重和偏置）在训练过程中被调整，以编码海量数据中存在的复杂模式。从物理上看，这可以被视为一个高度复杂的、可配置的信号处理系统。</li>
+            <li><strong>海量训练数据：</strong> Codex的“知识”来源于对巨量文本和公开源代码（例如来自GitHub的数十亿行代码）的“阅读”和学习。这些数据构成了模型构建其内部表示的“原材料”。其学习过程可以理解为一种统计规律的提取和压缩存储，公式可以简化为：模型性能 = f(模型规模, 数据量, 计算资源)。</li>
+            <li><strong>Transformer架构：</strong> Transformer模型特有的自注意力机制（Self-Attention Mechanism）是关键。它允许模型在处理输入序列（无论是自然语言还是代码片段）时，动态地评估不同部分之间的重要性，从而捕捉长距离依赖关系。这在物理逻辑上体现为一种高效的并行信息整合与加权机制。输入 <span class="formula">X</span> 经过多层处理，每一层都通过注意力计算 <span class="formula">Attention(Q, K, V) = softmax(Q * K^T / sqrt(d_k)) * V</span> 来更新信息的表示。</li>
+        </ol>
+        <p>这种架构使得Codex能够“理解”自然语言的模糊性和代码的精确性，并在两者之间建立映射。</p>
+
+        <h2>三、Codex的工作机理：从指令到代码的“物理”路径</h2>
+        <p>当用户向Codex发出一条自然语言指令（例如：“创建一个Python函数，计算两个数字的和”）时，系统内部经历了一系列复杂的物理逻辑步骤：</p>
+        <div class="controls">
+            <button id="playNlToCode">播放：自然语言到代码转换</button>
+        </div>
+        <canvas id="nlToCodeCanvas" width="600" height="200"></canvas>
+        <p><strong>1. 输入解析与编码 (Input Parsing & Encoding):</strong> 自然语言指令首先被分解为一系列更小的单元，称为“tokens”（词元）。这些tokens随后被转换为高维的数字向量（embeddings），这是模型能够进行数学运算的格式。这个过程类似于将物理信号（文字）转换为可在电路中处理的电信号。</p>
+        <p><strong>2. 上下文理解与模式匹配 (Contextual Understanding & Pattern Matching):</strong> 这些输入向量流经Transformer网络的多个层面。在每一层，自注意力机制和前馈网络共同作用，对输入信息进行复杂的非线性变换。模型试图在其巨大的参数空间中找到与输入指令最相关的模式。这并非人类意义上的“理解”，而是一种基于其训练数据的高度复杂的统计关联。如果输入指令与训练数据中“自然语言描述X对应代码Y”的模式相似，模型就会倾向于生成类似Y的代码。</p>
+        <p><strong>3. 代码生成与解码 (Code Generation & Decoding):</strong> 模型以自回归的方式逐个token生成输出代码。即，每生成一个token，这个token就会成为下一步生成过程的输入之一。模型在每个步骤计算词汇表中所有可能token的概率分布，并通常选择概率最高的token（或通过采样增加多样性）。这个过程可以被视为一个受控的、概率性的序列决策过程，其目标是构建一个在语法上正确且在功能上符合指令的代码序列。</p>
+        
+        <div class="controls">
+            <button id="playGptProcessing">播放：GPT模型处理流程</button>
+        </div>
+        <canvas id="gptProcessingCanvas" width="600" height="250"></canvas>
+
+        <p><strong>4. 计算实质 (Computational Essence):</strong> 从物理逻辑角度看，Codex的整个运作过程是一连串高维向量运算——矩阵乘法、加法、激活函数等。这些运算在庞大的参数集上进行，每一步计算都是确定性的。然而，由于模型的深度和参数的巨量，其整体行为呈现出高度的灵活性和“创造性”，能够从输入指令的“势能”转化为输出代码的“动能”。</p>
+
+        <h2>四、Codex的能力、应用场景与“物理”局限</h2>
+        <p>Codex展示了广泛的能力，包括但不限于代码生成、代码补全、代码解释、代码重构、错误查找、甚至跨语言代码翻译。它能够处理多种编程语言，如Python, JavaScript, Java, C++等。</p>
+        
+        <h3>4.1 能力展示（交互式）</h3>
+        <div class="tabs">
+            <button class="tab-button" onclick="showCapability('gen_python')">生成Python函数</button>
+            <button class="tab-button" onclick="showCapability('explain_sql')">解释SQL查询</button>
+            <button class="tab-button" onclick="showCapability('translate_js_py')">JS转Python</button>
+        </div>
+        <div id="capabilityDisplay" class="tab-content">
+            点击上方按钮查看示例...
+        </div>
+        <p>这些能力极大地提升了开发效率，使得开发者可以将更多精力投入到高层设计和复杂逻辑上，而非基础语法的编写。</p>
+
+        <h3>4.2 物理逻辑层面的局限性</h3>
+        <p>尽管Codex功能强大，但其物理逻辑基础也决定了其固有的局限性：</p>
+        <ol>
+            <li><strong>依赖训练数据：</strong> Codex的知识边界严格受限于其训练数据集。它无法创造出训练数据中从未暗示过的全新算法或编程范式。如果特定问题域或最新API未包含在训练集中，Codex的表现可能会显著下降。其“创造力”更多是现有模式的巧妙组合。</li>
+            <li><strong>缺乏真实世界感知与逻辑推理：</strong> Codex不具备真正的逻辑推理能力或对代码执行的物理后果（如性能瓶颈、资源消耗、安全漏洞的深层原因）的理解。它生成的代码可能在语法上正确，但在特定上下文中效率低下或存在潜在风险，因为它主要依赖统计模式而非因果分析。公式 <span class="formula">Output = Probability(Input, ModelParameters)</span> 而非 <span class="formula">Output = Logic(Input, WorldKnowledge)</span>。</li>
+            <li><strong>概率性错误与“一本正经的胡说八道”：</strong> 由于其概率生成的本质，Codex有时会生成看似合理但实际上错误或无用的代码，即所谓的“幻觉” (hallucination)。它可能无法区分细微但关键的需求差异，导致输出偏离预期。</li>
+            <li><strong>黑箱特性：</strong> 像其他大型深度学习模型一样，Codex的决策过程在很大程度上是“黑箱”的。虽然可以分析其激活模式，但要完全理解为何模型会针对特定输入给出特定输出，仍然是一个巨大的挑战。这使得调试和信任模型输出变得困难。</li>
+        </ol>
+        <div class="controls">
+            <button id="playBlackBox">动画：AI的“黑箱”</button>
+        </div>
+        <canvas id="blackBoxCanvas" width="600" height="200"></canvas>
+
+        <h2>五、Codex工作流与开发者协作</h2>
+        <p>Codex并非要取代开发者，而是作为一种强大的协作工具。理想的工作流程是：</p>
+        <ol>
+            <li>开发者提供清晰、结构化的自然语言指令或部分代码。</li>
+            <li>Codex根据指令生成候选代码片段。</li>
+            <li>开发者审查、测试、修改和完善Codex生成的代码。</li>
+            <li>通过迭代反馈，开发者引导Codex逐步逼近最终解决方案。</li>
+        </ol>
+        <div class="controls">
+            <button id="playWorkflow">播放：Codex与开发者工作流程</button>
+        </div>
+        <canvas id="workflowCanvas" width="700" height="200"></canvas>
+        <p>这种人机协作模式，将人的抽象思维、批判性评估与机器的高效模式匹配、代码生成能力相结合，有望显著提高软件开发的生产力和创造力。</p>
+
+        <h2>六、物理逻辑视角下的影响与展望</h2>
+        <p>从物理逻辑层面审视，Codex的出现预示着几个重要趋势：</p>
+        <ol>
+            <li><strong>计算资源的密集需求：</strong> 训练和运行类似Codex的大型模型需要巨大的计算能力（GPU/TPU集群）和能源消耗。这可能导致计算资源进一步向大型科技公司集中，并对环境产生影响。</li>
+            <li><strong>软件开发范式的转变：</strong> 开发过程可能从逐行编写代码向更高层次的“意图编程”或“规范即代码”转变。开发者角色可能更侧重于需求工程、系统设计、以及对AI生成代码的验证和整合。</li>
+            <li><strong>对软件质量和安全性的新挑战：</strong> 广泛使用AI生成的代码，如果缺乏严格的审查和测试，可能引入新的、难以预料的bug或安全漏洞。需要发展新的代码审计和AI可信赖性技术。</li>
+            <li><strong>数据作为核心“燃料”：</strong> Codex的成功再次证明了数据在现代AI系统中的核心地位。高质量、大规模、多样化的训练数据是模型性能的物理基础。未来，对代码数据的收集、标注和治理将变得更加重要。</li>
+        </ol>
+        <p>我们预期未来模型将朝着更强的上下文理解、更少的错误、更好的可解释性以及更高效的资源利用方向发展。这可能涉及到模型架构的创新、新的训练方法以及与符号AI等其他技术的融合。</p>
+
+        <h2>七、结论：驾驭代码生成的力量</h2>
+        <p>OpenAI Codex是人工智能在理解和生成代码方面取得的卓越成就，其物理逻辑基础在于大规模神经网络对海量数据模式的有效学习和表征。它通过复杂的计算流程，将人类的自然语言意图转化为机器可执行的代码指令，极大地改变了软件开发的图景。然而，理解其作为一种基于统计模式匹配而非真正逻辑推理的系统的本质，认识到其依赖训练数据、缺乏真实世界感知以及潜在的黑箱特性等物理局限，对于我们安全、有效地利用这一强大工具至关重要。未来，人类开发者与Codex等AI系统的协同进化，将在不断探索和塑造新的计算物理逻辑边界中，共同推动技术进步。</p>
+    </div>
+
+    <script>
+        // Animation 1: Natural Language to Code
+        const canvasNlToCode = document.getElementById('nlToCodeCanvas');
+        const ctxNlToCode = canvasNlToCode.getContext('2d');
+        let nlToCodeAnimationId;
+        let nlText = "创建一个带红色背景的按钮";
+        let codeText = "<button style='background-color: red;'>Click Me</button>";
+        let progressNlToCode = 0;
+
+        function drawNlToCode() {
+            ctxNlToCode.clearRect(0, 0, canvasNlToCode.width, canvasNlToCode.height);
+            ctxNlToCode.font = "20px Arial";
+            ctxNlToCode.textAlign = "center";
+
+            // Draw NL text disappearing
+            ctxNlToCode.globalAlpha = Math.max(0, 1 - progressNlToCode * 2);
+            ctxNlToCode.fillStyle = "#3498db";
+            ctxNlToCode.fillText(nlText, canvasNlToCode.width / 2, 70);
+
+            // Draw Code text appearing
+            ctxNlToCode.globalAlpha = Math.max(0, (progressNlToCode - 0.5) * 2);
+            ctxNlToCode.fillStyle = "#2ecc71";
+            ctxNlToCode.font = "18px 'Courier New', monospace";
+            ctxNlToCode.fillText(codeText, canvasNlToCode.width / 2, 130);
+            
+            ctxNlToCode.globalAlpha = 1; // Reset alpha
+
+            if (progressNlToCode < 1) {
+                progressNlToCode += 0.01;
+                nlToCodeAnimationId = requestAnimationFrame(drawNlToCode);
+            }
+        }
+
+        document.getElementById('playNlToCode').addEventListener('click', () => {
+            cancelAnimationFrame(nlToCodeAnimationId);
+            progressNlToCode = 0;
+            drawNlToCode();
+        });
+        drawNlToCode(); // Initial draw
+
+        // Animation 2: Simplified GPT-like Processing
+        const canvasGpt = document.getElementById('gptProcessingCanvas');
+        const ctxGpt = canvasGpt.getContext('2d');
+        let gptAnimationId;
+        let gptTokens = [{x: 50, y: 125, text: "Input", size: 0, color: "#3498db"}, 
+                         {x: 550, y: 125, text: "Output", size: 0, color: "#e74c3c"}];
+        let gptLayers = [
+            {x: 200, y: 50, nodes: 3, activeNode: -1},
+            {x: 300, y: 50, nodes: 4, activeNode: -1},
+            {x: 400, y: 50, nodes: 3, activeNode: -1}
+        ];
+        let gptProgress = 0; // 0: input, 1: processing, 2: output
+
+        function drawGptProcessing() {
+            ctxGpt.clearRect(0, 0, canvasGpt.width, canvasGpt.height);
+            ctxGpt.font = "16px Arial";
+            ctxGpt.textAlign = "center";
+
+            // Draw Input Token
+            ctxGpt.fillStyle = gptTokens[0].color;
+            ctxGpt.fillText(gptTokens[0].text, gptTokens[0].x, gptTokens[0].y - 15);
+            ctxGpt.beginPath();
+            ctxGpt.arc(gptTokens[0].x, gptTokens[0].y, 10 + gptTokens[0].size, 0, Math.PI*2);
+            ctxGpt.fill();
+
+            // Draw Output Token Placeholder
+            ctxGpt.fillStyle = gptTokens[1].color;
+            ctxGpt.fillText(gptTokens[1].text, gptTokens[1].x, gptTokens[1].y - 15);
+            ctxGpt.beginPath();
+            ctxGpt.arc(gptTokens[1].x, gptTokens[1].y, 10 + gptTokens[1].size, 0, Math.PI*2);
+            ctxGpt.fill();
+            
+            // Draw "Network" Layers
+            ctxGpt.strokeStyle = "#bdc3c7";
+            ctxGpt.lineWidth = 1;
+            gptLayers.forEach((layer, layerIndex) => {
+                for (let i = 0; i < layer.nodes; i++) {
+                    const nodeY = layer.y + i * (150 / (layer.nodes -1 + (layer.nodes==1?1:0) ));
+                    ctxGpt.beginPath();
+                    ctxGpt.arc(layer.x, nodeY, 8, 0, Math.PI*2);
+                    ctxGpt.fillStyle = (layer.activeNode === i) ? "#f1c40f" : "#ecf0f1";
+                    ctxGpt.fill();
+                    ctxGpt.stroke();
+
+                    // Connections
+                    if (layerIndex > 0) {
+                        const prevLayer = gptLayers[layerIndex-1];
+                        for (let j = 0; j < prevLayer.nodes; j++) {
+                            const prevNodeY = prevLayer.y + j * (150 / (prevLayer.nodes -1 + (prevLayer.nodes==1?1:0)));
+                            ctxGpt.beginPath();
+                            ctxGpt.moveTo(prevLayer.x, prevNodeY);
+                            ctxGpt.lineTo(layer.x, nodeY);
+                            ctxGpt.stroke();
+                        }
+                    }
+                }
+            });
+            
+            // Connect input to first layer, last layer to output conceptually
+             if (gptProgress > 0.1 && gptProgress < 0.9) { // During processing
+                ctxGpt.beginPath();
+                ctxGpt.moveTo(gptTokens[0].x + 15, gptTokens[0].y);
+                ctxGpt.lineTo(gptLayers[0].x - 10, gptLayers[0].y + 75); // Midpoint of first layer
+                ctxGpt.setLineDash([5, 5]);
+                ctxGpt.stroke();
+                ctxGpt.setLineDash([]);
+
+                ctxGpt.beginPath();
+                ctxGpt.moveTo(gptLayers[gptLayers.length-1].x + 10, gptLayers[gptLayers.length-1].y + 75); // Midpoint of last layer
+                ctxGpt.lineTo(gptTokens[1].x - 15, gptTokens[1].y);
+                ctxGpt.setLineDash([5, 5]);
+                ctxGpt.stroke();
+                ctxGpt.setLineDash([]);
+            }
+
+
+            // Animation logic
+            if (gptProgress <= 1) { // Input phase and processing
+                gptTokens[0].size = Math.min(10, gptProgress * 20);
+                if (gptProgress > 0.2 && gptProgress < 0.8) {
+                    // Simulate layer activation
+                    let currentLayer = Math.floor((gptProgress - 0.2) / (0.6 / gptLayers.length));
+                    if(currentLayer < gptLayers.length) {
+                        gptLayers.forEach(l => l.activeNode = -1);
+                        gptLayers[currentLayer].activeNode = Math.floor(Math.random() * gptLayers[currentLayer].nodes);
+                    }
+                } else {
+                     gptLayers.forEach(l => l.activeNode = -1);
+                }
+            }
+            if (gptProgress >= 0.8) { // Output phase
+                 gptTokens[1].size = Math.min(10, (gptProgress - 0.8) * 50);
+            }
+
+
+            if (gptProgress < 1.2) {
+                gptProgress += 0.005; // Slower animation
+                gptAnimationId = requestAnimationFrame(drawGptProcessing);
+            } else {
+                 gptLayers.forEach(l => l.activeNode = -1); // Clear active nodes
+                 requestAnimationFrame(drawGptProcessing); // One last draw to clear
+            }
+        }
+        document.getElementById('playGptProcessing').addEventListener('click', () => {
+            cancelAnimationFrame(gptAnimationId);
+            gptProgress = 0;
+            gptTokens.forEach(t => t.size = 0);
+            gptLayers.forEach(l => l.activeNode = -1);
+            drawGptProcessing();
+        });
+        drawGptProcessing(); // Initial draw
+
+        // Animation 3: Capabilities Showcase (DOM manipulation)
+        const capabilities = {
+            gen_python: {
+                title: "生成Python函数",
+                example: `指令: "创建一个Python函数，计算斐波那契数列的第n项"\n\nCodex输出 (示例):\ndef fibonacci(n):\n  if n <= 0:\n    return "Input should be a positive integer"\n  elif n == 1:\n    return 0\n  elif n == 2:\n    return 1\n  else:\n    a, b = 0, 1\n    for _ in range(2, n):\n      a, b = b, a + b\n    return b`
+            },
+            explain_sql: {
+                title: "解释SQL查询",
+                example: `指令: "解释这个SQL查询: SELECT name, email FROM users WHERE country = 'USA' ORDER BY registration_date DESC LIMIT 10;"\n\nCodex输出 (示例):\n这个SQL查询会从'users'表中选择居住在美国('USA')的用户的姓名('name')和邮箱('email')。\n结果会按照注册日期('registration_date')降序排列（最新的在前），并且只返回前10条记录。`
+            },
+            translate_js_py: {
+                title: "JavaScript 转 Python",
+                example: `指令: "将下面的JavaScript代码转换为Python:\nfunction greet(name) {\n  return "Hello, " + name + "!";\n}"\n\nCodex输出 (示例):\ndef greet(name):\n  return f"Hello, {name}!"`
+            }
+        };
+        const capabilityDisplay = document.getElementById('capabilityDisplay');
+        function showCapability(key) {
+            capabilityDisplay.innerHTML = `<strong>${capabilities[key].title}</strong><pre style="text-align:left; white-space: pre-wrap; font-size: 12pt;">${capabilities[key].example}</pre>`;
+            document.querySelectorAll('.tab-button').forEach(btn => btn.style.backgroundColor = '#3498db');
+            event.currentTarget.style.backgroundColor = '#2980b9';
+        }
+        // Set initial display for capabilities
+        capabilityDisplay.innerHTML = `点击上方按钮查看示例... (例如，Codex可以将自然语言指令转化为多种编程语言的代码，或解释现有代码的功能。)`;
+
+
+        // Animation 4: The "Black Box"
+        const canvasBlackBox = document.getElementById('blackBoxCanvas');
+        const ctxBlackBox = canvasBlackBox.getContext('2d');
+        let blackBoxAnimationId;
+        let gearAngle = 0;
+        let pulseSize = 0;
+        let pulseDirection = 1;
+
+        function drawBlackBox() {
+            ctxBlackBox.clearRect(0, 0, canvasBlackBox.width, canvasBlackBox.height);
+            
+            // Input Arrow
+            ctxBlackBox.fillStyle = "#3498db";
+            ctxBlackBox.beginPath();
+            ctxBlackBox.moveTo(50, 100);
+            ctxBlackBox.lineTo(130, 100);
+            ctxBlackBox.lineTo(130, 90);
+            ctxBlackBox.lineTo(150, 105);
+            ctxBlackBox.lineTo(130, 120);
+            ctxBlackBox.lineTo(130, 110);
+            ctxBlackBox.lineTo(50, 110);
+            ctxBlackBox.closePath();
+            ctxBlackBox.fill();
+            ctxBlackBox.font = "16px Arial";
+            ctxBlackBox.fillText("输入(指令)", 70, 80);
+
+            // Output Arrow
+            ctxBlackBox.fillStyle = "#2ecc71";
+            ctxBlackBox.beginPath();
+            ctxBlackBox.moveTo(550, 100);
+            ctxBlackBox.lineTo(470, 100);
+            ctxBlackBox.lineTo(470, 90);
+            ctxBlackBox.lineTo(450, 105);
+            ctxBlackBox.lineTo(470, 120);
+            ctxBlackBox.lineTo(470, 110);
+            ctxBlackBox.lineTo(550, 110);
+            ctxBlackBox.closePath();
+            ctxBlackBox.fill();
+            ctxBlackBox.fillText("输出(代码)", 480, 80);
+
+            // Black Box
+            const boxX = 200, boxY = 50, boxW = 200, boxH = 120;
+            ctxBlackBox.fillStyle = `rgba(50, 50, 50, ${0.8 + pulseSize * 0.02})`; // Pulsing opacity
+            ctxBlackBox.fillRect(boxX, boxY, boxW, boxH);
+            ctxBlackBox.strokeStyle = "black";
+            ctxBlackBox.strokeRect(boxX, boxY, boxW, boxH);
+            ctxBlackBox.fillStyle = "white";
+            ctxBlackBox.font = "bold 24px Arial";
+            ctxBlackBox.textAlign = "center";
+            ctxBlackBox.fillText("AI模型", boxX + boxW/2, boxY + boxH/2 - 15);
+            ctxBlackBox.font = "bold 40px Arial";
+            ctxBlackBox.fillText("?", boxX + boxW/2, boxY + boxH/2 + 25);
+
+            // Gears inside (simplified)
+            drawGear(ctxBlackBox, boxX + 50, boxY + 60, 20, 8, gearAngle, `rgba(255,255,255,${0.2 + pulseSize * 0.01})`);
+            drawGear(ctxBlackBox, boxX + 120, boxY + 40, 15, 6, -gearAngle * 0.7, `rgba(255,255,255,${0.2 + pulseSize * 0.01})`);
+            drawGear(ctxBlackBox, boxX + 150, boxY + 90, 18, 7, gearAngle * 0.5, `rgba(255,255,255,${0.2 + pulseSize * 0.01})`);
+
+            gearAngle += 0.02;
+            pulseSize += 0.1 * pulseDirection;
+            if (pulseSize > 5 || pulseSize < 0) pulseDirection *= -1;
+
+            blackBoxAnimationId = requestAnimationFrame(drawBlackBox);
+        }
+
+        function drawGear(ctx, x, y, radius, teeth, angle, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            for (let i = 0; i < teeth * 2; i++) {
+                const r = (i % 2 === 0) ? radius : radius * 0.7;
+                const currentAngle = angle + (Math.PI / teeth) * i;
+                ctx.lineTo(x + r * Math.cos(currentAngle), y + r * Math.sin(currentAngle));
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        document.getElementById('playBlackBox').addEventListener('click', () => {
+            // This animation plays continuously, button can be for emphasis or reset
+            gearAngle = 0; // Reset gear angle
+            // No need to cancel and request, it's already running.
+        });
+        drawBlackBox();
+
+
+        // Animation 5: Developer Workflow
+        const canvasWorkflow = document.getElementById('workflowCanvas');
+        const ctxWorkflow = canvasWorkflow.getContext('2d');
+        let workflowAnimationId;
+        let workflowState = 0; // 0: initial, 1: dev types, 2: codex processes, 3: code appears, 4: dev reviews
+        const workflowElements = [
+            { text: "开发者", x: 100, y: 100, type: "actor" },
+            { text: "指令/问题", x: 250, y: 60, type: "bubble", opacity: 0 },
+            { text: "Codex AI", x: 400, y: 100, type: "system" },
+            { text: "...", x: 400, y: 140, type: "processing", opacity: 0},
+            { text: "代码建议", x: 550, y: 60, type: "bubble", opacity: 0 },
+            { text: "审查/修改", x: 100, y: 140, type: "action", opacity: 0 }
+        ];
+
+        function drawWorkflow() {
+            ctxWorkflow.clearRect(0, 0, canvasWorkflow.width, canvasWorkflow.height);
+            ctxWorkflow.font = "16px Arial";
+            ctxWorkflow.textAlign = "center";
+
+            // Draw elements
+            workflowElements.forEach(el => {
+                ctxWorkflow.globalAlpha = el.opacity !== undefined ? el.opacity : 1;
+                if (el.type === "actor") {
+                    ctxWorkflow.fillStyle = "#2980b9";
+                    ctxWorkflow.fillRect(el.x - 40, el.y - 20, 80, 40);
+                    ctxWorkflow.fillStyle = "white";
+                    ctxWorkflow.fillText(el.text, el.x, el.y + 5);
+                } else if (el.type === "system") {
+                    ctxWorkflow.fillStyle = "#16a085";
+                    ctxWorkflow.fillRect(el.x - 40, el.y - 20, 80, 40);
+                    ctxWorkflow.fillStyle = "white";
+                    ctxWorkflow.fillText(el.text, el.x, el.y + 5);
+                } else if (el.type === "bubble") {
+                    ctxWorkflow.fillStyle = "#ecf0f1";
+                    ctxWorkflow.strokeStyle = "#7f8c8d";
+                    // Simple rect for bubble
+                    const metrics = ctxWorkflow.measureText(el.text);
+                    const width = metrics.width + 20;
+                    ctxWorkflow.fillRect(el.x - width/2, el.y - 20, width, 30);
+                    ctxWorkflow.strokeRect(el.x - width/2, el.y - 20, width, 30);
+                    ctxWorkflow.fillStyle = "#2c3e50";
+                    ctxWorkflow.fillText(el.text, el.x, el.y);
+                } else if (el.type === "processing" || el.type === "action") {
+                    ctxWorkflow.fillStyle = "#f39c12";
+                    ctxWorkflow.fillText(el.text, el.x, el.y);
+                }
+            });
+            ctxWorkflow.globalAlpha = 1;
+
+            // Arrows (static for simplicity, could be animated)
+            ctxWorkflow.strokeStyle = "#7f8c8d";
+            ctxWorkflow.lineWidth = 2;
+            // Dev to Codex (instruction)
+            if (workflowElements[1].opacity > 0.5) arrow(ctxWorkflow, 150, 100, 350, 100);
+            // Codex to Dev (code)
+            if (workflowElements[4].opacity > 0.5) arrow(ctxWorkflow, 450, 100, 150, 100, true);
+
+
+            // Animation states
+            switch(workflowState) {
+                case 0: // Initial state
+                    workflowElements[1].opacity = 0; // instruction
+                    workflowElements[3].opacity = 0; // processing
+                    workflowElements[4].opacity = 0; // code
+                    workflowElements[5].opacity = 0; // review
+                    break;
+                case 1: // Dev types instruction
+                    workflowElements[1].opacity = Math.min(1, workflowElements[1].opacity + 0.05);
+                    if (workflowElements[1].opacity >= 1) workflowState = 2;
+                    break;
+                case 2: // Codex processes
+                    workflowElements[3].opacity = Math.min(1, workflowElements[3].opacity + 0.05);
+                    if (workflowElements[3].opacity >= 1) workflowState = 3;
+                    break;
+                case 3: // Code appears
+                    workflowElements[4].opacity = Math.min(1, workflowElements[4].opacity + 0.05);
+                    if (workflowElements[4].opacity >= 1) workflowState = 4;
+                    break;
+                case 4: // Dev reviews
+                    workflowElements[5].opacity = Math.min(1, workflowElements[5].opacity + 0.05);
+                    if (workflowElements[5].opacity >= 1) workflowState = 5; // End or loop
+                    break;
+            }
+
+            if (workflowState < 5) {
+                workflowAnimationId = requestAnimationFrame(drawWorkflow);
+            }
+        }
+        
+        function arrow(ctx, fromx, fromy, tox, toy, twoWay = false) {
+            const headlen = 10; // length of head in pixels
+            const dx = tox - fromx;
+            const dy = toy - fromy;
+            const angle = Math.atan2(dy, dx);
+            ctx.beginPath();
+            ctx.moveTo(fromx, fromy);
+            ctx.lineTo(tox, toy);
+            ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.moveTo(tox, toy);
+            ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+            if (twoWay) { // Arrow head at the start as well for bi-directional
+                ctx.moveTo(fromx, fromy);
+                ctx.lineTo(fromx + headlen * Math.cos(angle - Math.PI / 6 + Math.PI), fromy + headlen * Math.sin(angle - Math.PI / 6 + Math.PI));
+                 ctx.moveTo(fromx, fromy);
+                ctx.lineTo(fromx + headlen * Math.cos(angle + Math.PI / 6 + Math.PI), fromy + headlen * Math.sin(angle + Math.PI / 6 + Math.PI));
+            }
+            ctx.stroke();
+        }
+
+
+        document.getElementById('playWorkflow').addEventListener('click', () => {
+            cancelAnimationFrame(workflowAnimationId);
+            workflowState = 0;
+            // Reset opacities explicitly for re-runs
+            workflowElements.forEach(el => {
+                if(el.opacity !== undefined) el.opacity = (el.type === "actor" || el.type === "system") ? 1 : 0;
+            });
+            workflowElements[1].opacity = 0; // instruction
+            workflowElements[3].opacity = 0; // processing
+            workflowElements[4].opacity = 0; // code
+            workflowElements[5].opacity = 0; // review
+            workflowState = 1; // Start animation
+            drawWorkflow();
+        });
+        drawWorkflow(); // Initial draw
+
+    </script>
+</body>
+</html>

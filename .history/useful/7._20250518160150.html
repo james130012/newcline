@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主动学习与数据筛选：物理逻辑视角深度解析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f0f2f5; /* Light gray background */
+            color: #333; /* Dark gray text */
+        }
+        .content-section {
+            background-color: #ffffff; /* White content background */
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .animation-container {
+            border: 1px solid #e2e8f0; /* Light border for canvas container */
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background-color: #f9fafb; /* Very light gray for canvas background */
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background-color: #fff; /* White canvas background */
+            border-radius: 4px;
+        }
+        .button-container button, .control-button {
+            background-color: #3b82f6; /* Blue */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+            margin: 0.25rem;
+        }
+        .button-container button:hover, .control-button:hover {
+            background-color: #2563eb; /* Darker Blue */
+        }
+        h1, h2, h3 {
+            color: #1e3a8a; /* Dark Blue for headers */
+            margin-bottom: 1rem;
+        }
+        h1 { font-size: 2.25rem; text-align: center; margin-bottom: 2rem; }
+        h2 { font-size: 1.75rem; border-bottom: 2px solid #3b82f6; padding-bottom: 0.5rem; }
+        h3 { font-size: 1.25rem; }
+        p, li {
+            line-height: 1.8;
+            margin-bottom: 1rem;
+            color: #4b5563; /* Medium gray text */
+        }
+        ul {
+            list-style-type: disc;
+            margin-left: 1.5rem;
+        }
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #eef2ff; /* Light indigo background for formulas */
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            color: #3730a3; /* Indigo text */
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-5xl mx-auto">
+        <h1>主动学习与数据筛选：物理逻辑视角深度解析</h1>
+
+        <div class="content-section">
+            <h2>引言：数据洪流中的导航艺术</h2>
+            <p>在机器学习的宏伟蓝图中，数据是驱动模型进化的核心燃料。然而，我们常常面临“数据洪流”与“标注瓶颈”并存的窘境：未标记数据唾手可得，但获取高质量的标记数据却成本高昂且耗时。如何从海量数据中高效地提炼出最有价值的信息，如同在湍急的河流中精准导航，是提升模型性能和降低成本的关键。本文将从“物理逻辑”的独特视角，深入剖析两种关键技术——主动学习（Active Learning）与数据筛选（Data Filtering），探讨它们在数据处理流程中的机制、效率与动态特性，并通过交互式动画直观呈现其核心思想。</p>
+        </div>
+
+        <div class="content-section">
+            <h2>一、主动学习：智能导航的“勘探者”</h2>
+            <p>主动学习可以被视为一个智能的“信息勘探系统”。它不像传统的被动学习那样全盘接收所有数据投喂，而是主动出击，识别并请求对那些“模型最不确定”或“最具信息量”的未标记样本进行标注。这个过程充满了动态的反馈与迭代优化。</p>
+            
+            <h3 class="mt-4">物理逻辑解析：</h3>
+            <ul>
+                <li><strong>信息势能与梯度下降：</strong> 未标记数据点可以看作分布在一个“信息势能场”中。模型的不确定性越高的地方，“信息势能”就越高。主动学习算法如同一个敏锐的勘探者，沿着“信息势能”的梯度方向，优先选择高势能点（高不确定性样本）进行标注，以期用最小的“能量消耗”（标注成本）获得最大的“势能降低”（模型性能提升）。</li>
+                <li><strong>闭环反馈控制系统：</strong> 主动学习构成了一个典型的闭环反馈系统：模型训练 -> 不确定性评估 -> 查询最有价值样本 -> 人工标注 -> 模型再训练。这个循环不断迭代，如同一个精密调校的控制器，持续优化系统的“输出”（模型精度）。</li>
+                <li><strong>能量效率：</strong> 其核心优势在于“能量效率”——用更少的标注样本达到与随机采样或全量标注相当甚至更好的模型性能，显著降低了“燃料”成本。</li>
+            </ul>
+
+            <div class="animation-container mt-6">
+                <h3 class="text-center mb-2">动画1：主动学习的决策边界优化过程</h3>
+                <p class="text-sm text-center mb-2">此动画展示了一个二分类问题。主动学习算法会优先选择靠近当前决策边界的模糊点进行标注，从而更有效地优化边界。</p>
+                <canvas id="activeLearningBoundaryCanvas" width="600" height="300"></canvas>
+                <div class="button-container text-center mt-2">
+                    <button id="playBoundaryAnim" class="control-button">播放/暂停</button>
+                    <button id="resetBoundaryAnim" class="control-button">重置</button>
+                </div>
+            </div>
+             <p class="text-sm mt-2">在这个动画中，蓝色和橙色的点代表两个不同的类别。初始时，决策边界（黑线）可能并不完美。主动学习会“智能地”选择那些模型最难区分的点（通常在边界附近，以黄色高亮显示）进行“查询”（模拟标注）。随着这些关键点被标注并加入训练集，决策边界会逐渐变得更加精确。</p>
+        </div>
+
+        <div class="content-section">
+            <h2>二、数据筛选：目标明确的“过滤器”</h2>
+            <p>数据筛选更像是一个目标明确的“物理过滤器”或“分拣系统”。它根据预设的规则或标准，对数据流进行处理，或剔除噪声、无关数据，或选取符合特定要求的子集。其操作通常更具静态性，缺乏主动学习那样的动态模型交互。</p>
+
+            <h3 class="mt-4">物理逻辑解析：</h3>
+            <ul>
+                <li><strong>选择性渗透/阻拦：</strong> 筛选器如同一个具有特定孔径的“筛网”或具有特定吸附性的“滤材”。数据流过时，符合标准的“粒子”（数据点）得以通过或被保留，不符合的则被阻拦或丢弃。例如，基于元数据（如图像分辨率、文本长度）的筛选，或基于关键词、特定模式的筛选。</li>
+                <li><strong>开环或固定参数系统：</strong> 一旦筛选规则设定，其操作通常是开环的，或者参数是固定的。它不像主动学习那样根据模型的实时状态调整策略。其目的是净化数据源或初步圈定一个大致相关的范围。</li>
+                <li><strong>处理效率与损耗：</strong> 对于去除明显噪声或快速缩小数据范围，筛选非常高效。但如果规则设置不当，可能会“误伤”有价值的数据（信息损耗），或者保留了大量虽然符合标准但对模型学习贡献不大的冗余数据。</li>
+            </ul>
+
+            <div class="animation-container mt-6">
+                <h3 class="text-center mb-2">动画2：数据筛选的数据流处理</h3>
+                <p class="text-sm text-center mb-2">此动画模拟数据点（圆形代表有效数据，方形代表噪声）流过一个筛选器。筛选器根据预设规则（例如，只允许圆形通过）进行分离。</p>
+                <canvas id="dataFilteringCanvas" width="600" height="250"></canvas>
+                <div class="button-container text-center mt-2">
+                    <button id="playFilteringAnim" class="control-button">播放/暂停</button>
+                    <button id="resetFilteringAnim" class="control-button">重置</button>
+                </div>
+            </div>
+            <p class="text-sm mt-2">在这个动画中，各种形状的数据点从左侧流入。中间的“过滤器”只允许圆形（代表符合标准的数据）通过，流向右侧的“已筛选数据区”；而方形（代表噪声或不符合标准的数据）则被阻拦并流向“已丢弃数据区”。这形象地展示了筛选机制如何根据固定规则净化数据流。</p>
+        </div>
+
+        <div class="content-section">
+            <h2>三、主动学习 vs. 数据筛选：机制对比</h2>
+            <p>从物理逻辑上看，主动学习和数据筛选代表了两种不同的数据处理哲学：主动学习是“智能导向、动态优化”，而数据筛选是“规则驱动、静态处理”。</p>
+
+            <div class="animation-container mt-6">
+                <h3 class="text-center mb-2">动画3：主动学习与筛选的效率对比</h3>
+                <p class="text-sm text-center mb-2">此动画通过两个并行的进度条比较主动学习和随机筛选（一种简单筛选策略）在达到相同模型精度时所需的标注样本数量。</p>
+                <canvas id="efficiencyComparisonCanvas" width="600" height="300"></canvas>
+                <div class="button-container text-center mt-2">
+                    <button id="playEfficiencyAnim" class="control-button">开始对比</button>
+                    <button id="resetEfficiencyAnim" class="control-button">重置</button>
+                </div>
+            </div>
+            <p class="text-sm mt-2">动画中，“主动学习”条通常会比“随机/一般筛选”条更快达到目标精度（例如90%），同时其下方的“已标注样本”计数也显著更少。这直观地体现了主动学习在标注“能量”消耗上的高效性。当然，这里的“筛选”指的是一种较为宽泛或随机的筛选，特定场景下的高度优化筛选也可能表现良好，但主动学习的核心优势在于其自适应性。</p>
+
+            <div class="animation-container mt-6">
+                <h3 class="text-center mb-2">动画4：主动学习的循环反馈机制</h3>
+                <p class="text-sm text-center mb-2">此动画展示主动学习的迭代循环过程：训练模型 -> 评估不确定性 -> 查询标注 -> 更新模型。</p>
+                <canvas id="activeLearningCycleCanvas" width="400" height="400"></canvas>
+                <div class="button-container text-center mt-2">
+                    <button id="playCycleAnim" class="control-button">播放/暂停</button>
+                </div>
+            </div>
+            <p class="text-sm mt-2">这个动画通过一个循环图展示了主动学习的核心流程。箭头指示信息和决策的流动方向：从“训练模型”开始，模型对未标记数据进行“不确定性评估”，然后“选择查询样本”交由“人工标注”，标注后的数据再用于“更新模型”。这个闭环系统不断运转，驱动模型智能进化。</p>
+            
+            <div class="animation-container mt-6">
+                <h3 class="text-center mb-2">动画5：信息价值探索对比</h3>
+                <p class="text-sm text-center mb-2">此动画将数据空间可视化为一个信息价值地图。主动学习会定位并选择信息价值最高的区域，而筛选则可能基于其他非信息价值的准则进行区域选择。</p>
+                <canvas id="informationValueCanvas" width="500" height="350"></canvas>
+                <div class="button-container text-center mt-2">
+                    <button id="queryAL" class="control-button">主动学习查询</button>
+                    <button id="applyFilter" class="control-button">应用筛选规则</button>
+                    <button id="resetInfoValue" class="control-button">重置</button>
+                </div>
+            </div>
+            <p class="text-sm mt-2">画布代表一个抽象的数据特征空间，颜色深浅代表“信息价值”或“模型不确定性”（深色代表高价值/高不确定性）。点击“主动学习查询”按钮，系统会自动高亮最具信息价值的点（模拟）。点击“应用筛选规则”按钮，则会根据一个预设的、可能与信息价值不完全相关的区域（例如，用户定义的矩形区域）进行选择。这对比了主动学习的“价值导向”和筛选的“规则导向”。</p>
+        </div>
+
+        <div class="content-section">
+            <h2>四、应用场景与协同策略</h2>
+            <p>主动学习与数据筛选并非总是相互排斥，它们可以协同工作：</p>
+            <ul>
+                <li><strong>先筛选，后主动学习：</strong> 可以先用数据筛选技术去除明显的噪声、低质量或完全无关的数据，对数据进行初步“净化”和“浓缩”，减少后续主动学习的计算负担和处理范围。如同在矿石富集前先去除大块废石。</li>
+                <li><strong>主动学习指导筛选规则：</strong> 主动学习过程中发现的某些特征或模式，有时可以反过来启发我们设计更有效的筛选规则。</li>
+            </ul>
+            <p>选择何种策略，取决于具体任务、数据特性、可用资源（尤其是标注预算）以及对模型性能的要求。例如，在医学影像分析中，可能先通过筛选去除低质量图像，再对疑似病灶区域利用主动学习挑选最具诊断价值的模糊病例让专家标注。一个简单的公式可以理解为，总效益 <span class="formula">E_total</span> 是初始数据质量 <span class="formula">Q_initial</span>、筛选效益 <span class="formula">E_filter</span> 和主动学习效益 <span class="formula">E_active</span> 的函数，同时受限于成本 <span class="formula">C</span>：<span class="formula">E_total = f(Q_initial, E_filter, E_active) - C</span>。目标是最大化 <span class="formula">E_total</span>。</p>
+        </div>
+
+        <div class="content-section">
+            <h2>五、结论：迈向更智能的数据利用</h2>
+            <p>从“物理逻辑”的视角看，主动学习如同一个拥有智能传感器和反馈回路的精密仪器，致力于以最高效率从数据中提取“信息能量”。而数据筛选则更像一个可配置的“物理屏障”或“分拣流水线”，依据既定规则对数据流进行整形和净化。理解它们各自的“物理特性”——动态性、选择性、能量效率、信息损耗可能性——有助于我们更明智地设计数据策略，在有限的资源下，最大化机器学习项目的成功率和回报率。未来的趋势无疑是结合两者的优点，构建更为强大和高效的数据处理与模型训练框架。</p>
+        </div>
+    </div>
+
+    <script>
+        // Common utility for drawing text on canvas
+        function drawCanvasText(ctx, text, x, y, color = 'black', fontSize = 12, textAlign = 'center', textBaseline = 'middle') {
+            ctx.fillStyle = color;
+            ctx.font = fontSize + 'px Noto Sans SC';
+            ctx.textAlign = textAlign;
+            ctx.textBaseline = textBaseline;
+            ctx.fillText(text, x, y);
+        }
+
+        // Animation 1: Active Learning Boundary
+        const boundaryCanvas = document.getElementById('activeLearningBoundaryCanvas');
+        const boundaryCtx = boundaryCanvas.getContext('2d');
+        const playBoundaryBtn = document.getElementById('playBoundaryAnim');
+        const resetBoundaryBtn = document.getElementById('resetBoundaryAnim');
+
+        let boundaryAnimationId;
+        let boundaryPlaying = false;
+        let points = [];
+        let boundaryY;
+        let iterationCount;
+        const numPoints = 50;
+        const queryRadius = 15; // Radius to highlight uncertain points
+
+        function initBoundary() {
+            points = [];
+            for (let i = 0; i < numPoints; i++) {
+                points.push({
+                    x: Math.random() * boundaryCanvas.width,
+                    y: Math.random() * boundaryCanvas.height,
+                    class: Math.random() > 0.5 ? 1 : 0, // 0 for blue, 1 for orange
+                    queried: false
+                });
+            }
+            boundaryY = boundaryCanvas.height / 2 + (Math.random() - 0.5) * 50; // Initial slightly off boundary
+            iterationCount = 0;
+            drawBoundary();
+        }
+
+        function drawBoundary() {
+            boundaryCtx.clearRect(0, 0, boundaryCanvas.width, boundaryCanvas.height);
+            
+            // Draw points
+            points.forEach(p => {
+                boundaryCtx.beginPath();
+                boundaryCtx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                boundaryCtx.fillStyle = p.class === 0 ? 'rgba(59, 130, 246, 0.7)' : 'rgba(249, 115, 22, 0.7)'; // Blue, Orange
+                if (p.queried) {
+                     boundaryCtx.strokeStyle = 'green';
+                     boundaryCtx.lineWidth = 2;
+                     boundaryCtx.stroke();
+                }
+                boundaryCtx.fill();
+            });
+
+            // Draw boundary line
+            boundaryCtx.beginPath();
+            boundaryCtx.moveTo(0, boundaryY);
+            boundaryCtx.lineTo(boundaryCanvas.width, boundaryY);
+            boundaryCtx.strokeStyle = 'black';
+            boundaryCtx.lineWidth = 2;
+            boundaryCtx.stroke();
+            
+            drawCanvasText(boundaryCtx, `迭代次数: ${iterationCount}`, boundaryCanvas.width - 70, 20, 'black', 12);
+            drawCanvasText(boundaryCtx, `当前决策边界`, boundaryCanvas.width / 2, boundaryY - 10, 'black', 10);
+
+
+            // Highlight uncertain points if playing
+            if (boundaryPlaying && iterationCount < 10) { // Limit iterations
+                points.forEach(p => {
+                    if (!p.queried && Math.abs(p.y - boundaryY) < queryRadius) {
+                        boundaryCtx.beginPath();
+                        boundaryCtx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+                        boundaryCtx.strokeStyle = 'yellow';
+                        boundaryCtx.lineWidth = 3;
+                        boundaryCtx.stroke();
+                    }
+                });
+            }
+        }
+
+        function updateBoundary() {
+            if (!boundaryPlaying || iterationCount >= 10) { // Stop after 10 iterations or if paused
+                 if (iterationCount >=10) boundaryPlaying = false;
+                 drawBoundary(); // Redraw one last time to remove highlights if stopped
+                 return;
+            }
+
+            let uncertainPoints = points.filter(p => !p.queried && Math.abs(p.y - boundaryY) < queryRadius);
+            if (uncertainPoints.length > 0) {
+                // Select a few uncertain points to "query"
+                for(let i=0; i < Math.min(3, uncertainPoints.length); i++){
+                    let pointToQuery = uncertainPoints[Math.floor(Math.random() * uncertainPoints.length)];
+                    if(pointToQuery) pointToQuery.queried = true;
+                }
+
+                // Adjust boundary based on queried points (simplified logic)
+                let class0SumY = 0, class0Count = 0;
+                let class1SumY = 0, class1Count = 0;
+                points.filter(p => p.queried).forEach(p => {
+                    if (p.class === 0) {
+                        class0SumY += p.y;
+                        class0Count++;
+                    } else {
+                        class1SumY += p.y;
+                        class1Count++;
+                    }
+                });
+                
+                let meanY0 = class0Count > 0 ? class0SumY / class0Count : boundaryY - 20;
+                let meanY1 = class1Count > 0 ? class1SumY / class1Count : boundaryY + 20;
+                
+                // Move boundary towards the middle of the means of queried classes
+                let targetBoundaryY = (meanY0 + meanY1) / 2;
+                if (class0Count === 0 && class1Count > 0) targetBoundaryY = meanY1 - 30; // if only class 1 queried, push boundary away
+                if (class1Count === 0 && class0Count > 0) targetBoundaryY = meanY0 + 30; // if only class 0 queried, push boundary away
+                
+                boundaryY += (targetBoundaryY - boundaryY) * 0.2; // Smooth transition
+                iterationCount++;
+            } else if (points.every(p => p.queried)) { // All points queried
+                boundaryPlaying = false;
+            }
+
+
+            drawBoundary();
+            boundaryAnimationId = requestAnimationFrame(updateBoundary);
+        }
+        
+        playBoundaryBtn.addEventListener('click', () => {
+            boundaryPlaying = !boundaryPlaying;
+            if (boundaryPlaying) {
+                if (iterationCount >= 10) initBoundary(); // Reset if max iterations reached
+                updateBoundary();
+                playBoundaryBtn.textContent = '暂停';
+            } else {
+                cancelAnimationFrame(boundaryAnimationId);
+                playBoundaryBtn.textContent = '播放';
+                drawBoundary(); // Redraw to remove highlights
+            }
+        });
+        resetBoundaryBtn.addEventListener('click', () => {
+            boundaryPlaying = false;
+            cancelAnimationFrame(boundaryAnimationId);
+            playBoundaryBtn.textContent = '播放';
+            initBoundary();
+        });
+        initBoundary();
+
+        // Animation 2: Data Filtering
+        const filteringCanvas = document.getElementById('dataFilteringCanvas');
+        const filteringCtx = filteringCanvas.getContext('2d');
+        const playFilteringBtn = document.getElementById('playFilteringAnim');
+        const resetFilteringBtn = document.getElementById('resetFilteringAnim');
+
+        let filteringAnimationId;
+        let filteringPlaying = false;
+        let filterItems = [];
+        const filterGateX = filteringCanvas.width / 2;
+        const filterGateY = filteringCanvas.height / 2;
+        const gateHeight = 80;
+
+        function initFiltering() {
+            filterItems = [];
+            for (let i = 0; i < 30; i++) {
+                filterItems.push({
+                    x: Math.random() * (filterGateX - 50) - 50, // Start off-screen left
+                    y: Math.random() * filteringCanvas.height,
+                    type: Math.random() > 0.4 ? 'circle' : 'square', // circle = good, square = noise
+                    speed: Math.random() * 1 + 0.5,
+                    size: 10,
+                    filteredOut: false,
+                    passedFilter: false
+                });
+            }
+            drawFiltering();
+        }
+
+        function drawFiltering() {
+            filteringCtx.clearRect(0, 0, filteringCanvas.width, filteringCanvas.height);
+
+            // Draw filter gate
+            filteringCtx.fillStyle = '#cbd5e1'; // Light gray gate
+            filteringCtx.fillRect(filterGateX - 5, filterGateY - gateHeight / 2 - 10, 10, gateHeight + 20);
+            drawCanvasText(filteringCtx, '过滤器', filterGateX, filterGateY - gateHeight/2 - 20, 'black', 12);
+            
+            // Draw labels for areas
+            drawCanvasText(filteringCtx, '原始数据流', 50, 20, '#4b5563', 12);
+            drawCanvasText(filteringCtx, '已筛选数据', filteringCanvas.width - 60, filterGateY - 20, '#16a34a', 12); // Green
+            drawCanvasText(filteringCtx, '已丢弃数据', filteringCanvas.width - 60, filterGateY + 40, '#dc2626', 12); // Red
+
+
+            filterItems.forEach(item => {
+                filteringCtx.beginPath();
+                if (item.type === 'circle') {
+                    filteringCtx.arc(item.x, item.y, item.size / 2, 0, Math.PI * 2);
+                    filteringCtx.fillStyle = 'rgba(59, 130, 246, 0.8)'; // Blue circle
+                } else {
+                    filteringCtx.rect(item.x - item.size / 2, item.y - item.size / 2, item.size, item.size);
+                    filteringCtx.fillStyle = 'rgba(239, 68, 68, 0.8)'; // Red square
+                }
+                filteringCtx.fill();
+            });
+        }
+
+        function updateFiltering() {
+            if (!filteringPlaying) return;
+
+            filterItems.forEach(item => {
+                if (item.x > filterGateX - item.size / 2 && item.x < filterGateX + item.size / 2) { // At the gate
+                    if (item.type === 'circle' && !item.passedFilter && !item.filteredOut) { // Circle passes
+                        if (item.y > filterGateY - gateHeight / 2 && item.y < filterGateY + gateHeight / 2) {
+                           item.passedFilter = true;
+                        } else { // Circle hits the gate wall
+                           item.filteredOut = true; // Treat as filtered out if it hits wall
+                        }
+                    } else if (item.type === 'square' && !item.filteredOut && !item.passedFilter) { // Square is filtered out
+                        item.filteredOut = true;
+                    }
+                }
+
+                if (item.passedFilter) {
+                    item.x += item.speed; // Continue right
+                    // Optional: guide to "filtered data" area
+                    if (item.y > filterGateY - 20) item.y -= item.speed * 0.3;
+                    if (item.y < filterGateY - 20) item.y += item.speed * 0.3;
+
+                } else if (item.filteredOut) {
+                    item.x += item.speed; // Squares also move right but to a different area
+                     // Optional: guide to "discarded data" area
+                    if (item.y < filterGateY + 40) item.y += item.speed * 0.3;
+                    if (item.y > filterGateY + 40) item.y -= item.speed * 0.3;
+                } else {
+                    item.x += item.speed; // Move towards gate
+                }
+
+                // Reset item if it goes off screen
+                if (item.x > filteringCanvas.width + item.size) {
+                    item.x = -item.size;
+                    item.y = Math.random() * filteringCanvas.height;
+                    item.filteredOut = false;
+                    item.passedFilter = false;
+                }
+            });
+
+            drawFiltering();
+            filteringAnimationId = requestAnimationFrame(updateFiltering);
+        }
+
+        playFilteringBtn.addEventListener('click', () => {
+            filteringPlaying = !filteringPlaying;
+            if (filteringPlaying) {
+                updateFiltering();
+                playFilteringBtn.textContent = '暂停';
+            } else {
+                cancelAnimationFrame(filteringAnimationId);
+                playFilteringBtn.textContent = '播放';
+            }
+        });
+        resetFilteringBtn.addEventListener('click', () => {
+            filteringPlaying = false;
+            cancelAnimationFrame(filteringAnimationId);
+            playFilteringBtn.textContent = '播放';
+            initFiltering();
+        });
+        initFiltering();
+
+
+        // Animation 3: Efficiency Comparison
+        const efficiencyCanvas = document.getElementById('efficiencyComparisonCanvas');
+        const efficiencyCtx = efficiencyCanvas.getContext('2d');
+        const playEfficiencyBtn = document.getElementById('playEfficiencyAnim');
+        const resetEfficiencyBtn = document.getElementById('resetEfficiencyAnim');
+        
+        let efficiencyAnimationId;
+        let efficiencyPlaying = false;
+        let alAccuracy = 0, filterAccuracy = 0;
+        let alLabels = 0, filterLabels = 0;
+        const targetAccuracy = 90; // Target 90%
+
+        function initEfficiency() {
+            alAccuracy = 0; filterAccuracy = 0;
+            alLabels = 0; filterLabels = 0;
+            drawEfficiency();
+        }
+
+        function drawEfficiency() {
+            efficiencyCtx.clearRect(0, 0, efficiencyCanvas.width, efficiencyCanvas.height);
+            const barWidth = 50;
+            const maxBarHeight = 180;
+            
+            // AL Bar
+            drawCanvasText(efficiencyCtx, '主动学习 (AL)', 150, 230, 'black', 14);
+            efficiencyCtx.fillStyle = '#3b82f6'; // Blue
+            let alBarHeight = (alAccuracy / 100) * maxBarHeight;
+            efficiencyCtx.fillRect(125, 200 - alBarHeight, barWidth, alBarHeight);
+            drawCanvasText(efficiencyCtx, `${alAccuracy.toFixed(1)}%`, 150, 190 - alBarHeight, 'black', 12);
+            drawCanvasText(efficiencyCtx, `标注: ${alLabels}`, 150, 250, 'black', 12);
+
+            // Filter/Random Bar
+            drawCanvasText(efficiencyCtx, '随机/一般筛选', 450, 230, 'black', 14);
+            efficiencyCtx.fillStyle = '#f97316'; // Orange
+            let filterBarHeight = (filterAccuracy / 100) * maxBarHeight;
+            efficiencyCtx.fillRect(425, 200 - filterBarHeight, barWidth, filterBarHeight);
+            drawCanvasText(efficiencyCtx, `${filterAccuracy.toFixed(1)}%`, 450, 190 - filterBarHeight, 'black', 12);
+            drawCanvasText(efficiencyCtx, `标注: ${filterLabels}`, 450, 250, 'black', 12);
+            
+            // Target line
+            efficiencyCtx.beginPath();
+            let targetY = 200 - (targetAccuracy / 100) * maxBarHeight;
+            efficiencyCtx.moveTo(50, targetY);
+            efficiencyCtx.lineTo(efficiencyCanvas.width - 50, targetY);
+            efficiencyCtx.strokeStyle = '#16a34a'; // Green
+            efficiencyCtx.lineWidth = 1;
+            efficiencyCtx.setLineDash([5, 3]);
+            efficiencyCtx.stroke();
+            efficiencyCtx.setLineDash([]);
+            drawCanvasText(efficiencyCtx, `目标精度: ${targetAccuracy}%`, efficiencyCanvas.width - 100, targetY - 10, '#16a34a', 10);
+
+            if (alAccuracy >= targetAccuracy && filterAccuracy < targetAccuracy) {
+                drawCanvasText(efficiencyCtx, 'AL 达成目标!', 150, 30, '#16a34a', 16);
+            }
+            if (filterAccuracy >= targetAccuracy && alAccuracy < targetAccuracy) {
+                 drawCanvasText(efficiencyCtx, '筛选达成目标!', 450, 30, '#16a34a', 16);
+            }
+             if (filterAccuracy >= targetAccuracy && alAccuracy >= targetAccuracy) {
+                 drawCanvasText(efficiencyCtx, '均达成目标!', efficiencyCanvas.width/2, 30, '#16a34a', 16);
+            }
+        }
+
+        function updateEfficiency() {
+            if (!efficiencyPlaying) return;
+
+            if (alAccuracy < targetAccuracy) {
+                alAccuracy += Math.random() * 1.5 + 0.5; // AL learns faster per label
+                alLabels += 1; // Assumes 1 label per step for simplicity
+            }
+             if (alAccuracy > 100) alAccuracy = 100;
+
+
+            if (filterAccuracy < targetAccuracy) {
+                filterAccuracy += Math.random() * 0.8 + 0.2; // Filter/Random learns slower
+                filterLabels += 1; 
+            }
+            if (filterAccuracy > 100) filterAccuracy = 100;
+
+
+            drawEfficiency();
+
+            if (alAccuracy >= targetAccuracy && filterAccuracy >= targetAccuracy) {
+                efficiencyPlaying = false;
+                playEfficiencyBtn.textContent = '开始对比'; // Ready for new start
+                // Final draw to show "both reached"
+                drawEfficiency();
+                return;
+            }
+            efficiencyAnimationId = requestAnimationFrame(updateEfficiency);
+        }
+        
+        playEfficiencyBtn.addEventListener('click', () => {
+            if (efficiencyPlaying) { // If it's playing, this acts as a pause
+                efficiencyPlaying = false;
+                cancelAnimationFrame(efficiencyAnimationId);
+                playEfficiencyBtn.textContent = '继续对比';
+            } else { // If paused or reset
+                if (alAccuracy >= targetAccuracy && filterAccuracy >= targetAccuracy) { // If finished, reset first
+                    initEfficiency();
+                }
+                efficiencyPlaying = true;
+                updateEfficiency();
+                playEfficiencyBtn.textContent = '暂停对比';
+            }
+        });
+        resetEfficiencyBtn.addEventListener('click', () => {
+            efficiencyPlaying = false;
+            cancelAnimationFrame(efficiencyAnimationId);
+            playEfficiencyBtn.textContent = '开始对比';
+            initEfficiency();
+        });
+        initEfficiency();
+
+
+        // Animation 4: Active Learning Cycle
+        const cycleCanvas = document.getElementById('activeLearningCycleCanvas');
+        const cycleCtx = cycleCanvas.getContext('2d');
+        const playCycleBtn = document.getElementById('playCycleAnim');
+
+        let cycleAnimationId;
+        let cyclePlaying = false;
+        let currentStep = 0;
+        const steps = [
+            { name: "1. 训练模型", x: cycleCanvas.width / 2, y: 50 },
+            { name: "2. 评估不确定性", x: cycleCanvas.width - 80, y: cycleCanvas.height / 2 },
+            { name: "3. 查询标注", x: cycleCanvas.width / 2, y: cycleCanvas.height - 50 },
+            { name: "4. 更新模型", x: 80, y: cycleCanvas.height / 2 }
+        ];
+
+        function drawCycle() {
+            cycleCtx.clearRect(0, 0, cycleCanvas.width, cycleCanvas.height);
+            const radius = 30;
+
+            // Draw connections (arrows)
+            cycleCtx.strokeStyle = '#9ca3af'; // Gray for arrows
+            cycleCtx.lineWidth = 2;
+            for (let i = 0; i < steps.length; i++) {
+                const next = (i + 1) % steps.length;
+                cycleCtx.beginPath();
+                cycleCtx.moveTo(steps[i].x, steps[i].y);
+                // Draw arrow head
+                let angle = Math.atan2(steps[next].y - steps[i].y, steps[next].x - steps[i].x);
+                let targetX = steps[next].x - radius * Math.cos(angle); // Adjust to edge of circle
+                let targetY = steps[next].y - radius * Math.sin(angle);
+                cycleCtx.lineTo(targetX, targetY);
+                cycleCtx.stroke();
+
+                cycleCtx.beginPath();
+                cycleCtx.moveTo(targetX, targetY);
+                cycleCtx.lineTo(targetX - 10 * Math.cos(angle - Math.PI / 6), targetY - 10 * Math.sin(angle - Math.PI / 6));
+                cycleCtx.lineTo(targetX - 10 * Math.cos(angle + Math.PI / 6), targetY - 10 * Math.sin(angle + Math.PI / 6));
+                cycleCtx.closePath();
+                cycleCtx.fillStyle = '#9ca3af';
+                cycleCtx.fill();
+            }
+            
+            // Draw steps
+            steps.forEach((step, index) => {
+                cycleCtx.beginPath();
+                cycleCtx.arc(step.x, step.y, radius, 0, Math.PI * 2);
+                cycleCtx.fillStyle = (index === currentStep && cyclePlaying) ? '#2563eb' : '#3b82f6'; // Highlight current step
+                cycleCtx.fill();
+                drawCanvasText(cycleCtx, step.name, step.x, step.y, 'white', 10);
+            });
+        }
+
+        function updateCycle() {
+            if (!cyclePlaying) return;
+            currentStep = (currentStep + 1) % steps.length;
+            drawCycle();
+            cycleAnimationId = setTimeout(() => requestAnimationFrame(updateCycle), 1000); // Slow down step change
+        }
+        
+        playCycleBtn.addEventListener('click', () => {
+            cyclePlaying = !cyclePlaying;
+            if (cyclePlaying) {
+                updateCycle();
+                playCycleBtn.textContent = '暂停';
+            } else {
+                clearTimeout(cycleAnimationId);
+                cancelAnimationFrame(cycleAnimationId); // Though setTimeout is used, good practice
+                playCycleBtn.textContent = '播放';
+                drawCycle(); // Redraw in static state
+            }
+        });
+        drawCycle(); // Initial draw
+
+
+        // Animation 5: Information Value Exploration
+        const infoValueCanvas = document.getElementById('informationValueCanvas');
+        const infoValueCtx = infoValueCanvas.getContext('2d');
+        const queryALBtn = document.getElementById('queryAL');
+        const applyFilterBtn = document.getElementById('applyFilter');
+        const resetInfoValueBtn = document.getElementById('resetInfoValue');
+
+        const gridSize = 20;
+        const cols = Math.floor(infoValueCanvas.width / gridSize);
+        const rows = Math.floor(infoValueCanvas.height / gridSize);
+        let infoGrid = [];
+        let filterRect = { x: 2, y: 2, w: 5, h: 3, active: false }; // Default filter rect in grid units
+
+        function initInfoValue() {
+            infoGrid = [];
+            for (let r = 0; r < rows; r++) {
+                infoGrid[r] = [];
+                for (let c = 0; c < cols; c++) {
+                    // Create a gradient-like information value, e.g. higher in center or a corner
+                    let distToCorner = Math.sqrt(Math.pow(r - 0, 2) + Math.pow(c - 0, 2));
+                    let maxDist = Math.sqrt(Math.pow(rows,2) + Math.pow(cols,2));
+                    // infoGrid[r][c] = { value: Math.random(), selectedByAL: false, selectedByFilter: false };
+                    infoGrid[r][c] = { value: 1 - (distToCorner / maxDist) + (Math.random()-0.5)*0.2 , selectedByAL: false, selectedByFilter: false };
+                    infoGrid[r][c].value = Math.max(0, Math.min(1, infoGrid[r][c].value)); // Clamp between 0 and 1
+                }
+            }
+            filterRect.active = false;
+            drawInfoValue();
+        }
+
+        function drawInfoValue() {
+            infoValueCtx.clearRect(0, 0, infoValueCanvas.width, infoValueCanvas.height);
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    let cell = infoGrid[r][c];
+                    // Color based on value (e.g., grayscale, or blue to red)
+                    let blueIntensity = 255 * (1 - cell.value);
+                    let redIntensity = 255 * cell.value;
+                    infoValueCtx.fillStyle = `rgb(${redIntensity}, 50, ${blueIntensity})`;
+                    infoValueCtx.fillRect(c * gridSize, r * gridSize, gridSize -1, gridSize -1);
+
+                    if (cell.selectedByAL) {
+                        infoValueCtx.strokeStyle = 'yellow';
+                        infoValueCtx.lineWidth = 3;
+                        infoValueCtx.strokeRect(c * gridSize + 1, r * gridSize + 1, gridSize - 3, gridSize - 3);
+                    }
+                    if (cell.selectedByFilter) {
+                        infoValueCtx.strokeStyle = '#34d399'; // Emerald green
+                        infoValueCtx.lineWidth = 3;
+                        infoValueCtx.strokeRect(c * gridSize + 1, r * gridSize + 1, gridSize - 3, gridSize - 3);
+                    }
+                }
+            }
+            if (filterRect.active) {
+                infoValueCtx.strokeStyle = '#a78bfa'; // Violet
+                infoValueCtx.lineWidth = 2;
+                infoValueCtx.strokeRect(filterRect.x * gridSize, filterRect.y * gridSize, filterRect.w * gridSize, filterRect.h * gridSize);
+                drawCanvasText(infoValueCtx, '筛选区域', (filterRect.x + filterRect.w/2) * gridSize, (filterRect.y + filterRect.h/2) * gridSize, 'white', 10);
+            }
+             drawCanvasText(infoValueCtx, '颜色越红代表信息价值越高', infoValueCanvas.width / 2, 15, 'black', 12);
+        }
+        
+        queryALBtn.addEventListener('click', () => {
+            // Find top N most valuable cells not yet selected
+            let candidates = [];
+            infoGrid.forEach((rowArr, r) => rowArr.forEach((cell, c) => {
+                if (!cell.selectedByAL) candidates.push({r, c, value: cell.value});
+            }));
+            candidates.sort((a, b) => b.value - a.value); // Sort descending by value
+            
+            for (let i = 0; i < Math.min(5, candidates.length); i++) { // Select top 5
+                infoGrid[candidates[i].r][candidates[i].c].selectedByAL = true;
+            }
+            filterRect.active = false; // Deactivate filter highlight if AL is used
+            drawInfoValue();
+        });
+
+        applyFilterBtn.addEventListener('click', () => {
+            // Define a sample filter rectangle (could be user-drawn in a more complex version)
+            filterRect = { x: Math.floor(Math.random()*(cols-5)), y: Math.floor(Math.random()*(rows-3)), w: 5, h: 3, active: true };
+            
+            infoGrid.forEach((rowArr, r) => rowArr.forEach((cell, c) => {
+                cell.selectedByFilter = false; // Clear previous filter selections
+                if (r >= filterRect.y && r < filterRect.y + filterRect.h &&
+                    c >= filterRect.x && c < filterRect.x + filterRect.w) {
+                    cell.selectedByFilter = true;
+                }
+                cell.selectedByAL = false; // Clear AL selections if filter is applied
+            }));
+            drawInfoValue();
+        });
+
+        resetInfoValueBtn.addEventListener('click', initInfoValue);
+
+        initInfoValue();
+
+    </script>
+</body>
+</html>
