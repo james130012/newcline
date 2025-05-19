@@ -1,0 +1,964 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视觉规划：让AI用图像思考的物理逻辑解读</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Quicksand:wght@400;500;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans SC', 'Quicksand', sans-serif;
+            font-size: 16px; /* 三号字体大约等于 16pt */
+            line-height: 1.8;
+            background-color: #f0f2f5; /* 浅灰色背景 */
+            color: #333;
+            display: flex;
+            justify-content: center;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        .a3-page {
+            width: 842px; /* A3 width in points (approx for screen) */
+            min-height: 1191px; /* A3 height in points (approx for screen) */
+            background-color: #ffffff;
+            padding: 40px 50px; /* 普通页边距 */
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h1, h2, h3 {
+            font-family: 'Noto Sans SC', 'Quicksand', sans-serif;
+            font-weight: 700;
+            color: #1a237e; /* 深蓝色标题 */
+            margin-bottom: 0.75em;
+        }
+        h1 {
+            font-size: 2.5em; /* 放大主标题 */
+            text-align: center;
+            border-bottom: 2px solid #3949ab;
+            padding-bottom: 0.5em;
+            margin-bottom: 1em;
+        }
+        h2 {
+            font-size: 1.8em;
+            color: #283593; /* 次级标题颜色 */
+            margin-top: 1.5em;
+        }
+        h3 {
+            font-size: 1.4em;
+            color: #3f51b5; /* 三级标题颜色 */
+        }
+        p {
+            margin-bottom: 1em;
+            text-align: justify;
+        }
+        .highlight {
+            background-color: #e8eaf6; /* 淡紫色高亮 */
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-weight: 500;
+            color: #303f9f; /* 深一点的文字颜色 */
+        }
+        strong.key-phrase {
+            color: #c51162; /* 强调关键词的颜色 */
+            font-weight: 700;
+        }
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f5f5f5;
+            padding: 0.5em;
+            border-radius: 4px;
+            display: block;
+            text-align: center;
+            margin: 1em 0;
+            font-size: 0.95em;
+            color: #555;
+        }
+        .animation-container {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            background-color: #fafafa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .animation-canvas-container {
+            width: 100%;
+            max-width: 600px; /* 限制Canvas最大宽度 */
+            height: auto; /* 高度自适应 */
+            margin-bottom: 10px;
+            position: relative; /* For absolute positioning of canvas if needed */
+        }
+        .animation-canvas-container canvas {
+            display: block;
+            margin: 0 auto; /* 居中Canvas */
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .animation-controls button {
+            background-color: #3f51b5; /* 按钮颜色 */
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 5px;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+        .animation-controls button:hover {
+            background-color: #303f9f;
+        }
+        .caption {
+            font-size: 0.9em;
+            color: #555;
+            text-align: center;
+            margin-top: 0.5em;
+        }
+        /* Specific canvas styling */
+        #actionCoverageCanvasContainer { /* Example if a specific ID was needed */
+            height: 300px; /* As per user instruction for a specific canvas */
+        }
+        .p5Canvas { /* General class for p5 canvases */
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 100%;
+        }
+        .canvas-parent {
+            width: 100%;
+            height: 300px; /* Default height, can be overridden */
+            margin-bottom: 10px;
+            border: 1px dashed #bdbdbd;
+            border-radius: 4px;
+        }
+        .flex-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 1em;
+        }
+        .flex-item {
+            flex: 1;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="a3-page">
+        <h1>视觉规划：让AI用图像“思考”的物理逻辑解读</h1>
+
+        <section>
+            <h2>引言：当语言不足以描绘世界</h2>
+            <p>在人工智能（AI）的浩瀚星空中，大型语言模型（LLMs）及其多模态扩展（MLLMs）无疑是璀璨的明星。它们在理解、生成文本，乃至跨模态推理方面取得了巨大进步。然而，一个不容忽视的现实是：<strong class="key-phrase">这些模型在推理时，即便面对视觉信息，也主要依赖纯文本作为表达和构建思路的媒介。</strong>这就像一位技艺精湛的画家，却被要求只能用文字描述他的画作，而非直接挥洒色彩。</p>
+            <p>论文《Visual Planning: Let's Think Only with Images》敏锐地指出，语言并非总是推理的最佳载体，尤其是在处理<strong class="key-phrase">空间几何信息、物理动态或视觉优先</strong>的任务时。想象一下，规划迷宫路线、设计房间布局，或是预测机械系统下一步的状态——这些场景下，视觉化的思考远比冗长的文字描述更直观、更高效。当前模型将视觉信息“翻译”成文本再进行推理的模式，无疑引入了一道“模态鸿沟”，可能削弱了模型捕捉精细视觉特征和状态转换的能力。这引出了一个核心问题：<strong class="key-phrase">AI能否摆脱文本的束缚，直接用图像进行思考和规划？</strong></p>
+        </section>
+
+        <section>
+            <h2>核心理念：“视觉规划”——AI的“心理草图”</h2>
+            <p>针对上述挑战，论文提出了一种全新的范式——<strong class="key-phrase">视觉规划（Visual Planning）</strong>。这是一种激动人心的尝试，它让AI能够<strong class="key-phrase">完全通过视觉表征进行规划，无需任何文本媒介</strong>。在这个范式中，规划过程表现为一系列图像序列，每一帧图像都编码了视觉领域中的一步推理。这非常像人类在解决复杂问题时，会在脑海中勾勒草图或想象未来行动的画面。</p>
+            <p>这种“纯视觉”的思考方式，其“物理逻辑”体现在：</p>
+            <ul>
+                <li><strong class="key-phrase">状态的直观性：</strong> 每一个“视觉想法”（Visual Thought）都是一个具体的图像，直接呈现了环境或问题的某个状态，如同物理系统在某一时刻的快照。</li>
+                <li><strong class="key-phrase">转换的连续性：</strong> 规划过程由图像序列构成，相邻图像间的变化直接对应了行动或推理的步骤，模拟了物理过程的连续演变。</li>
+                <li><strong class="key-phrase">避免信息损耗：</strong> 无需将视觉信息强制压缩、转译为文字，从而最大限度地保留了原始视觉数据中的丰富细节和空间关系。</li>
+            </ul>
+            <p>这不仅仅是一种技术上的革新，更像是在赋予AI一种新的“认知工具”，让它能以更接近人类直觉的方式与充满视觉信息的世界互动。</p>
+        </section>
+        
+        <div class="animation-container">
+            <h3>动画1: 文本推理 vs. 视觉规划 (概念动画)</h3>
+            <div class="canvas-parent" id="anim1_concept_comparison" style="height: 250px;"></div>
+            <div class="animation-controls">
+                <button id="playAnim1">播放动画</button>
+                <button id="resetAnim1">重置</button>
+            </div>
+            <p class="caption">比较传统文本链式思考与新兴的视觉规划在解决简单导航问题上的差异。</p>
+        </div>
+
+        <section>
+            <h2>驱动引擎：VPRL框架——教会AI“看图说话”般规划</h2>
+            <p>为了实现纯粹的视觉规划，论文引入了一个名为<strong class="key-phrase">VPRL（Visual Planning via Reinforcement Learning）</strong>的创新强化学习框架。这个框架的核心是利用大型视觉模型（Large Vision Model, LVM），并通过强化学习（特别是GRPO算法）对其进行后训练，使其掌握在视觉领域逐步推理的能力。</p>
+            <p>VPRL的运作机制，从“物理逻辑”上看，可以理解为一个精密的学习与决策系统：</p>
+            <ol>
+                <li><strong class="key-phrase">感知层 (LVM)：</strong> LVM作为系统的“眼睛”和初步的“视觉大脑”，它专门处理图像和视频帧，不依赖文本数据。它的任务是根据当前看到的图像（当前状态）和历史图像序列，生成下一个可能的视觉状态。这类似于一个物理传感器感知环境，并预测环境的短期变化。
+                    <p class="formula">下一视觉状态 v_hat_i ~ 视觉模型 Pi_theta(v_i | v_0, v_hat_1, ..., v_hat_i-1)</p>
+                </li>
+                <li><strong class="key-phrase">学习与优化层 (两阶段强化学习)：</strong>
+                    <ul>
+                        <li><strong>阶段一：策略初始化 (Policy Initialization)。</strong> 在这个阶段，模型通过学习环境中的随机游走轨迹，来“热身”。目标是让模型学会生成有效的、连贯的视觉状态序列，并保持探索能力。这好比让一个机器人先熟悉环境，能到处走到处看，为后续学习具体任务打下基础。损失函数可以简化理解为：
+                        <p class="formula">L_VPFT(theta) = -E[log Pi_theta(下一目标图像 | 当前及历史图像序列)]</p>
+                        </li>
+                        <li><strong>阶段二：视觉规划的强化学习 (Reinforcement Learning for Visual Planning)。</strong> 这是核心学习阶段。模型在模拟环境中“行动”（即生成下一个视觉状态），并根据行动的“好坏”获得奖励或惩罚。这里的“好坏”由一个精心设计的奖励函数来评判，它会鼓励那些能导向目标、且符合环境规则的“视觉步骤”。GRPO (Group Relative Policy Optimization) 算法通过比较一组候选行动的相对优势来更新策略，引导模型产生更高回报的视觉规划序列。
+                        <p class="formula">奖励 R(当前状态 v_i, 下一候选状态 v_hat_i+1) = alpha_opt * I(最优进展) + alpha_nopt * I(非最优但有效) + alpha_inv * I(无效行动)</p>
+                        其中，I(...) 是指示函数，alpha 是不同类型行动的奖励系数。例如，<strong class="highlight">alpha_opt = 1 (最优进展), alpha_nopt = 0 (无进展), alpha_inv = -5 (无效，重罚)</strong>。
+                        </li>
+                    </ul>
+                </li>
+            </ol>
+            <p>整个VPRL框架，就像一个不断试错、学习、优化的智能体。它不依赖预设的文本指令，而是通过直接与“视觉世界”互动，从经验中学习如何一步步“看”向目标。</p>
+        </section>
+
+        <div class="animation-container">
+            <h3>动画2: VPRL 框架流程 (流程动画)</h3>
+            <div class="canvas-parent" id="anim2_vprl_framework" style="height: 400px;"></div>
+            <div class="animation-controls">
+                <button id="playAnim2">播放流程</button>
+                <button id="resetAnim2">重置</button>
+            </div>
+            <p class="caption">动态展示VPRL框架中，从输入图像到策略更新的完整流程。</p>
+        </div>
+
+        <section>
+            <h2>视觉规划的“物理逻辑”：状态、转换、力与约束</h2>
+            <p>从更深层次的“物理逻辑”视角审视视觉规划，我们可以发现其运作方式与物理系统有着有趣的相似性：</p>
+            <ul>
+                <li><strong class="key-phrase">视觉状态 (Visual States)：</strong> 序列中的每一张图像 (v_i) 代表了问题在某一时刻的“状态”。这就像物理学中描述一个系统位置、动量等的参量集合。这些状态是具体的、可观察的。</li>
+                <li><strong class="key-phrase">状态转换 (State Transitions)：</strong> 从一个视觉状态 v_i 到下一个视觉状态 v_i+1 的过程，是由模型 Pi_theta 生成的。这个转换可以看作是在某种“规则”或“力场”作用下的演化。在VPRL中，这个“规则”是模型通过强化学习学到的策略。</li>
+                <li><strong class="key-phrase">奖励机制 (Reward Mechanism)：</strong> 奖励函数 R 扮演了“驱动力”的角色。它定义了哪些状态转换是“好”的（导向目标，如同系统向低能态演化），哪些是“坏”的（偏离目标或违反规则，如同受到阻力或惩罚）。模型的目标是最大化累积奖励，这类似于物理系统寻求最经济的路径或最稳定的状态。</li>
+                <li><strong class="key-phrase">环境约束 (Environmental Constraints)：</strong> 诸如迷宫中的墙壁、FROZENLAKE中的冰洞等，构成了环境的“物理约束”。模型在规划时必须遵守这些约束，否则会受到惩罚（负奖励）。这体现了现实世界中物理规律的不可违背性。</li>
+                <li><strong class="key-phrase">探索与利用 (Exploration vs. Exploitation)：</strong> 在强化学习的第二阶段，模型需要在“探索”新的视觉路径和“利用”已知的好路径之间找到平衡。这与物理粒子在势场中的运动相似，既有随机热运动（探索），也有向势能极小点运动的趋势（利用）。策略初始化的随机游走，正是为了增强探索能力。</li>
+            </ul>
+            <p>因此，视觉规划不仅仅是图像序列的生成，它更像是在一个高维的、由视觉特征构成的“状态空间”中，依据学到的“动力学规则”（策略）和“能量景观”（奖励函数），寻找一条从初始状态到目标状态的<strong class="highlight">最优或有效路径</strong>。这种“思考”方式，根植于视觉世界的内在逻辑，而非外在的文本描述。</p>
+        </section>
+
+        <div class="animation-container">
+            <h3>动画3: VPRL 奖励机制 (因果链动画)</h3>
+            <div class="canvas-parent" id="anim3_reward_mechanism" style="height: 350px;"></div>
+            <div class="animation-controls">
+                <button id="playAnim3_optimal">模拟最优行动</button>
+                <button id="playAnim3_nonoptimal">模拟非最优行动</button>
+                <button id="playAnim3_invalid">模拟无效行动</button>
+            </div>
+            <p class="caption">展示不同行动（最优、非最优、无效）如何触发不同的奖励反馈。</p>
+        </div>
+        
+        <section>
+            <h2>实验验证：在“视觉沙盘”中一较高下</h2>
+            <p>为了检验视觉规划的实际效果，研究者们在几个经典的视觉导航任务上进行了实验，包括<strong class="key-phrase">FROZENLAKE（冰湖）、MAZE（迷宫）和 MINIBEHAVIOR（小型行为模拟）</strong>。这些任务的共同特点是，它们的状态转换在视觉上是清晰可辨的，非常适合视觉规划大显身手。</p>
+            <p>实验结果令人振奋：</p>
+            <ul>
+                <li><strong class="key-phrase">视觉规划超越文本规划：</strong> 无论是基于监督微调的视觉规划（VPFT）还是基于强化学习的VPRL，其性能都显著优于传统的、依赖文本进行推理的方法（如SFT in Text）。在精确匹配率（EM）和进展率（PR）等指标上，视觉规划取得了大幅领先。这证明了在视觉主导的任务中，“看图思考”比“读文思考”更有效。</li>
+                <li><strong class="key-phrase">强化学习的威力：</strong> VPRL的表现又远超仅进行监督微调的VPFT。这得益于强化学习赋予模型的探索能力和从环境反馈中学习的能力。VPRL能够更好地理解任务的潜在规则和模式，而不仅仅是模仿训练数据。</li>
+                <li><strong class="key-phrase">鲁棒性与泛化能力：</strong> 面对更复杂的环境（如更大的网格），VPRL展现出更强的鲁棒性，性能下降更平缓。这说明通过强化学习学到的“物理逻辑”更具普适性。</li>
+            </ul>
+            <p>这些实验结果有力地证明，视觉规划不仅是一个可行的范式，而且在特定领域具有成为主流推理方式的巨大潜力。</p>
+        </section>
+
+        <div class="animation-container">
+            <h3>动画4: 迷宫导航演示 (探索与模拟动画)</h3>
+            <div class="canvas-parent" id="anim4_maze_navigation" style="height: 400px;"></div>
+            <div class="animation-controls">
+                <button id="playAnim4">开始导航</button>
+                <button id="resetAnim4">重置迷宫</button>
+            </div>
+            <p class="caption">一个智能体使用视觉规划（模拟的图像序列）在迷宫中寻找路径。</p>
+        </div>
+
+        <div class="animation-container">
+            <h3>动画5: 性能对比 (数据动画)</h3>
+            <div class="canvas-parent" id="anim5_performance_chart" style="height: 400px;"></div>
+            <div class="animation-controls">
+                <button id="anim5_show_frozenlake">冰湖</button>
+                <button id="anim5_show_maze">迷宫</button>
+            </div>
+            <p class="caption">交互式图表，展示VPRL在不同任务上相对于其他方法的性能优势 (模拟数据)。</p>
+        </div>
+
+        <section>
+            <h2>结论：开启AI“视觉思维”的新纪元</h2>
+            <p>《Visual Planning: Let's Think Only with Images》这篇论文，不仅仅是提出了一种新的技术或模型，它更像是在<strong class="key-phrase">挑战AI推理领域长期以来对文本的过度依赖</strong>，并为我们揭示了一条通往更直观、更灵活、更强大AI推理系统的新路径。通过让模型完全在视觉模态下进行状态转换和规划，视觉规划范式为解决空间推理、动态预测等视觉核心问题提供了强有力的工具。</p>
+            <p>从“物理逻辑”的角度看，视觉规划让AI的“思考”过程更加贴近我们所感知的物理世界：<strong class="highlight">状态是可见的，变化是连续的，规则是通过与环境互动学习的。</strong> VPRL框架的成功，特别是强化学习的应用，证明了AI有能力掌握这种纯粹的视觉推理能力，并能达到甚至超越基于文本的复杂推理。</p>
+            <p>这项工作为多模态研究开辟了广阔的新天地。未来，我们或许能构建出更全面的AI系统，它们能够像人类一样，在文本的逻辑思辨和图像的直观想象之间自由切换，用更丰富的“思维工具箱”来理解和改造世界。这无疑是向着更通用、更类人的人工智能迈出的重要一步。</p>
+        </section>
+
+        <footer>
+            <p style="text-align: center; font-size: 0.9em; color: #777; margin-top: 2em;">
+                基于论文 "Visual Planning: Let's Think Only with Images" (arXiv:2505.11409v1) 的解读与分析。
+            </p>
+        </footer>
+    </div>
+
+<script>
+// Helper function for P5.js instance mode
+function sketchWrapper(id, sketchFunc, parentId, canvasWidth, canvasHeight) {
+    let parentDiv = document.getElementById(parentId);
+    if (!parentDiv) {
+        console.error("Parent div not found:", parentId);
+        return null;
+    }
+    // Ensure parent has dimensions
+    if (parentDiv.offsetWidth === 0 || parentDiv.offsetHeight === 0) {
+        console.warn("Parent div has zero dimensions:", parentId);
+    }
+    
+    let instance = new p5(p => {
+        sketchFunc(p);
+        p.setup = () => {
+            // Use parent dimensions for canvas, fallback to provided if parent is 0
+            let w = parentDiv.offsetWidth > 0 ? parentDiv.offsetWidth : canvasWidth;
+            let h = parentDiv.offsetHeight > 0 ? parentDiv.offsetHeight : canvasHeight;
+            let canvas = p.createCanvas(w, h);
+            canvas.parent(parentId);
+            canvas.addClass('p5Canvas'); // Add class for general styling
+            if (p.customSetup) {
+                p.customSetup();
+            }
+            // Initial draw for static elements or first frame
+            if (p.redrawOnce) p.redrawOnce(); 
+            else if (p.initialDraw) p.initialDraw();
+
+            // Ensure canvas is redrawn if noLoop is used in setup
+            if (p.noLoop && p.isLooping()) { // p.isLooping() is true by default
+                 // If noLoop() was called in customSetup, we might need a redraw
+            } else if (!p.isLooping()){
+                p.redraw();
+            }
+        };
+        // Resize canvas if window resizes (optional, good for responsiveness)
+        p.windowResized = () => {
+            if (parentDiv.offsetWidth > 0 && parentDiv.offsetHeight > 0) {
+                 p.resizeCanvas(parentDiv.offsetWidth, parentDiv.offsetHeight);
+                 if (p.customResize) p.customResize();
+                 else if (p.initialDraw) p.initialDraw(); // Redraw content after resize
+                 else p.redraw();
+            }
+        };
+    });
+    return instance;
+}
+
+
+// --- Animation 1: Concept Comparison ---
+const anim1Sketch = (p) => {
+    let step = 0;
+    let maxSteps = 5;
+    let playing = false;
+    let frameRate = 2; // Slower animation
+
+    const textPlan = [
+        "开始",
+        "1. 向前走到路口",
+        "2. 在路口左转",
+        "3. 继续向前",
+        "4. 到达目的地！"
+    ];
+
+    // Simplified visual representation
+    let agentPos = { x: 50, y: 100 };
+    const pathPoints = [
+        { x: 50, y: 100 },
+        { x: 150, y: 100 }, // Go straight
+        { x: 150, y: 50 },  // Turn left (up)
+        { x: 250, y: 50 },  // Continue straight
+        { x: 250, y: 50 }   // Destination
+    ];
+    let currentTargetPoint = 0;
+
+    p.customSetup = () => {
+        p.frameRate(frameRate);
+        p.initialDraw();
+        p.noLoop(); // Start paused
+
+        document.getElementById('playAnim1').onclick = () => {
+            if (!playing) {
+                playing = true;
+                step = 0; // Reset step on play if not already playing
+                currentTargetPoint = 0;
+                agentPos = { x: pathPoints[0].x, y: pathPoints[0].y };
+                p.loop();
+            }
+        };
+        document.getElementById('resetAnim1').onclick = () => {
+            playing = false;
+            step = 0;
+            currentTargetPoint = 0;
+            agentPos = { x: pathPoints[0].x, y: pathPoints[0].y };
+            p.noLoop();
+            p.initialDraw();
+        };
+    };
+    
+    p.initialDraw = () => {
+        p.background(240);
+        let w = p.width;
+        let h = p.height;
+
+        // Text Reasoning Side
+        p.fill(50);
+        p.textSize(16);
+        p.textAlign(p.LEFT, p.TOP);
+        p.text("文本推理 (Text Reasoning)", 10, 10);
+        for (let i = 0; i <= step && i < textPlan.length; i++) {
+            p.fill(i === step ? p.color(200,0,0) : 50);
+            p.text(textPlan[i], 20, 40 + i * 25);
+        }
+
+        // Visual Planning Side
+        p.textAlign(p.LEFT, p.TOP);
+        p.fill(50);
+        p.text("视觉规划 (Visual Planning)", w / 2 + 10, 10);
+        
+        // Simple map
+        p.stroke(150);
+        p.line(w/2 + 50, h/2 + 50, w/2 + 250, h/2 + 50); // Path segment 1
+        p.line(w/2 + 150, h/2 + 50, w/2 + 150, h/2 - 0); // Path segment 2
+        p.line(w/2 + 150, h/2 - 0, w/2 + 250, h/2 - 0); // Path segment 3
+        
+        p.fill(0, 150, 0); // Start
+        p.ellipse(w/2 + pathPoints[0].x, h/2 + pathPoints[0].y - 50, 10, 10);
+        p.fill(255, 0, 0); // End
+        p.ellipse(w/2 + pathPoints[3].x, h/2 + pathPoints[3].y - 50, 10, 10);
+
+        // Agent
+        p.fill(0, 0, 255);
+        p.ellipse(w/2 + agentPos.x, h/2 + agentPos.y - 50, 15, 15);
+
+        // Visual "thought" sequence (simplified)
+        p.textSize(12);
+        p.fill(100);
+        p.text("视觉步骤:", w/2 + 10, h - 40);
+        for(let i=0; i < currentTargetPoint; i++) {
+            p.stroke(0,0,255);
+            p.fill(200,200,255,150);
+            p.rect(w/2 + 20 + i*35, h-30, 30, 20); // Simplified visual thought
+            p.fill(0,0,255);
+            p.ellipse(w/2 + 20 + i*35 + 15, h-30 + 10, 5,5);
+        }
+    };
+
+    p.draw = () => {
+        if (!playing) return;
+        
+        p.initialDraw(); // Redraw background and static elements
+
+        if (step < maxSteps -1) {
+            step++;
+            if (currentTargetPoint < pathPoints.length -1) {
+                 // Move agent smoothly (simple lerp)
+                agentPos.x = p.lerp(agentPos.x, pathPoints[currentTargetPoint+1].x, 0.5);
+                agentPos.y = p.lerp(agentPos.y, pathPoints[currentTargetPoint+1].y, 0.5);
+                
+                // Check if close enough to target to advance
+                let d = p.dist(agentPos.x, agentPos.y, pathPoints[currentTargetPoint+1].x, pathPoints[currentTargetPoint+1].y);
+                if (d < 5) {
+                    currentTargetPoint++;
+                     agentPos.x = pathPoints[currentTargetPoint].x; // Snap to point
+                     agentPos.y = pathPoints[currentTargetPoint].y;
+                }
+            }
+        } else {
+            playing = false;
+            p.noLoop();
+        }
+    };
+};
+let anim1Instance;
+
+// --- Animation 2: VPRL Framework ---
+const anim2Sketch = (p) => {
+    let currentStage = 0;
+    const stages = [
+        { name: "输入图像 (v_t)", x: 100, y: 50, w: 150, h: 40 },
+        { name: "LVM (视觉模型)", x: 300, y: 50, w: 180, h: 40 },
+        { name: "生成候选视觉状态组 {v_hat_t+1}", x: 100, y: 150, w: 280, h: 40 },
+        { name: "解析行动 (Parse Actions)", x: 300, y: 250, w: 200, h: 40 },
+        { name: "计算奖励 (Compute Rewards)", x: 100, y: 250, w: 200, h: 40 },
+        { name: "策略更新 (Policy Update via GRPO)", x: 200, y: 350, w: 300, h: 40 }
+    ];
+    let playing = false;
+
+    p.customSetup = () => {
+        p.initialDraw();
+        p.noLoop();
+        document.getElementById('playAnim2').onclick = () => {
+            if (!playing) {
+                playing = true;
+                currentStage = 0;
+                p.loop();
+            }
+        };
+        document.getElementById('resetAnim2').onclick = () => {
+            playing = false;
+            currentStage = 0;
+            p.noLoop();
+            p.initialDraw();
+        };
+    };
+    
+    p.initialDraw = () => {
+        p.background(245);
+        p.textAlign(p.CENTER, p.CENTER);
+        p.textSize(14);
+
+        for (let i = 0; i < stages.length; i++) {
+            if (i === currentStage && playing) {
+                p.fill(100, 200, 100); // Highlight current stage
+            } else {
+                p.fill(200);
+            }
+            p.stroke(50);
+            p.rect(stages[i].x, stages[i].y, stages[i].w, stages[i].h, 5);
+            p.fill(0);
+            p.text(stages[i].name, stages[i].x + stages[i].w / 2, stages[i].y + stages[i].h / 2);
+        }
+
+        // Arrows (simplified)
+        p.stroke(50);
+        p.line(stages[0].x + stages[0].w, stages[0].y + stages[0].h / 2, stages[1].x, stages[1].y + stages[1].h / 2); // Input -> LVM
+        p.line(stages[1].x + stages[1].w/2, stages[1].y + stages[1].h, stages[2].x + stages[2].w/2, stages[2].y); // LVM -> Candidates
+        p.line(stages[2].x + stages[2].w*0.75, stages[2].y + stages[2].h, stages[3].x + stages[3].w/2, stages[3].y); // Candidates -> Parse
+        p.line(stages[2].x + stages[2].w*0.25, stages[2].y + stages[2].h, stages[4].x + stages[4].w/2, stages[4].y); // Candidates -> Rewards
+        p.line(stages[3].x + stages[3].w/2, stages[3].y + stages[3].h, stages[5].x + stages[5].w/2, stages[5].y - 20); // Parse -> Update
+        p.line(stages[4].x + stages[4].w/2, stages[4].y + stages[4].h, stages[5].x + stages[5].w/2, stages[5].y - 20); // Rewards -> Update
+        // Loop back arrow (conceptual)
+        p.noFill();
+        p.arc(stages[5].x - 50, stages[5].y + stages[5].h/2, 100, 100, p.PI/2, p.PI * 1.5);
+        p.line(stages[5].x - 50, stages[5].y + stages[5].h/2 + 50, stages[0].x + stages[0].w/2, stages[0].y + stages[0].h + 10);
+    };
+
+    p.draw = () => {
+        if (!playing) return;
+        p.initialDraw(); // Redraw
+        if (p.frameCount % 30 === 0) { // Advance stage every second (approx at 30fps)
+            currentStage++;
+            if (currentStage >= stages.length) {
+                playing = false;
+                currentStage = stages.length -1; // Stay on last stage
+                p.noLoop();
+            }
+        }
+    };
+};
+let anim2Instance;
+
+// --- Animation 3: Reward Mechanism ---
+const anim3Sketch = (p) => {
+    let agentX, agentY;
+    let targetX, targetY;
+    let candidates = [];
+    const numCandidates = 3;
+    let currentScenario = null; // 'optimal', 'nonoptimal', 'invalid'
+
+    p.customSetup = () => {
+        agentX = p.width / 2;
+        agentY = p.height - 50;
+        targetX = p.width / 2;
+        targetY = 50;
+        p.generateCandidates();
+        p.initialDraw();
+        p.noLoop();
+
+        document.getElementById('playAnim3_optimal').onclick = () => { currentScenario = 'optimal'; p.generateCandidates(); p.redraw(); };
+        document.getElementById('playAnim3_nonoptimal').onclick = () => { currentScenario = 'nonoptimal'; p.generateCandidates(); p.redraw(); };
+        document.getElementById('playAnim3_invalid').onclick = () => { currentScenario = 'invalid'; p.generateCandidates(); p.redraw(); };
+    };
+    
+    p.customResize = () => { // Handle resize
+        agentX = p.width / 2;
+        agentY = p.height - 50;
+        targetX = p.width / 2;
+        targetY = 50;
+        p.generateCandidates();
+    };
+
+    p.generateCandidates = () => {
+        candidates = [];
+        for (let i = 0; i < numCandidates; i++) {
+            let candX = agentX + p.random(-80, 80);
+            let candY = agentY - p.random(30, 100); // Tend to move upwards
+            let type = 'nonoptimal'; // Default
+            
+            if (currentScenario === 'optimal' && i === 0) { // Make first one optimal
+                candY = agentY - 80; 
+                candX = agentX + p.random(-20,20); // Closer to target line
+                type = 'optimal';
+            } else if (currentScenario === 'invalid' && i === 1) { // Make second one invalid
+                candX = agentX + p.random(-100, 100);
+                candY = agentY + p.random(10,30); // Moves backward or hits a "wall" (conceptual)
+                type = 'invalid';
+            } else if (currentScenario === 'nonoptimal' && i === 2) {
+                type = 'nonoptimal';
+            }
+            // Ensure one of each type if scenario is set
+            if (currentScenario && candidates.filter(c => c.type === currentScenario).length === 0 && i === numCandidates -1) {
+                 type = currentScenario; // Force the last one to be the scenario type if not yet present
+            }
+
+
+            candidates.push({ x: candX, y: candY, type: type });
+        }
+         // If a specific scenario is chosen, ensure at least one candidate matches it
+        if (currentScenario && !candidates.some(c => c.type === currentScenario)) {
+            if (candidates.length > 0) candidates[0].type = currentScenario; // Default to first
+            else candidates.push({x: agentX, y: agentY - 50, type: currentScenario}); // Add one if empty
+        }
+    };
+    
+    p.initialDraw = () => {
+        p.background(240);
+        p.textAlign(p.CENTER, p.CENTER);
+
+        // Target
+        p.fill(0, 200, 0);
+        p.ellipse(targetX, targetY, 30, 30);
+        p.fill(0);
+        p.text("目标", targetX, targetY - 25);
+
+        // Agent
+        p.fill(0, 0, 255);
+        p.ellipse(agentX, agentY, 25, 25);
+        p.fill(0);
+        p.text("智能体 (v_t)", agentX, agentY + 25);
+
+        // Candidates and Rewards
+        for (let cand of candidates) {
+            p.stroke(150);
+            p.line(agentX, agentY, cand.x, cand.y);
+            
+            let rewardText = "";
+            let rewardColor = p.color(128); // Grey for default
+
+            if (currentScenario === cand.type) { // Highlight the chosen scenario's effect
+                 if (cand.type === 'optimal') {
+                    p.fill(50, 180, 50); // Green
+                    rewardText = "最优进展: R = +1";
+                    rewardColor = p.color(50, 180, 50);
+                } else if (cand.type === 'nonoptimal') {
+                    p.fill(200, 200, 50); // Yellow
+                    rewardText = "非最优: R = 0";
+                    rewardColor = p.color(200, 200, 50);
+                } else if (cand.type === 'invalid') {
+                    p.fill(220, 50, 50); // Red
+                    rewardText = "无效行动: R = -5";
+                    rewardColor = p.color(220, 50, 50);
+                }
+            } else {
+                 p.fill(200); // Default for other candidates
+            }
+
+            p.ellipse(cand.x, cand.y, 20, 20);
+            p.fill(0);
+            p.textSize(12);
+            p.text(`v_hat_t+1`, cand.x, cand.y - 15);
+            if (rewardText) {
+                p.fill(rewardColor);
+                p.text(rewardText, cand.x, cand.y + 20);
+            }
+        }
+        if (!currentScenario) {
+            p.fill(0); p.textSize(14);
+            p.text("点击按钮模拟不同行动的奖励", p.width/2, p.height/2);
+        }
+    };
+    p.draw = () => { // Only needed if there were continuous animations
+         p.initialDraw(); // For this one, redraw on demand is enough
+    }
+};
+let anim3Instance;
+
+// --- Animation 4: Maze Navigation ---
+const anim4Sketch = (p) => {
+    const cols = 10;
+    const rows = 8;
+    let cellSize;
+    let grid = [];
+    let agent;
+    let target;
+    let path = []; // Sequence of visual states (simplified: agent positions)
+    let currentPathStep = 0;
+    let playing = false;
+
+    class Cell {
+        constructor(i, j) {
+            this.i = i;
+            this.j = j;
+            this.wall = p.random(1) < 0.3; // 30% chance of being a wall
+        }
+        show() {
+            let x = this.i * cellSize;
+            let y = this.j * cellSize;
+            p.stroke(200);
+            if (this.wall) {
+                p.fill(50);
+            } else {
+                p.fill(255);
+            }
+            p.rect(x, y, cellSize, cellSize);
+        }
+    }
+
+    class Agent {
+        constructor(i, j) {
+            this.i = i;
+            this.j = j;
+        }
+        show() {
+            let x = this.i * cellSize + cellSize / 2;
+            let y = this.j * cellSize + cellSize / 2;
+            p.fill(0, 0, 255);
+            p.ellipse(x, y, cellSize * 0.6, cellSize * 0.6);
+        }
+        move(nextPos) {
+            this.i = nextPos.i;
+            this.j = nextPos.j;
+        }
+    }
+    
+    function createMaze() {
+        grid = [];
+         for (let j = 0; j < rows; j++) {
+            for (let i = 0; i < cols; i++) {
+                grid.push(new Cell(i, j));
+            }
+        }
+        // Ensure start and end are not walls
+        grid[0].wall = false; // Start at (0,0)
+        grid[cols * rows - 1].wall = false; // End at bottom-right
+        agent = new Agent(0, 0);
+        target = { i: cols - 1, j: rows - 1 };
+    }
+
+    // Simplified pathfinding (random walk towards target, not optimal)
+    function generatePath() {
+        path = [{i: agent.i, j: agent.j}];
+        let currentI = agent.i;
+        let currentJ = agent.j;
+        let attempts = 0;
+
+        while((currentI !== target.i || currentJ !== target.j) && path.length < 50 && attempts < 200) {
+            attempts++;
+            let possibleMoves = [];
+            // Prefer moves towards target
+            if (currentI < target.i && currentI + 1 < cols && !grid[(currentI+1) + currentJ*cols].wall) possibleMoves.push({i: currentI + 1, j: currentJ});
+            if (currentI > target.i && currentI - 1 >= 0 && !grid[(currentI-1) + currentJ*cols].wall) possibleMoves.push({i: currentI - 1, j: currentJ});
+            if (currentJ < target.j && currentJ + 1 < rows && !grid[currentI + (currentJ+1)*cols].wall) possibleMoves.push({i: currentI, j: currentJ + 1});
+            if (currentJ > target.j && currentJ - 1 >= 0 && !grid[currentI + (currentJ-1)*cols].wall) possibleMoves.push({i: currentI, j: currentJ - 1});
+            
+            // Add other valid moves if preferred are not available or to add randomness
+            if (currentI + 1 < cols && !grid[(currentI+1) + currentJ*cols].wall) possibleMoves.push({i: currentI + 1, j: currentJ});
+            if (currentI - 1 >= 0 && !grid[(currentI-1) + currentJ*cols].wall) possibleMoves.push({i: currentI - 1, j: currentJ});
+            if (currentJ + 1 < rows && !grid[currentI + (currentJ+1)*cols].wall) possibleMoves.push({i: currentI, j: currentJ + 1});
+            if (currentJ - 1 >= 0 && !grid[currentI + (currentJ-1)*cols].wall) possibleMoves.push({i: currentI, j: currentJ - 1});
+
+
+            if (possibleMoves.length > 0) {
+                let move = p.random(possibleMoves.filter(m => !path.find(p => p.i === m.i && p.j === m.j))); // Avoid immediate backtrack
+                if (!move && possibleMoves.length > 0) move = p.random(possibleMoves); // If all are backtrack, pick one
+                if (move) {
+                    currentI = move.i;
+                    currentJ = move.j;
+                    path.push({i: currentI, j: currentJ});
+                } else { break; } // Stuck
+            } else {
+                break; // No moves
+            }
+        }
+        if (currentI !== target.i || currentJ !== target.j) {
+             // Could not find path, try to make a simple one
+             path = [{i:0,j:0}, {i:cols-1, j:rows-1}]; // Fallback
+             grid[0].wall = false;
+             grid[cols*rows-1].wall = false;
+        }
+    }
+
+    p.customSetup = () => {
+        cellSize = p.min(p.width / cols, p.height / rows);
+        createMaze();
+        generatePath();
+        p.initialDraw();
+        p.noLoop();
+
+        document.getElementById('playAnim4').onclick = () => {
+            if (!playing) {
+                playing = true;
+                currentPathStep = 0;
+                agent.i = path[0].i; agent.j = path[0].j;
+                p.loop();
+            }
+        };
+        document.getElementById('resetAnim4').onclick = () => {
+            playing = false;
+            createMaze();
+            generatePath();
+            currentPathStep = 0;
+            agent.i = path[0].i; agent.j = path[0].j;
+            p.noLoop();
+            p.initialDraw();
+        };
+    };
+    
+    p.customResize = () => {
+        cellSize = p.min(p.width / cols, p.height / rows);
+    };
+
+    p.initialDraw = () => {
+        p.background(220);
+        for (let cell of grid) {
+            cell.show();
+        }
+        // Target
+        p.fill(255, 0, 0);
+        p.ellipse(target.i * cellSize + cellSize / 2, target.j * cellSize + cellSize / 2, cellSize * 0.6, cellSize * 0.6);
+        
+        agent.show();
+
+        // Show path "visual thoughts"
+        p.fill(100); p.textSize(12); p.textAlign(p.LEFT);
+        p.text("模拟视觉规划步骤:", 5, p.height - 25);
+        for(let i=0; i < path.length && i < 10; i++) { // Show first 10 steps
+            p.stroke(i === currentPathStep ? p.color(255,0,0) : p.color(0,0,255));
+            p.fill(200,200,255,150);
+            p.rect(5 + i*(cellSize*0.5 + 5), p.height - (cellSize*0.5) - 5, cellSize*0.5, cellSize*0.5);
+            p.fill(0,0,255);
+            p.ellipse(5 + i*(cellSize*0.5 + 5) + cellSize*0.25, p.height - (cellSize*0.5) - 5 + cellSize*0.25, 5,5);
+        }
+    };
+
+    p.draw = () => {
+        if (!playing) return;
+        p.initialDraw();
+
+        if (p.frameCount % 15 === 0) { // Slower steps
+            if (currentPathStep < path.length - 1) {
+                currentPathStep++;
+                agent.move(path[currentPathStep]);
+            } else {
+                playing = false;
+                p.noLoop();
+                 // Check if reached target
+                if (agent.i === target.i && agent.j === target.j) {
+                    // Optional: success message
+                }
+            }
+        }
+    };
+};
+let anim4Instance;
+
+// --- Animation 5: Performance Chart ---
+const anim5Sketch = (p) => {
+    let data = {};
+    let currentDataset = 'frozenlake'; // 'frozenlake' or 'maze'
+    const datasets = {
+        frozenlake: {
+            labels: ["Text-SFT", "VPFT", "VPRL"],
+            em: [34.3, 56.1, 80.6], // Example EM scores from paper (AVG)
+            pr: [53.3, 65.2, 84.9]  // Example PR scores
+        },
+        maze: { // Using MAZE specific from Table 1
+            labels: ["Text-SFT", "VPFT", "VPRL"],
+            em: [33.3, 64.0, 74.5],
+            pr: [52.7, 59.0, 77.6]
+        }
+    };
+
+    p.customSetup = () => {
+        data = datasets[currentDataset];
+        p.initialDraw();
+        p.noLoop();
+
+        document.getElementById('anim5_show_frozenlake').onclick = () => {
+            currentDataset = 'frozenlake';
+            data = datasets[currentDataset];
+            p.redraw();
+        };
+        document.getElementById('anim5_show_maze').onclick = () => {
+            currentDataset = 'maze';
+            data = datasets[currentDataset];
+            p.redraw();
+        };
+    };
+    
+    p.initialDraw = () => {
+        p.background(245);
+        let barWidth = (p.width - 100) / (data.labels.length * 2.5); // Adjusted for spacing
+        let maxVal = 100; // Percentage
+        let chartHeight = p.height - 100;
+        let chartOriginX = 60;
+        let chartOriginY = p.height - 50;
+
+        p.textAlign(p.CENTER, p.CENTER);
+        p.textSize(16);
+        p.fill(0);
+        p.text(`任务: ${currentDataset === 'frozenlake' ? '冰湖 (FrozenLake)' : '迷宫 (Maze)'} - 性能对比 (模拟数据)`, p.width / 2, 30);
+
+        // Draw axes
+        p.stroke(0);
+        p.line(chartOriginX, chartOriginY, chartOriginX, chartOriginY - chartHeight); // Y-axis
+        p.line(chartOriginX, chartOriginY, p.width - 20, chartOriginY); // X-axis
+
+        // Y-axis labels
+        p.textAlign(p.RIGHT, p.CENTER);
+        for (let i = 0; i <= maxVal; i += 20) {
+            let y = chartOriginY - (i / maxVal) * chartHeight;
+            p.line(chartOriginX - 5, y, chartOriginX, y);
+            p.text(i + "%", chartOriginX - 10, y);
+        }
+
+        // Bars
+        p.textAlign(p.CENTER, p.BOTTOM);
+        for (let i = 0; i < data.labels.length; i++) {
+            let x_em = chartOriginX + i * (barWidth * 2.5) + barWidth * 0.5;
+            let x_pr = x_em + barWidth;
+
+            // EM bar
+            p.fill(100, 100, 255); // Blue for EM
+            let h_em = (data.em[i] / maxVal) * chartHeight;
+            p.rect(x_em, chartOriginY - h_em, barWidth, h_em);
+            p.fill(0);
+            p.text(data.em[i].toFixed(1), x_em + barWidth / 2, chartOriginY - h_em - 5);
+
+            // PR bar
+            p.fill(100, 200, 100); // Green for PR
+            let h_pr = (data.pr[i] / maxVal) * chartHeight;
+            p.rect(x_pr, chartOriginY - h_pr, barWidth, h_pr);
+            p.fill(0);
+            p.text(data.pr[i].toFixed(1), x_pr + barWidth / 2, chartOriginY - h_pr - 5);
+            
+            // Label
+            p.fill(0);
+            p.text(data.labels[i], (x_em + x_pr + barWidth)/2 , chartOriginY + 20);
+        }
+        
+        // Legend
+        p.fill(100, 100, 255); p.rect(p.width - 150, chartOriginY - chartHeight + 10, 15, 15);
+        p.fill(0); p.textAlign(p.LEFT); p.text("EM (%)", p.width - 130, chartOriginY - chartHeight + 18);
+        p.fill(100, 200, 100); p.rect(p.width - 150, chartOriginY - chartHeight + 30, 15, 15);
+        p.fill(0); p.text("PR (%)", p.width - 130, chartOriginY - chartHeight + 38);
+    };
+     p.draw = () => { // Only needed if there were continuous animations
+         p.initialDraw(); // For this one, redraw on demand is enough
+    }
+};
+let anim5Instance;
+
+
+// Initialize sketches after DOM is ready
+window.onload = () => {
+    anim1Instance = sketchWrapper('anim1', anim1Sketch, 'anim1_concept_comparison', 600, 250);
+    anim2Instance = sketchWrapper('anim2', anim2Sketch, 'anim2_vprl_framework', 600, 400);
+    anim3Instance = sketchWrapper('anim3', anim3Sketch, 'anim3_reward_mechanism', 500, 350);
+    anim4Instance = sketchWrapper('anim4', anim4Sketch, 'anim4_maze_navigation', 400, 320); // Smaller maze
+    anim5Instance = sketchWrapper('anim5', anim5Sketch, 'anim5_performance_chart', 600, 400);
+
+    // A global check for p5 instances and canvas parenting
+    setTimeout(() => {
+        document.querySelectorAll('.canvas-parent').forEach(parentDiv => {
+            if (parentDiv.children.length === 0 || !(parentDiv.children[0] instanceof HTMLCanvasElement)) {
+                console.error("P5 Canvas not parented correctly or missing for:", parentDiv.id);
+            } else {
+                // console.log("P5 Canvas seems OK for:", parentDiv.id);
+            }
+            if (parentDiv.offsetWidth === 0 || parentDiv.offsetHeight === 0) {
+                 console.warn("Zero dimension parent for canvas:", parentDiv.id, "width:", parentDiv.offsetWidth, "height:", parentDiv.offsetHeight);
+            }
+        });
+    }, 1000); // Wait a bit for p5 to initialize
+};
+
+</script>
+</body>
+</html>

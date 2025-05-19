@@ -1,0 +1,856 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>类脑变分推理：物理逻辑视角深度解读</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+Screen+TC&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'LXGW WenKai Screen TC', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+            font-size: 16pt; /* 三号字体大约是16pt */
+            line-height: 1.8;
+            background-color: #f8f9fa; /* 淡雅的背景色 */
+            color: #333;
+        }
+        @media print {
+            body {
+                font-size: 16pt;
+                width: 29.7cm; /* A3 width */
+                height: 42cm; /* A3 height */
+                margin: 2cm; /* 普通页边距 */
+            }
+            .no-print {
+                display: none;
+            }
+            .animation-container, .controls {
+                page-break-inside: avoid;
+            }
+        }
+        .content-wrapper {
+            max-width: 1000px; /* A3纸张内容区域宽度参考，实际打印由@media print控制 */
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #ffffff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+        h1, h2, h3 {
+            font-weight: 600;
+            margin-bottom: 0.5em;
+            color: #2c3e50; /* 深蓝灰色标题 */
+        }
+        h1 {
+            font-size: 2.5em;
+            text-align: center;
+            margin-bottom: 1em;
+            border-bottom: 2px solid #3498db; /* 蓝色下划线 */
+            padding-bottom: 0.5em;
+        }
+        h2 {
+            font-size: 1.8em;
+            margin-top: 1.5em;
+            color: #2980b9; /* 较深的蓝色 */
+        }
+        h3 {
+            font-size: 1.4em;
+            margin-top: 1em;
+            color: #16a085; /* 青绿色 */
+        }
+        p {
+            margin-bottom: 1em;
+            text-align: justify;
+        }
+        strong, .highlight {
+            color: #e74c3c; /* 突出文字用红色 */
+            font-weight: bold;
+        }
+        .key-concept {
+            background-color: #e8f6fd; /* 淡蓝色背景 */
+            border-left: 5px solid #3498db; /* 蓝色左边框 */
+            padding: 15px;
+            margin-bottom: 1em;
+            border-radius: 8px;
+        }
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #ecf0f1; /* 浅灰色背景 */
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: block;
+            text-align: center;
+            font-size: 0.95em;
+            color: #2c3e50;
+            border: 1px dashed #bdc3c7;
+        }
+        .animation-container {
+            margin: 20px auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            min-height: 300px; /* 确保canvas有高度 */
+            width: 100%; /* 强制铺满父容器 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .animation-container canvas {
+             display: block; /* p5.js canvas is inline by default */
+             max-width: 100%;
+             height: auto;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        .controls button {
+            background-color: #3498db; /* 蓝色按钮 */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+        .controls button:hover {
+            background-color: #2980b9; /* 深蓝色悬停 */
+        }
+        .caption {
+            text-align: center;
+            font-style: italic;
+            color: #7f8c8d; /* 灰色说明文字 */
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+        /* 强制P5 canvas铺满其父容器，并设定最小高度 */
+        #freeEnergyCanvasContainer,
+        #neuralTrajectoryCanvasContainer,
+        #inferenceComparisonCanvasContainer,
+        #fondFrameworkCanvasContainer,
+        #v1FeaturesCanvasContainer {
+            width: 100%;
+            min-height: 350px; /* 保证有足够的高度进行展示 */
+            display: flex; /* 使用flex布局来居中canvas */
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="content-wrapper">
+        <h1>类脑变分推理：物理与逻辑的交响</h1>
+        <p class="text-lg text-gray-700 leading-relaxed">
+            理解大脑如何进行高效推理，是神经科学与人工智能领域的共同追求。近期，一篇题为《类脑变分推理》(Brain-like variational inference) 的研究论文（Hadi Vafaii, Dekel Galor, Jacob L. Yates, arXiv:2410.19315v2）为我们揭示了一条连接理论与生物现实的可能路径。这篇论文不仅提出了一个新颖的理论框架FOND（自由能在线自然梯度动力学），还由此衍生出一个具体的、具有生物学合理性的脉冲神经网络模型——迭代泊松变分自编码器 (iP-VAE)。本文将从<strong class="highlight">物理和逻辑</strong>的视角，对该研究进行深度解读，并通过交互式动画直观展示其核心概念。
+        </p>
+
+        <h2>一、感知即推理：变分自由能的物理隐喻</h2>
+        <p>
+            大脑无时无刻不在处理来自外界的纷繁信息，并试图理解这个世界。这一过程可以被看作是一种<strong class="highlight">推理 (inference)</strong>：根据不完整的感官输入，推断出造成这些输入的潜在原因。论文将这一过程与物理学中的能量最小化原理联系起来，引入了<strong class="highlight">变分自由能 (Variational Free Energy, F)</strong>的概念。
+        </p>
+        <p class="key-concept">
+            <strong>变分自由能 (F)</strong>：在神经科学中，它被认为是衡量大脑模型对世界解释好坏程度的一个量。大脑的目标是最小化这个自由能，这等价于在机器学习中最大化证据下界 (ELBO)。当自由能最小时，大脑对世界的内部表征与感官输入最为吻合，同时模型的复杂度也得到控制。
+        </p>
+        <p>
+            从物理视角看，自由能最小化过程，就像一个物体在能量场中滚动，最终会停留在能量最低的稳定状态。大脑的感知过程，也可以被看作是在一个由神经元活动构成的“状态空间”中，通过动态演化，最终收敛到一个与当前感官输入最匹配的“吸引子”状态。
+        </p>
+        <div id="freeEnergyCanvasContainer" class="animation-container"></div>
+        <div class="controls no-print">
+            <button onclick="toggleAnimation('freeEnergySketch')">播放/暂停</button>
+            <button onclick="resetAnimation('freeEnergySketch')">重置</button>
+        </div>
+        <p class="caption">动画1：变分自由能最小化。小球代表系统状态，曲线代表自由能景观。系统总是趋向于自由能更低的状态。</p>
+
+        <h2>二、FOND框架：从第一性原理推导神经动力学</h2>
+        <p>
+            论文的核心贡献之一是提出了<strong class="highlight">FOND (Free energy Online Natural-gradient Dynamics)</strong> 框架。这是一种“规范性”(prescriptive) 的方法，即从最基本的理论原则出发，推导出神经系统的动力学方程，而不是像“描述性”(descriptive) 方法那样，先观察数据再拟合模型。
+        </p>
+        <p>
+            FOND框架的关键步骤包括：
+        </p>
+        <ol class="list-decimal list-inside pl-5 space-y-1 mb-4">
+            <li><strong>确定动态变量</strong>：论文选择神经元的<strong class="highlight">膜电位 (membrane potentials, u)</strong>作为核心动态变量。膜电位是神经元内部状态的直接反映，并决定了其放电行为。</li>
+            <li><strong>设定目标函数</strong>：最小化变分自由能 F。</li>
+            <li><strong>选择优化方法</strong>：采用<strong class="highlight">在线自然梯度下降 (online natural gradient descent)</strong>。自然梯度考虑了参数空间的几何结构，使得优化过程更为高效和稳定。</li>
+            <li><strong>引入泊松假设</strong>：假设神经元的脉冲发放服从泊松分布，这使得模型能够处理离散的、整数值的脉冲计数 (spike counts, z)，并且瞬时发放率 (firing rates, r) 可以通过膜电位的指数函数 (r = exp(u)) 来确定。</li>
+        </ol>
+        <p>
+            通过这一系列逻辑严谨的推导，论文得到了一个描述膜电位随时间演化的动力学方程。这个方程漂亮地统一了几个关键的神经计算概念：
+        </p>
+        <p class="formula">
+            du(t)/dt ∝ Feedforward_Drive - Recurrent_Explaining_Away - Homeostatic_Leak_Term
+        </p>
+        <p>
+            其中：
+        </p>
+        <ul class="list-disc list-inside pl-5 space-y-1">
+            <li><strong class="highlight">前馈驱动 (Feedforward Drive)</strong>：Φ<sup>T</sup>x(t)，表示来自外部感官输入x(t)的直接驱动，Φ<sup>T</sup>可以看作是感受野或特征检测器。</li>
+            <li><strong class="highlight">循环“解释消除” (Recurrent "Explaining Away")</strong>：Φ<sup>T</sup>Φz(t)，表示神经元网络内部的相互作用。通过脉冲z(t)（而非连续的膜电位）进行通信，一个神经元的活动会“解释掉”部分输入，并抑制其他试图解释相同输入的神经元，这体现了有效的侧向竞争。</li>
+            <li><strong class="highlight">稳态泄露项 (Homeostatic "Leak" Term)</strong>：β(u(t) - u<sub>0</sub>)，确保膜电位在没有输入时能回到一个基准状态u<sub>0</sub>，这与生物神经元的漏电特性相似，并源于自由能中的KL散度项，起到了正则化作用。</li>
+        </ul>
+
+        <div id="fondFrameworkCanvasContainer" class="animation-container"></div>
+        <div class="controls no-print">
+            <button onclick="toggleAnimation('fondFrameworkSketch')">播放/暂停</button>
+            <button onclick="resetAnimation('fondFrameworkSketch')">重置</button>
+        </div>
+        <p class="caption">动画2：FOND框架流程示意。展示从自由能出发，通过自然梯度下降和泊松假设，推导出神经动力学方程的过程。</p>
+
+        <h2>三、iP-VAE模型：一个会“思考”的脉冲神经网络</h2>
+        <p>
+            基于FOND框架推导出的动力学方程，论文构建了<strong class="highlight">迭代泊松变分自编码器 (iP-VAE)</strong>。这是一种循环脉冲神经网络，其核心特点在于它通过膜电位的动态演化来进行变分推理。
+        </p>
+        <h3>3.1 神经轨迹与吸引子</h3>
+        <p>
+            在iP-VAE中，当接收到感官输入后，网络中神经元的膜电位开始演化。这个演化过程可以被视为在多维神经状态空间中的一条<strong class="highlight">神经轨迹 (Neural Trajectory)</strong>。这条轨迹最终会收敛到一个<strong class="highlight">吸引子 (attractor)</strong>状态，该状态对应于对当前输入的最优解释（即自由能最小的状态）。在收敛过程中，神经元会根据其膜电位发放脉冲。
+        </p>
+        <div id="neuralTrajectoryCanvasContainer" class="animation-container"></div>
+        <div class="controls no-print">
+            <button onclick="toggleAnimation('neuralTrajectorySketch')">播放/暂停</button>
+            <button onclick="resetAnimation('neuralTrajectorySketch')">重置</button>
+        </div>
+        <p class="caption">动画3：神经轨迹与吸引子。展示在二维状态空间中，神经状态（小球）如何从初始位置演化并收敛到一个吸引子（目标点）。</p>
+
+        <h3>3.2 迭代推理的力量</h3>
+        <p>
+            iP-VAE采用的是<strong class="highlight">迭代推理 (iterative inference)</strong> 方式。与传统的变分自编码器 (VAE) 中常用的<strong class="highlight">分摊推理 (amortized inference)</strong> 不同（分摊推理试图用一个固定的编码器网络一步到位地输出后验分布的参数），迭代推理允许网络通过多次循环计算，逐步优化其对输入的表征。
+        </p>
+        <p class="key-concept">
+            <strong>迭代推理 vs. 分摊推理</strong>：分摊推理快，但可能存在“分摊差距”，即无法达到最优的推理结果。迭代推理更耗时，但通常能获得更精确的后验近似，更符合大脑皮层中观察到的循环处理和渐进式表征优化的特性。
+        </p>
+        <div id="inferenceComparisonCanvasContainer" class="animation-container"></div>
+        <div class="controls no-print">
+            <button onclick="toggleAnimation('inferenceComparisonSketch')">播放/暂停</button>
+            <button onclick="resetAnimation('inferenceComparisonSketch')">重置</button>
+        </div>
+        <p class="caption">动画4：迭代推理与分摊推理对比。左侧展示迭代推理逐步逼近目标，右侧展示分摊推理一步到位（可能存在偏差）。</p>
+
+        <h3>3.3 生物学合理性与性能优势</h3>
+        <p>
+            iP-VAE展现出诸多令人振奋的特性：
+        </p>
+        <ul class="list-disc list-inside pl-5 space-y-1 mb-4">
+            <li><strong class="highlight">脉冲整数表示</strong>：使用整数脉冲计数，这与生物神经元的通信方式一致，且在硬件实现上更高效。</li>
+            <li><strong class="highlight">涌现的归一化与侧向竞争</strong>：模型动力学自然地产生了类似生物系统中观察到的归一化效应和神经元间的竞争，有助于形成稀疏和高效的编码。</li>
+            <li><strong class="highlight">稀疏性与重建质量的平衡</strong>：实验表明，iP-VAE在图像重建任务中，能在保持高稀疏性的同时（即用较少的神经元活动来表征信息），达到与标准VAE相当甚至更好的重建质量。</li>
+            <li><strong class="highlight">生物学特征模拟</strong>：iP-VAE能够学习到类似于初级视皮层 (V1) 中简单细胞的感受野特征（如Gabor滤波器），并表现出如对比度依赖的响应延迟等生物学现象。</li>
+            <li><strong class="highlight">优异的分布外泛化能力</strong>：iP-VAE在处理训练时未见过的数据（OOD, out-of-distribution inputs）时，表现出比标准VAE和一些混合迭代-分摊模型更强的泛化能力。</li>
+        </ul>
+        <div id="v1FeaturesCanvasContainer" class="animation-container"></div>
+        <div class="controls no-print">
+            <button onclick="toggleAnimation('v1FeaturesSketch')">播放/暂停</button>
+            <button onclick="resetAnimation('v1FeaturesSketch')">重置</button>
+        </div>
+        <p class="caption">动画5：V1视皮层特征的涌现。展示一个简化的特征学习过程，从随机噪声逐渐演化出类似Gabor滤波器的方向性条纹特征。</p>
+
+        <h2>四、物理逻辑的统一：连接点与未来展望</h2>
+        <p>
+            这篇论文的精妙之处在于其<strong class="highlight">物理逻辑的统一性</strong>。它不仅仅是提出了一个新模型，更重要的是，它展示了如何从变分自由能这一基本原理出发，通过逻辑严谨的数学推导（自然梯度、泊松假设），直接得到一个具有生物学意义的神经动力学模型。
+        </p>
+        <p>
+            从物理层面看，模型中的膜电位、脉冲、漏电、侧向抑制等元素都与生物神经元的物理特性和行为高度吻合。模型的动态演化过程，也呼应了物理系统中向低能态稳定点收敛的普遍规律。
+        </p>
+        <p>
+            从逻辑层面看，FOND框架提供了一个清晰的“配方”，使得研究者可以系统地探索不同假设（如不同的概率分布、动态变量）如何影响最终的神经计算模型。论文中对迭代推理与分摊推理的比较，以及对不同模型（如VAE、预测编码、稀疏编码）在自由能最小化框架下的统一（如图2所示），都体现了其深刻的逻辑洞察力。
+        </p>
+        <p>
+            iP-VAE的成功，特别是其在稀疏性、生物学合理性和OOD泛化方面的表现，为我们理解大脑如何实现高效、鲁棒的推理提供了新的视角。它启发我们，或许大脑的复杂功能，正是源于一些相对简洁的优化原理和物理约束的共同作用。
+        </p>
+        <p>
+            当然，这只是探索类脑智能征途中的一步。未来的研究可以在此基础上进一步探索：
+        </p>
+        <ul class="list-disc list-inside pl-5 space-y-1">
+            <li>更复杂的层级结构和预测动力学。</li>
+            <li>更具生物学真实性的学习规则。</li>
+            <li>模型在更广泛的认知任务上的应用。</li>
+            <li>与真实的神经生理数据的直接对比和验证。</li>
+        </ul>
+        <p>
+            总而言之，Vafaii及其同事的工作，为我们架起了一座连接理论物理、计算神经科学和人工智能的桥梁。它不仅让我们对大脑的奥秘有了更深的遐想，也为构建更智能、更高效的人工系统点亮了一盏明灯。这篇论文所展现的从第一性原理出发推导类脑算法的思路，无疑将对未来的研究产生深远的影响。
+        </p>
+    </div>
+
+    <script>
+        // 全局存储P5.js实例和状态
+        let sketches = {};
+
+        function toggleAnimation(sketchName) {
+            if (sketches[sketchName] && sketches[sketchName].instance) {
+                if (sketches[sketchName].isPlaying) {
+                    sketches[sketchName].instance.noLoop();
+                    sketches[sketchName].isPlaying = false;
+                } else {
+                    sketches[sketchName].instance.loop();
+                    sketches[sketchName].isPlaying = true;
+                }
+            }
+        }
+
+        function resetAnimation(sketchName) {
+            if (sketches[sketchName] && sketches[sketchName].instance && sketches[sketchName].resetFunc) {
+                sketches[sketchName].resetFunc(sketches[sketchName].instance);
+                if (!sketches[sketchName].isPlaying) { // 如果是暂停状态，重置后手动绘制一帧
+                    sketches[sketchName].instance.redraw();
+                }
+            }
+        }
+        
+        // Animation 1: Free Energy Minimization
+        const freeEnergySketchFunc = (p) => {
+            let ballX, ballY;
+            let energyPath = [];
+            let time = 0;
+            const amplitude = 80;
+            const frequency = 0.02;
+            const damping = 0.98;
+            let velocityY = 0;
+            let isPlaying = true;
+
+            p.setup = () => {
+                const container = document.getElementById('freeEnergyCanvasContainer');
+                const canvas = p.createCanvas(container.offsetWidth - 20, container.offsetHeight - 20); // 减去padding
+                canvas.parent('freeEnergyCanvasContainer');
+                resetState();
+                sketches['freeEnergySketch'] = { instance: p, isPlaying: isPlaying, resetFunc: resetState };
+                p.noLoop(); // Start paused, user clicks play
+                p.redraw(); // Draw initial frame
+            };
+
+            function resetState() {
+                ballX = p.width / 5;
+                time = 0;
+                velocityY = 0;
+                energyPath = [];
+                for (let x = 0; x < p.width; x += 5) {
+                    let y = p.height / 2 + amplitude * p.cos(frequency * x + p.PI) * p.exp(-0.001 * x) + 
+                              amplitude/2 * p.sin(frequency * 2 * x);
+                    energyPath.push({x: x, y: y});
+                }
+                ballY = calculateY(ballX);
+                if (sketches['freeEnergySketch']) sketches['freeEnergySketch'].isPlaying = true; // Default to playing on reset
+                p.loop();
+            }
+            
+            function calculateY(xPos) {
+                // Find the y for a given x on the path
+                for(let i = 0; i < energyPath.length - 1; i++) {
+                    if (xPos >= energyPath[i].x && xPos < energyPath[i+1].x) {
+                        // Linear interpolation for simplicity
+                        let t = (xPos - energyPath[i].x) / (energyPath[i+1].x - energyPath[i].x);
+                        return p.lerp(energyPath[i].y, energyPath[i+1].y, t);
+                    }
+                }
+                return energyPath[energyPath.length-1].y; // fallback
+            }
+
+            p.draw = () => {
+                p.background(255);
+                
+                // Draw energy landscape
+                p.noFill();
+                p.stroke(52, 152, 219, 150); // Light blue
+                p.strokeWeight(3);
+                p.beginShape();
+                for (let pt of energyPath) {
+                    p.vertex(pt.x, pt.y);
+                }
+                p.endShape();
+
+                // Update and draw ball
+                if (sketches['freeEnergySketch'] && sketches['freeEnergySketch'].isPlaying) {
+                    let currentY = calculateY(ballX);
+                    let nextX = ballX + 1;
+                    if (nextX >= p.width * 0.8) nextX = p.width * 0.8; // Stop before end
+                    
+                    let nextYOnPath = calculateY(nextX);
+                    let slope = (nextYOnPath - currentY); // Simplified force based on slope
+
+                    velocityY += slope * 0.1; // Gravity effect
+                    velocityY *= damping;     // Damping
+
+                    ballY += velocityY;
+                    
+                    // Constrain ball to path (approximately)
+                    let pathY = calculateY(ballX);
+                    if ( (velocityY > 0 && ballY > pathY) || (velocityY < 0 && ballY < pathY) ){
+                         ballY = pathY; // Snap to path if overshot due to discrete steps
+                    }
+
+                    ballX += 1;
+                    if (ballX > p.width * 0.8) { // Stop condition
+                        ballX = p.width * 0.8;
+                        if (sketches['freeEnergySketch']) {
+                             p.noLoop();
+                             sketches['freeEnergySketch'].isPlaying = false;
+                        }
+                    }
+                }
+                
+                p.fill(231, 76, 60); // Red ball
+                p.stroke(192, 57, 43);
+                p.strokeWeight(2);
+                p.ellipse(ballX, ballY, 20, 20);
+
+                p.fill(0);
+                p.noStroke();
+                p.textAlign(p.CENTER);
+                p.textSize(14);
+                p.text("自由能 (F)", p.width/2, 30);
+                p.text("状态空间", p.width/2, p.height - 15);
+            };
+             p.windowResized = () => {
+                const container = document.getElementById('freeEnergyCanvasContainer');
+                p.resizeCanvas(container.offsetWidth - 20, container.offsetHeight - 20);
+                resetState(); // Re-initialize on resize
+                p.redraw();
+            };
+        };
+        new p5(freeEnergySketchFunc);
+
+        // Animation 2: Neural Trajectory
+        const neuralTrajectorySketchFunc = (p) => {
+            let particle;
+            let attractor;
+            let trail = [];
+            let isPlaying = true;
+
+            class Particle {
+                constructor(x, y) {
+                    this.pos = p.createVector(x, y);
+                    this.vel = p.createVector();
+                    this.acc = p.createVector();
+                    this.maxSpeed = 3;
+                    this.maxForce = 0.1;
+                }
+
+                update() {
+                    this.vel.add(this.acc);
+                    this.vel.limit(this.maxSpeed);
+                    this.pos.add(this.vel);
+                    this.acc.mult(0); // Reset acceleration
+                    trail.push(this.pos.copy());
+                    if (trail.length > 200) {
+                        trail.splice(0, 1);
+                    }
+                }
+
+                applyForce(force) {
+                    this.acc.add(force);
+                }
+
+                seek(target) {
+                    let desired = p5.Vector.sub(target, this.pos);
+                    desired.setMag(this.maxSpeed);
+                    let steer = p5.Vector.sub(desired, this.vel);
+                    steer.limit(this.maxForce);
+                    this.applyForce(steer);
+                }
+
+                display() {
+                    p.fill(52, 152, 219); // Blue particle
+                    p.noStroke();
+                    p.ellipse(this.pos.x, this.pos.y, 16, 16);
+                }
+                
+                atTarget(target) {
+                    return p.dist(this.pos.x, this.pos.y, target.x, target.y) < this.maxSpeed;
+                }
+            }
+
+            p.setup = () => {
+                const container = document.getElementById('neuralTrajectoryCanvasContainer');
+                const canvas = p.createCanvas(container.offsetWidth - 20, container.offsetHeight - 20);
+                canvas.parent('neuralTrajectoryCanvasContainer');
+                resetState();
+                sketches['neuralTrajectorySketch'] = { instance: p, isPlaying: isPlaying, resetFunc: resetState };
+                p.noLoop();
+                p.redraw();
+            };
+            
+            function resetState() {
+                particle = new Particle(p.width * 0.1, p.height * 0.1);
+                attractor = p.createVector(p.width * 0.8, p.height * 0.8);
+                trail = [];
+                if (sketches['neuralTrajectorySketch']) sketches['neuralTrajectorySketch'].isPlaying = true;
+                p.loop();
+            }
+
+            p.draw = () => {
+                p.background(255);
+
+                // Draw trail
+                p.beginShape();
+                p.noFill();
+                p.stroke(230, 126, 34, 100); // Orange trail
+                p.strokeWeight(2);
+                for (let v of trail) {
+                    p.vertex(v.x, v.y);
+                }
+                p.endShape();
+
+                if (sketches['neuralTrajectorySketch'] && sketches['neuralTrajectorySketch'].isPlaying) {
+                    if (!particle.atTarget(attractor)) {
+                        particle.seek(attractor);
+                        particle.update();
+                    } else {
+                         p.noLoop(); // Stop when target reached
+                         if (sketches['neuralTrajectorySketch']) sketches['neuralTrajectorySketch'].isPlaying = false;
+                    }
+                }
+                particle.display();
+
+                // Draw attractor
+                p.fill(46, 204, 113); // Green attractor
+                p.noStroke();
+                p.ellipse(attractor.x, attractor.y, 24, 24);
+                p.fill(0);
+                p.textAlign(p.CENTER, p.CENTER);
+                p.text("u*", attractor.x, attractor.y - 20);
+
+                // Labels for state space axes (conceptual)
+                p.fill(0);
+                p.textSize(14);
+                p.textAlign(p.LEFT, p.BOTTOM);
+                p.text("膜电位 u1", 10, p.height - 10);
+                p.push();
+                p.translate(10, p.height - 10);
+                p.rotate(-p.PI/2);
+                p.text("膜电位 u2", 0, -5);
+                p.pop();
+                
+                // Spikes (conceptual)
+                if (trail.length % 15 === 0 && trail.length > 0 && sketches['neuralTrajectorySketch'] && sketches['neuralTrajectorySketch'].isPlaying && !particle.atTarget(attractor)) {
+                    p.fill(255,0,0,150);
+                    p.ellipse(particle.pos.x + p.random(-5,5), particle.pos.y + p.random(-5,5), 5,5);
+                    p.text("脉冲!", particle.pos.x, particle.pos.y - 15);
+                }
+            };
+            p.windowResized = () => {
+                const container = document.getElementById('neuralTrajectoryCanvasContainer');
+                p.resizeCanvas(container.offsetWidth - 20, container.offsetHeight - 20);
+                resetState();
+                p.redraw();
+            };
+        };
+        new p5(neuralTrajectorySketchFunc);
+
+        // Animation 3: Iterative vs Amortized Inference
+        const inferenceComparisonSketchFunc = (p) => {
+            let iterativePos, amortizedPos;
+            let targetPos;
+            let iterStep = 0;
+            const maxIterSteps = 100;
+            let isPlaying = true;
+
+            p.setup = () => {
+                const container = document.getElementById('inferenceComparisonCanvasContainer');
+                const canvas = p.createCanvas(container.offsetWidth - 20, container.offsetHeight - 20);
+                canvas.parent('inferenceComparisonCanvasContainer');
+                resetState();
+                sketches['inferenceComparisonSketch'] = { instance: p, isPlaying: isPlaying, resetFunc: resetState };
+                p.noLoop();
+                p.redraw();
+            };
+
+            function resetState() {
+                targetPos = p.createVector(p.width * 0.75, p.height / 2);
+                iterativePos = p.createVector(p.width * 0.25, p.height / 3);
+                amortizedPos = p.createVector(p.width * 0.25, p.height * 2 / 3);
+                iterStep = 0;
+                if (sketches['inferenceComparisonSketch']) sketches['inferenceComparisonSketch'].isPlaying = true;
+                p.loop();
+            }
+
+            p.draw = () => {
+                p.background(255);
+                const moitiéWidth = p.width / 2;
+
+                // Target
+                p.fill(46, 204, 113); // Green
+                p.ellipse(targetPos.x, targetPos.y, 30, 30);
+                p.fill(0);
+                p.textAlign(p.CENTER, p.CENTER);
+                p.text("最优参数", targetPos.x, targetPos.y - 25);
+
+                // Iterative Inference (Top half conceptually, or left side)
+                p.fill(0);
+                p.text("迭代推理", moitiéWidth * 0.5, p.height * 0.15);
+                p.stroke(52, 152, 219, 100); // Blue
+                p.line(moitiéWidth * 0.25, p.height / 3, targetPos.x, targetPos.y); // Path
+                
+                if (sketches['inferenceComparisonSketch'] && sketches['inferenceComparisonSketch'].isPlaying && iterStep < maxIterSteps) {
+                    let dir = p5.Vector.sub(targetPos, iterativePos);
+                    dir.mult(0.05); // Speed of iteration
+                    iterativePos.add(dir);
+                    iterStep++;
+                } else if (iterStep >= maxIterSteps && sketches['inferenceComparisonSketch']) {
+                     // p.noLoop(); // Stop iterative part
+                     // sketches['inferenceComparisonSketch'].isPlaying = false; // Keep overall playing for amortized part if needed
+                }
+                p.fill(52, 152, 219);
+                p.ellipse(iterativePos.x, iterativePos.y, 20, 20);
+
+
+                // Amortized Inference (Bottom half conceptually, or right side)
+                p.fill(0);
+                p.text("分摊推理", moitiéWidth * 0.5, p.height * 0.6);
+                p.stroke(231, 76, 60, 100); // Red
+                let amortizedTarget = p.createVector(targetPos.x - 20, targetPos.y + 20); // Simulate amortization gap
+                p.line(moitiéWidth * 0.25, p.height * 2 / 3, amortizedTarget.x, amortizedTarget.y);
+                
+                if (sketches['inferenceComparisonSketch'] && sketches['inferenceComparisonSketch'].isPlaying && iterStep >= 10) { // Show amortized after a few iter steps
+                    amortizedPos.set(amortizedTarget);
+                } else if (iterStep < 10) {
+                     amortizedPos.set(p.width * 0.25, p.height * 2 / 3); // Keep at start
+                }
+
+                p.fill(231, 76, 60);
+                p.ellipse(amortizedPos.x, amortizedPos.y, 20, 20);
+                
+                if (iterStep >= maxIterSteps && p5.Vector.dist(iterativePos, targetPos) < 5) {
+                    if (sketches['inferenceComparisonSketch']) {
+                        p.noLoop();
+                        sketches['inferenceComparisonSketch'].isPlaying = false;
+                    }
+                }
+            };
+            p.windowResized = () => {
+                const container = document.getElementById('inferenceComparisonCanvasContainer');
+                p.resizeCanvas(container.offsetWidth - 20, container.offsetHeight - 20);
+                resetState();
+                p.redraw();
+            };
+        };
+        new p5(inferenceComparisonSketchFunc);
+
+        // Animation 4: FOND Framework Flow
+        const fondFrameworkSketchFunc = (p) => {
+            let currentStep = 0;
+            const totalSteps = 4;
+            let progress = 0; // Progress within a step (0 to 1)
+            let isPlaying = true;
+
+            const steps = [
+                { name: "变分自由能 F", x: 0.2, y: 0.2, w: 200, h: 60 },
+                { name: "自然梯度下降\n+ 泊松假设", x: 0.5, y: 0.4, w: 200, h: 80, arrowTo: 0 },
+                { name: "神经动力学方程\ndu/dt = ...", x: 0.5, y: 0.7, w: 220, h: 80, arrowTo: 1 },
+                { name: "iP-VAE 模型", x: 0.8, y: 0.8, w: 180, h: 60, arrowTo: 2 }
+            ];
+
+            p.setup = () => {
+                const container = document.getElementById('fondFrameworkCanvasContainer');
+                const canvas = p.createCanvas(container.offsetWidth - 20, container.offsetHeight - 20);
+                canvas.parent('fondFrameworkCanvasContainer');
+                resetState();
+                sketches['fondFrameworkSketch'] = { instance: p, isPlaying: isPlaying, resetFunc: resetState };
+                p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(14);
+                p.noLoop();
+                p.redraw();
+            };
+
+            function resetState() {
+                currentStep = 0;
+                progress = 0;
+                if (sketches['fondFrameworkSketch']) sketches['fondFrameworkSketch'].isPlaying = true;
+                p.loop();
+            }
+
+            p.draw = () => {
+                p.background(255);
+                
+                for (let i = 0; i < steps.length; i++) {
+                    let s = steps[i];
+                    let x = s.x * p.width;
+                    let y = s.y * p.height;
+                    
+                    if (i <= currentStep) {
+                        p.fill(224, 247, 250, 200); // Light cyan
+                        p.stroke(0, 150, 136); // Teal
+                    } else {
+                        p.fill(240, 240, 240, 150); // Light gray
+                        p.stroke(180, 180, 180);
+                    }
+                    p.rectMode(p.CENTER);
+                    p.rect(x, y, s.w, s.h, 10);
+                    p.fill(50);
+                    p.noStroke();
+                    p.text(s.name, x, y);
+
+                    // Draw arrow
+                    if (s.arrowTo !== undefined && i <= currentStep) {
+                        let prevStep = steps[s.arrowTo];
+                        let startX = prevStep.x * p.width;
+                        let startY = prevStep.y * p.height + prevStep.h / 2;
+                        let endX = x;
+                        let endY = y - s.h / 2;
+                        
+                        p.stroke(244, 67, 54, 150); // Red arrow
+                        p.strokeWeight(2);
+                        p.line(startX, startY, endX, endY);
+                        p.push();
+                        p.translate(endX, endY);
+                        let angle = p.atan2(endY - startY, endX - startX);
+                        p.rotate(angle);
+                        p.fill(244, 67, 54, 150);
+                        p.triangle(0, 0, -8, -4, -8, 4);
+                        p.pop();
+                    }
+                }
+
+                if (sketches['fondFrameworkSketch'] && sketches['fondFrameworkSketch'].isPlaying) {
+                    progress += 0.02;
+                    if (progress >= 1) {
+                        progress = 0;
+                        currentStep++;
+                        if (currentStep >= steps.length) {
+                            currentStep = steps.length -1; // Stay at last step
+                             p.noLoop();
+                             if (sketches['fondFrameworkSketch']) sketches['fondFrameworkSketch'].isPlaying = false;
+                        }
+                    }
+                }
+            };
+            p.windowResized = () => {
+                const container = document.getElementById('fondFrameworkCanvasContainer');
+                p.resizeCanvas(container.offsetWidth - 20, container.offsetHeight - 20);
+                // No need to reset state for this one, positions are relative
+                p.redraw();
+            };
+        };
+        new p5(fondFrameworkSketchFunc);
+
+        // Animation 5: Emergence of V1-like Features
+        const v1FeaturesSketchFunc = (p) => {
+            const gridSize = 10;
+            const cellSize = 30;
+            let features = [];
+            let learningProgress = 0; // 0 to 1
+            const learningSpeed = 0.005;
+            let isPlaying = true;
+
+            class Feature {
+                constructor() {
+                    this.pixels = [];
+                    this.targetAngle = p.random(p.PI); // Target orientation
+                    this.targetFreq = p.random(0.1, 0.3); // Target spatial frequency for Gabor
+                    for (let i = 0; i < cellSize; i++) {
+                        this.pixels[i] = [];
+                        for (let j = 0; j < cellSize; j++) {
+                            this.pixels[i][j] = p.random(255); // Initial noise
+                        }
+                    }
+                }
+
+                update(progress) {
+                    for (let y = 0; y < cellSize; y++) {
+                        for (let x = 0; x < cellSize; x++) {
+                            // Center coordinates
+                            let xc = x - cellSize / 2;
+                            let yc = y - cellSize / 2;
+                            // Rotate coordinates
+                            let x_theta = xc * p.cos(this.targetAngle) + yc * p.sin(this.targetAngle);
+                            // Gabor-like pattern (simplified)
+                            let targetVal = 127.5 + 127.5 * p.cos(2 * p.PI * this.targetFreq * x_theta);
+                            
+                            this.pixels[y][x] = p.lerp(this.pixels[y][x], targetVal, progress * 0.1); // Slow lerp towards target
+                        }
+                    }
+                }
+
+                display(xOffset, yOffset) {
+                    for (let i = 0; i < cellSize; i++) {
+                        for (let j = 0; j < cellSize; j++) {
+                            p.fill(this.pixels[i][j]);
+                            p.noStroke();
+                            p.rect(xOffset + j, yOffset + i, 1, 1);
+                        }
+                    }
+                }
+            }
+
+            p.setup = () => {
+                const container = document.getElementById('v1FeaturesCanvasContainer');
+                // Calculate canvas size based on grid and cell size, respecting container
+                let canvasWidth = gridSize * cellSize + (gridSize - 1) * 5; // 5 for spacing
+                let canvasHeight = gridSize * cellSize + (gridSize - 1) * 5;
+                canvasWidth = Math.min(canvasWidth, container.offsetWidth - 20);
+                canvasHeight = Math.min(canvasHeight, container.offsetHeight - 20);
+
+                const canvas = p.createCanvas(canvasWidth, canvasHeight);
+                canvas.parent('v1FeaturesCanvasContainer');
+                resetState();
+                sketches['v1FeaturesSketch'] = { instance: p, isPlaying: isPlaying, resetFunc: resetState };
+                p.noLoop();
+                p.redraw();
+            };
+            
+            function resetState() {
+                features = [];
+                for (let i = 0; i < gridSize * gridSize; i++) {
+                    features.push(new Feature());
+                }
+                learningProgress = 0;
+                if (sketches['v1FeaturesSketch']) sketches['v1FeaturesSketch'].isPlaying = true;
+                p.loop();
+            }
+
+            p.draw = () => {
+                p.background(220);
+                const spacing = 5;
+                const totalCellSize = cellSize + spacing;
+
+                if (sketches['v1FeaturesSketch'] && sketches['v1FeaturesSketch'].isPlaying && learningProgress < 1) {
+                    learningProgress += learningSpeed;
+                    for (let feature of features) {
+                        feature.update(learningProgress);
+                    }
+                } else if (learningProgress >= 1 && sketches['v1FeaturesSketch']) {
+                     p.noLoop();
+                     sketches['v1FeaturesSketch'].isPlaying = false;
+                }
+                
+                learningProgress = p.constrain(learningProgress, 0, 1);
+
+                for (let i = 0; i < gridSize; i++) {
+                    for (let j = 0; j < gridSize; j++) {
+                        let feature = features[i * gridSize + j];
+                        feature.display(j * totalCellSize, i * totalCellSize);
+                    }
+                }
+                
+                // Progress bar
+                p.fill(100);
+                p.noStroke();
+                p.rect(0, p.height - 20, p.width, 20);
+                p.fill(46, 204, 113);
+                p.rect(0, p.height - 20, p.width * learningProgress, 20);
+                p.fill(255);
+                p.textAlign(p.CENTER, p.CENTER);
+                p.text(`学习进度: ${p.int(learningProgress*100)}%`, p.width/2, p.height - 10);
+            };
+             p.windowResized = () => { // This one is a bit tricky due to fixed cell sizes
+                const container = document.getElementById('v1FeaturesCanvasContainer');
+                let canvasWidth = gridSize * cellSize + (gridSize - 1) * 5;
+                let canvasHeight = gridSize * cellSize + (gridSize - 1) * 5;
+                canvasWidth = Math.min(canvasWidth, container.offsetWidth - 20);
+                canvasHeight = Math.min(canvasHeight, container.offsetHeight - 20);
+                p.resizeCanvas(canvasWidth, canvasHeight);
+                // No need to reset state, features are independent of canvas size
+                p.redraw();
+            };
+        };
+        new p5(v1FeaturesSketchFunc);
+
+    </script>
+</body>
+</html>

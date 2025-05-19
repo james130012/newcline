@@ -1,0 +1,783 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大型语言模型训练中的神经热力学定律解读</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            font-size: 18px; /* 接近“三号”字体在屏幕上的感觉 */
+            line-height: 1.8;
+            color: #333;
+            background-color: #f9fafb; /* 淡雅背景色 */
+        }
+        .container {
+            max-width: 1000px; /* A3纸张宽度较大，这里选用适合屏幕的宽度 */
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h1, h2, h3 {
+            color: #2c3e50; /* 深蓝灰色标题 */
+            margin-bottom: 0.75em;
+            font-weight: 700;
+        }
+        h1 {
+            font-size: 2.5em;
+            text-align: center;
+            border-bottom: 2px solid #3498db; /* 蓝色下划线 */
+            padding-bottom: 0.5em;
+            margin-bottom: 1em;
+        }
+        h2 {
+            font-size: 1.8em;
+            margin-top: 1.5em;
+        }
+        h3 {
+            font-size: 1.4em;
+            margin-top: 1em;
+        }
+        p {
+            margin-bottom: 1em;
+        }
+        strong, .highlight {
+            color: #e74c3c; /* 突出显示用红色 */
+            font-weight: 700;
+        }
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #ecf0f1; /* 淡灰色背景 */
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 0.5em 0;
+            color: #2980b9; /* 蓝色公式文本 */
+            font-weight: bold;
+        }
+        .animation-container {
+            margin: 2em 0;
+            padding: 1em;
+            border: 1px solid #bdc3c7; /* 边框 */
+            border-radius: 8px;
+            background-color: #fdfefe; /* 动画区域背景 */
+        }
+        .animation-canvas-container {
+            width: 100%;
+            height: 350px; /* 为P5 Canvas固定高度 */
+            margin-bottom: 10px;
+            border-radius: 6px;
+            overflow: hidden; /* 确保canvas在容器内 */
+            border: 1px solid #e0e0e0;
+        }
+        .animation-canvas-container canvas {
+            display: block; /* 移除canvas下方的额外空间 */
+        }
+        .controls button {
+            background-color: #3498db; /* 蓝色按钮 */
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+        .controls button:hover {
+            background-color: #2980b9; /* 深蓝色悬停 */
+        }
+        .caption {
+            font-size: 0.9em;
+            color: #7f8c8d; /* 灰色说明文字 */
+            text-align: center;
+            margin-top: 0.5em;
+        }
+        /* 确保P5 canvas强制铺满父容器并有高度 */
+        #riverValleyCanvasContainer canvas,
+        #lrTemperatureCanvasContainer canvas,
+        #equipartitionCanvasContainer canvas,
+        #entropicForceCanvasContainer canvas,
+        #wsdScheduleCanvasContainer canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container my-8">
+        <h1>解密“黑箱”：大型语言模型训练的神经热力学视角</h1>
+
+        <p>近年来，大型语言模型（LLMs）如同雨后春笋般涌现，在自然语言处理领域展现出惊人的能力。然而，这些模型的训练过程往往像一个“黑箱”，其内部的复杂动态和优化规律尚待揭示。麻省理工学院的研究者们另辟蹊径，在论文《大型语言模型训练的神经热力学定律》中，创新性地引入了<strong class="highlight">热力学框架</strong>，为我们理解LLM的训练动态提供了全新的物理逻辑视角。</p>
+
+        <p>这篇解读将带你从物理的直觉出发，探索这篇论文的核心思想，看看热力学中的温度、熵、热容等概念如何在LLM的训练中焕发新生，并如何指导我们更有效地设计学习率策略。准备好了吗？让我们一起踏上这场连接人工智能与经典物理的奇妙旅程吧！</p>
+
+        <h2>一、训练的“地形图”：神奇的“河谷”损失景观</h2>
+        <p>想象一下，模型训练的过程就像在一个复杂的地形上寻找最低点（即最小损失）。论文指出，LLM的损失景观（Loss Landscape）呈现出一种独特的<strong class="highlight">“河谷”（River-Valley）结构</strong>。这意味着地形中既有狭窄陡峭的“峡谷”（Valley），也有宽阔平缓的“河流”（River）。</p>
+        <ul>
+            <li><strong>峡谷（Fast Directions）</strong>：对应模型参数空间中那些梯度变化剧烈、损失函数曲率很大的方向。优化器在这些方向上会快速震荡、调整。</li>
+            <li><strong>河流（Slow Directions）</strong>：对应梯度平缓、曲率较小的方向。优化器沿着这些方向缓慢前进，实现损失的持续下降。</li>
+        </ul>
+        <p>这种快慢动态的分离，是整个神经热力学框架的基石。它允许我们将复杂的训练过程分解，分别研究其“热”行为和“功”行为。</p>
+
+        <div class="animation-container">
+            <h3>动画1：河谷损失景观与优化器轨迹</h3>
+            <div id="riverValleyCanvasContainer" class="animation-canvas-container"></div>
+            <div class="controls">
+                <button id="playRiverValley">播放/暂停</button>
+                <button id="resetRiverValley">重置</button>
+            </div>
+            <p class="caption">概念动画：模拟优化器在河谷损失景观中的运动。红色小球代表优化器，它在“峡谷”中快速震荡，同时沿着“河流”缓慢前进。</p>
+        </div>
+
+        <h2>二、快动态的热力学：学习率即“温度”</h2>
+        <p>在“峡谷”中，优化器的快速震荡行为与热力学中分子的无规则热运动惊人地相似。论文巧妙地将几个关键的热力学概念引入LLM训练的快动态分析中：</p>
+
+        <h3>1. 学习率 (η) 如同 “温度” (T)</h3>
+        <p>在物理学中，温度是分子平均动能的体现。在LLM训练中，<strong class="highlight">学习率（Learning Rate, η）扮演了类似的角色</strong>。梯度噪声和有限的学习率会诱导一种“热能”。</p>
+        <ul>
+            <li><strong>高学习率</strong>：如同高温，使得优化器在峡谷中“热运动”更剧烈，探索范围更广，但也可能导致不稳定。</li>
+            <li><strong>低学习率</strong>：如同低温，优化器运动更平缓，更容易稳定在局部区域。</li>
+        </ul>
+        <p class="formula">平均热损失 (fast loss) l_f 近似正比于 η: l_f ≈ C * η</p>
+        <p>这里的C可以看作一个常数，关联了梯度噪声的强度。</p>
+
+        <div class="animation-container">
+            <h3>动画2：学习率与峡谷中的“热运动”</h3>
+            <div id="lrTemperatureCanvasContainer" class="animation-canvas-container"></div>
+            <div class="controls">
+                <button id="setHighLR">高学习率 (高温)</button>
+                <button id="setLowLR">低学习率 (低温)</button>
+                <button id="startAnnealing">模拟退火 (学习率衰减)</button>
+            </div>
+            <p class="caption">过程动画：展示不同学习率下，粒子（优化器）在峡谷（二次势阱）中的震荡情况。“退火”过程模拟学习率从高到低衰减，粒子逐渐稳定。</p>
+        </div>
+
+        <h3>2. “能量均分定理” 的启示</h3>
+        <p>热力学中的能量均分定理指出，在热平衡状态下，能量会平均分配给系统的每个自由度。在LLM训练中，研究者发现一个有趣的现象：在峡谷方向，只要学习率和梯度噪声相同，<strong class="highlight">不同陡峭程度（曲率 a）的峡谷，其平均“热损失” (l_f) 大致相同</strong>。</p>
+        <p class="formula">对于SGD: σ ≈ sqrt(η / (2a)) * σ_g  =>  l_f = 0.5 * a * σ^2 ≈ η * (σ_g^2) / 4</p>
+        <p>其中 σ 是峡谷中参数分布的宽度，σ_g 是梯度噪声。可以看到，最终的 l_f 与峡谷的陡峭程度 a 无关，这呼应了能量均分定理的精神——能量（损失）的分配不依赖于“弹簧系数”（陡峭程度 a）。</p>
+
+        <div class="animation-container">
+            <h3>动画3：能量均分定理模拟</h3>
+            <div id="equipartitionCanvasContainer" class="animation-canvas-container"></div>
+            <div class="controls">
+                <button id="runEquipartition">运行模拟</button>
+            </div>
+            <p class="caption">数据/对比动画：展示两个不同陡峭程度（曲率不同）的峡谷。在相同的学习率（温度）下，粒子在两个峡谷中的平均“热损失”（由震荡幅度体现）相似。下方柱状图实时显示平均热损失。</p>
+        </div>
+
+        <h3>3. “热容” 与 “热传导”：学习率衰减的物理内涵</h3>
+        <p>当学习率 η 变化时，平均热损失 l_f 也会随之改变。这种变化的敏感程度，可以类比为<strong class="highlight">“热容” (Heat Capacity, C)</strong>：C = ∂l_f / ∂η。</p>
+        <p>在学习率的衰减阶段（Decay Phase），通常也称为“退火”（Annealing）。这个过程类似于一个热物体逐渐冷却。如果学习率衰减得太慢，训练效率低；如果衰减太快，系统可能无法达到真正的“低温”平衡态，导致最终性能不佳。这与热力学第二定律中描述的不可逆过程类似：一个热物体接触冷源，其温度不会低于冷源温度，且降温过程需要时间。</p>
+        <p>论文推导了最优的学习率衰减策略，发现其形式类似于 <strong class="highlight">η(t) ∝ 1/t</strong>，这与物理中某些系统的弛豫过程相似。这个衰减过程可以类比为<strong class="highlight">热传导 (Thermal Conduction)</strong>，热损失的衰减速率与当前热损失和平衡态热损失之差成正比，类似于傅里叶热传导定律 Q = k * (T_A - T_B)。</p>
+
+        <h2>三、慢动态的热力学：熵力与河流导航</h2>
+        <p>现在我们将目光转向“河流”方向的慢动态。优化器在沿河前进时，并非不受峡谷中快动态的影响。这些快动态会通过一种名为<strong class="highlight">“熵力”（Entropic Force）</strong>的机制，反作用于慢动态。</p>
+        <p>熵，在物理学中通常表示系统的混乱程度或微观状态的数量。在这里，研究者定义了一种与峡谷宽度（或陡峭程度 a(y) 的对数）相关的熵 S：</p>
+        <p class="formula">S(y) ∝ -1/2 * log(a(y))</p>
+        <p>其中 y 是沿河流方向的慢变量。这个定义与玻尔兹曼熵公式 S = k_B * log(W) (W为微观状态数，这里与峡谷宽度 σ 相关，而 σ 又与 1/√a(y) 相关) 有着深刻的联系，也间接触及了热力学第三定律的某些思想（低温下系统趋于有序，熵较低）。</p>
+        <p>熵力 F_ent 定义为熵 S 沿着河流方向 y 的梯度：</p>
+        <p class="formula">F_ent = ∇S = - (d^2(η, σ_g) / 2) * (a'(y) / a(y))</p>
+        <p>这个力的方向<strong class="highlight">总是指向峡谷更宽（即 a(y) 更小，熵更大）的区域</strong>。想象一下，如果河流前方的峡谷突然变窄（a(y) 增大），熵力就会产生一个“阻力”，试图阻止优化器进入这个更“受限”的区域。反之，如果前方峡谷变宽，熵力会“鼓励”优化器前进。</p>
+        <p>总的驱动力 F 是河床本身的梯度力 F_btm = -c'(y) （c(y)是河床底部的高度）和熵力 F_ent 的合力。在某些情况下，如果熵力过大且方向与 F_btm 相反，就可能发生<strong class="highlight">“熵捕获”（Entropic Trapping）</strong>现象，即优化器被困在熵较高的区域，难以进一步降低损失。</p>
+
+        <div class="animation-container">
+            <h3>动画4：熵力与河流导航</h3>
+            <div id="entropicForceCanvasContainer" class="animation-canvas-container"></div>
+            <div class="controls">
+                <button id="toggleEntropicForce">显示/隐藏熵力</button>
+                <button id="resetEntropicForce">重置</button>
+            </div>
+            <p class="caption">因果链/概念动画：模拟优化器（红球）在一条宽度变化的“河流”中运动。蓝色箭头表示河床梯度力，橙色箭头（可切换显示）表示熵力。当河流峡谷变窄时，熵力可能阻碍前进。</p>
+        </div>
+
+        <h2>四、实践指南：设计更优的学习率策略</h2>
+        <p>神经热力学框架不仅提供了深刻的理论洞见，更为LLM训练中的学习率设计提供了实用指导。目前流行的<strong class="highlight">“预热-稳定-衰减”（Warmup-Stable-Decay, WSD）</strong>学习率策略，在这个框架下得到了很好的物理解释：</p>
+        <ul>
+            <li><strong>预热（Warmup）</strong>：逐渐增大学习率，如同给系统缓慢“升温”，帮助优化器跳出初始点附近的尖锐局部最小值，进入更广阔的探索区域。</li>
+            <li><strong>稳定（Stable）</strong>：保持较高的学习率，对应系统在较高“温度”下沿“河流”前进，进行主要的损失下降。此时峡谷中的“热平衡”使得平均热损失 l_f 相对稳定。</li>
+            <li><strong>衰减（Decay）</strong>：逐渐降低学习率，进行“退火”操作，目的是减小峡谷中的“热震荡”，使优化器更精确地收敛到损失函数的较低区域。论文指出，理想的衰减时间 T_d 的上界与 η_min (最终学习率) 相关，约为 O(1/η_min)，而与稳定阶段的学习率 η 关系不大。</li>
+        </ul>
+        <p>最终的损失 l_final 可以看作是几个部分的贡献：</p>
+        <p class="formula">l_final = l(D, η_min) + Δ_entropic + Δ_anneal</p>
+        <p>其中 l(D, η_min) 是由学习率总积分 D（控制慢动态损失 l_s）和最终学习率 η_min（控制快动态损失 l_f）决定的主要部分。Δ_entropic 是熵力带来的修正，Δ_anneal 是由于退火不充分带来的修正。实验表明，在GPT-2的早期训练中，这两项修正影响较小。</p>
+        <p>这意味着，为了降低最终损失，关键在于<strong class="highlight">增大 D（例如使用更大的稳定期学习率或更长的稳定期）并选择合适的 η_min</strong>，同时确保衰减阶段足够长以避免 Δ_anneal 过大。</p>
+
+        <div class="animation-container">
+            <h3>动画5：WSD学习率策略与训练动态</h3>
+            <div id="wsdScheduleCanvasContainer" class="animation-canvas-container"></div>
+            <div class="controls">
+                <button id="playWSD">播放WSD过程</button>
+            </div>
+            <p class="caption">时间轴/过程动画：上方图表显示WSD学习率曲线，下方模拟优化器在河谷景观中的行为。预热阶段（绿色），稳定阶段（蓝色），衰减阶段（紫色）。</p>
+        </div>
+
+        <h2>五、总结与展望</h2>
+        <p>《神经热力学定律》这篇论文为我们打开了一扇全新的窗户，让我们得以从物理学的视角审视大型语言模型训练这一复杂过程。通过构建“河谷”损失景观的玩具模型，并巧妙地将热力学中的温度、熵、热容、热传导以及三大定律等概念引入分析，研究者们不仅揭示了学习率在训练动态中的多重角色（温度、熵力大小、时间尺度），还为设计更高效的学习率策略提供了理论依据和直观的物理解释。</p>
+        <p>尽管论文中的模型和推导基于一些简化假设（如忽略动量、权重衰减，假设河谷笔直等），但其提出的<strong class="highlight">“物理启发”原则</strong>无疑为深度学习理论的发展注入了新的活力。未来的研究可以在此基础上，考虑更复杂的模型、验证更大规模的预测，并将这一框架推广到其他类型的神经网络结构中。</p>
+        <p>正如论文所言，这种优化与热力学之间的对偶性，为发展更深层次的深度学习科学理解奠定了基础。或许，解开LLM“黑箱”的钥匙，就隐藏在这些古老而美妙的物理定律之中。</p>
+    </div>
+
+    <script>
+        // P5.js Sketch 1: River-Valley Loss Landscape
+        const sketchRiverValley = (p) => {
+            let particle;
+            let playing = false;
+            let riverPath = [];
+            const valleyAmplitude = 50;
+            const valleyFrequency = 0.1;
+            const riverSteepness = 0.05;
+            let time = 0;
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+
+                reset() {
+                    this.x = 50;
+                    this.y = p.height / 2;
+                    this.vyValley = 0; // Velocity in valley y-direction
+                    this.targetYValley = 0; // Center of valley oscillation
+                    time = 0;
+                }
+
+                update() {
+                    if (!playing) return;
+
+                    // Slow movement along the river (x-direction)
+                    this.x += 0.5;
+                    if (this.x > p.width - 50) {
+                        this.x = 50; // Loop back
+                        riverPath = [];
+                    }
+                    
+                    // River's general downward slope (conceptual)
+                    let riverCenterY = p.height / 2 + time * riverSteepness;
+
+                    // Fast oscillation in the valley (y-direction)
+                    // Simulate bouncing within a valley defined around riverCenterY
+                    let valleyCenter = riverCenterY + p.sin(this.x * 0.02) * 20; // River meanders a bit
+                    
+                    // Oscillation within the valley
+                    let force = (valleyCenter - this.y) * 0.1; // Spring-like force towards valley center
+                    this.vyValley += force;
+                    this.vyValley *= 0.8; // Damping
+                    this.y += this.vyValley;
+                    
+                    // Add some random fast noise
+                    this.y += p.random(-5, 5);
+                    
+                    // Keep particle within some bounds for visualization
+                    this.y = p.constrain(this.y, valleyAmplitude, p.height - valleyAmplitude);
+
+                    riverPath.push(p.createVector(this.x, this.y));
+                    if (riverPath.length > 300) {
+                        riverPath.shift();
+                    }
+                    time++;
+                }
+
+                display() {
+                    // Draw conceptual river valley
+                    p.noFill();
+                    p.stroke(200, 200, 255); // Light blue for valley
+                    p.strokeWeight(2);
+                    for (let i = 0; i < p.width; i += 10) {
+                        let riverCenterY = p.height / 2 + (i/p.width * p.width * 0.001) * riverSteepness * 1000; // Simplified
+                        let vc = riverCenterY + p.sin(i * 0.02) * 20;
+                        p.line(i, vc - valleyAmplitude, i, vc + valleyAmplitude);
+                    }
+                    
+                    // Draw particle path
+                    p.stroke(255, 100, 100, 150); // Particle trail
+                    p.strokeWeight(2);
+                    for (let i = 0; i < riverPath.length - 1; i++) {
+                        p.line(riverPath[i].x, riverPath[i].y, riverPath[i+1].x, riverPath[i+1].y);
+                    }
+
+                    // Draw particle
+                    p.fill(255, 0, 0);
+                    p.noStroke();
+                    p.ellipse(this.x, this.y, 15, 15);
+                }
+            }
+
+            p.setup = () => {
+                const container = document.getElementById('riverValleyCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight);
+                particle = new Particle();
+                p.background(240, 245, 250); // Light background for canvas
+                particle.display(); // Initial draw
+            };
+
+            p.draw = () => {
+                p.background(240, 245, 250);
+                particle.update();
+                particle.display();
+            };
+
+            document.getElementById('playRiverValley').addEventListener('click', () => {
+                playing = !playing;
+            });
+            document.getElementById('resetRiverValley').addEventListener('click', () => {
+                particle.reset();
+                riverPath = [];
+                playing = false;
+                p.redraw();
+            });
+        };
+        new p5(sketchRiverValley, 'riverValleyCanvasContainer');
+
+        // P5.js Sketch 2: Learning Rate as Temperature
+        const sketchLRTemperature = (p) => {
+            let particles = [];
+            const numParticles = 10;
+            let temperature = 5; // Corresponds to learning rate
+            let annealing = false;
+            let targetTemperature = 1;
+
+            class Particle {
+                constructor(x, y) {
+                    this.pos = p.createVector(x, y);
+                    this.vel = p.createVector(p.random(-1,1), p.random(-1,1));
+                    this.acc = p.createVector(0,0);
+                    this.mass = p.random(5,10);
+                }
+
+                applyForce(force) {
+                    let f = p5.Vector.div(force, this.mass);
+                    this.acc.add(f);
+                }
+
+                update() {
+                    // Force towards center (valley bottom)
+                    let center = p.createVector(p.width / 2, p.height / 2);
+                    let springForce = p5.Vector.sub(center, this.pos);
+                    springForce.mult(0.01); // Spring constant
+                    this.applyForce(springForce);
+
+                    // Thermal agitation based on temperature
+                    let thermalForce = p5.Vector.random2D();
+                    thermalForce.mult(temperature * 0.5);
+                    this.applyForce(thermalForce);
+                    
+                    this.vel.add(this.acc);
+                    this.vel.limit(temperature); // Velocity also limited by temp
+                    this.pos.add(this.vel);
+                    this.acc.mult(0); // Reset acceleration
+
+                    // Bounce off walls
+                    if (this.pos.x < 0 || this.pos.x > p.width) this.vel.x *= -1;
+                    if (this.pos.y < 0 || this.pos.y > p.height) this.vel.y *= -1;
+                }
+
+                display() {
+                    p.stroke(0, 50);
+                    p.fill(100, 150, 255, 150);
+                    p.ellipse(this.pos.x, this.pos.y, this.mass * 2, this.mass * 2);
+                }
+            }
+
+            p.setup = () => {
+                const container = document.getElementById('lrTemperatureCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight);
+                for (let i = 0; i < numParticles; i++) {
+                    particles.push(new Particle(p.random(p.width), p.random(p.height)));
+                }
+                p.background(240, 245, 250);
+                drawValley();
+                particles.forEach(pt => pt.display());
+            };
+            
+            function drawValley() {
+                p.noFill();
+                p.stroke(200, 200, 200);
+                p.ellipse(p.width/2, p.height/2, p.width*0.8, p.height*0.8);
+                p.text(`Temp (LR): ${temperature.toFixed(1)}`, 10, 20);
+            }
+
+            p.draw = () => {
+                p.background(240, 245, 250);
+                drawValley();
+
+                if (annealing) {
+                    if (temperature > targetTemperature) {
+                        temperature -= 0.02; // Simulate cooling
+                    } else {
+                        temperature = targetTemperature;
+                        annealing = false;
+                    }
+                }
+
+                particles.forEach(pt => {
+                    pt.update();
+                    pt.display();
+                });
+            };
+
+            document.getElementById('setHighLR').addEventListener('click', () => {
+                temperature = 10; annealing = false; p.loop();
+            });
+            document.getElementById('setLowLR').addEventListener('click', () => {
+                temperature = 1; annealing = false; p.loop();
+            });
+            document.getElementById('startAnnealing').addEventListener('click', () => {
+                temperature = 10; // Start hot
+                targetTemperature = 1; // Cool down to this
+                annealing = true; p.loop();
+            });
+        };
+        new p5(sketchLRTemperature, 'lrTemperatureCanvasContainer');
+
+        // P5.js Sketch 3: Equipartition Theorem
+        const sketchEquipartition = (p) => {
+            let particles1 = [], particles2 = [];
+            const numParticles = 5;
+            let springConstant1 = 0.02, springConstant2 = 0.005; // k1 sharper, k2 flatter
+            let temperature = 3; // Same "temperature" (learning rate)
+            let avgLoss1 = 0, avgLoss2 = 0;
+            let lossHistory1 = [], lossHistory2 = [];
+            let playing = false;
+
+            class Particle {
+                constructor(x_offset, springK) {
+                    this.k = springK;
+                    this.x_offset = x_offset;
+                    this.y = p.height / 2;
+                    this.vy = 0;
+                }
+
+                update() {
+                    if (!playing) return;
+                    // Force towards center (y = p.height / 2)
+                    let displacement = this.y - p.height / 2;
+                    let springForce = -this.k * displacement;
+                    
+                    // Thermal agitation
+                    let thermalForce = p.random(-temperature, temperature) * 0.1;
+                    
+                    this.vy += springForce + thermalForce;
+                    this.vy *= 0.9; // Damping
+                    this.y += this.vy;
+
+                    // Keep within bounds
+                    this.y = p.constrain(this.y, 20, p.height - 20);
+                }
+
+                getLoss() { // Potential energy as loss
+                    let displacement = this.y - p.height / 2;
+                    return 0.5 * this.k * displacement * displacement;
+                }
+
+                display() {
+                    p.fill(150, 150, 255);
+                    p.ellipse(this.x_offset, this.y, 15, 15);
+                }
+            }
+            
+            function calculateAvgLoss(particleArray, lossHistoryArray) {
+                let currentTotalLoss = 0;
+                particleArray.forEach(pt => currentTotalLoss += pt.getLoss());
+                let currentAvgLoss = currentTotalLoss / particleArray.length;
+                lossHistoryArray.push(currentAvgLoss);
+                if (lossHistoryArray.length > 100) lossHistoryArray.shift();
+                
+                let sum = lossHistoryArray.reduce((a,b) => a+b, 0);
+                return sum / lossHistoryArray.length;
+            }
+
+            p.setup = () => {
+                const container = document.getElementById('equipartitionCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight - 50); // Space for bar chart
+                for (let i = 0; i < numParticles; i++) {
+                    particles1.push(new Particle(p.width / 4, springConstant1));
+                    particles2.push(new Particle(p.width * 3 / 4, springConstant2));
+                }
+                p.background(240, 245, 250);
+                drawScene();
+            };
+
+            function drawScene() {
+                p.background(240, 245, 250);
+                // Draw valleys (conceptual)
+                p.stroke(200);
+                p.line(p.width/4 - 50, p.height/2, p.width/4 + 50, p.height/2); // Center line
+                p.line(p.width*3/4 - 50, p.height/2, p.width*3/4 + 50, p.height/2);
+                p.text(`Valley 1 (Sharp, k=${springConstant1})`, p.width/4 - 60, 30);
+                p.text(`Valley 2 (Flat, k=${springConstant2})`, p.width*3/4 - 60, 30);
+
+                particles1.forEach(pt => pt.display());
+                particles2.forEach(pt => pt.display());
+
+                // Draw bar chart for average losses
+                let barWidth = p.width / 4 - 20;
+                let maxLossDisplay = temperature * 5; // Arbitrary scale for display
+
+                p.fill(255, 100, 100);
+                let h1 = p.map(avgLoss1, 0, maxLossDisplay, 0, 40);
+                p.rect(p.width/4 - barWidth/2, p.height + 45 - h1, barWidth, h1);
+                p.text(`Avg Loss 1: ${avgLoss1.toFixed(2)}`, p.width/4 - 30, p.height + 35);
+
+                p.fill(100, 100, 255);
+                let h2 = p.map(avgLoss2, 0, maxLossDisplay, 0, 40);
+                p.rect(p.width*3/4 - barWidth/2, p.height + 45 - h2, barWidth, h2);
+                 p.text(`Avg Loss 2: ${avgLoss2.toFixed(2)}`, p.width*3/4 - 30, p.height + 35);
+            }
+
+            p.draw = () => {
+                if (playing) {
+                    particles1.forEach(pt => pt.update());
+                    particles2.forEach(pt => pt.update());
+                    avgLoss1 = calculateAvgLoss(particles1, lossHistory1);
+                    avgLoss2 = calculateAvgLoss(particles2, lossHistory2);
+                }
+                drawScene();
+            };
+            
+            document.getElementById('runEquipartition').addEventListener('click', () => {
+                playing = !playing;
+                if (!playing) p.noLoop()
+                else p.loop();
+            });
+        };
+        new p5(sketchEquipartition, 'equipartitionCanvasContainer');
+
+        // P5.js Sketch 4: Entropic Force
+        const sketchEntropicForce = (p) => {
+            let particle;
+            let showEntropicForce = false;
+            let playing = false;
+
+            class Particle {
+                constructor() { this.reset(); }
+                reset() {
+                    this.pos = p.createVector(50, p.height / 2);
+                    this.vel = p.createVector(0.5, 0); // Start moving along river
+                    this.path = [];
+                }
+
+                update() {
+                    if (!playing) return;
+
+                    let riverCenterY = p.height / 2;
+                    let valleySharpness_a = 0.01 + (this.pos.x / p.width) * 0.08; // Valley gets sharper (a increases)
+
+                    // Force from river bottom (simplified: try to stay at riverCenterY)
+                    let forceRiverBottom = p.createVector(0.3, (riverCenterY - this.pos.y) * 0.001); // Small pull to center Y
+
+                    // Entropic force: points to lower sharpness (wider valley, smaller 'a')
+                    // a'(y)/a(y) term: if a increases with x, a'(x) > 0. Force is negative.
+                    // F_ent = - K * (a'(x)/a(x))
+                    // Here a'(x) is positive (0.08/p.width), so F_ent is in -x direction
+                    let entropicForceMagnitude = 0;
+                    if (showEntropicForce) {
+                         entropicForceMagnitude = -0.2 * ( (0.08/p.width) / valleySharpness_a ); // Simplified
+                    }
+                    let forceEntropic = p.createVector(entropicForceMagnitude * 10, 0); // Scaled for visibility
+
+                    this.vel.add(forceRiverBottom);
+                    this.vel.add(forceEntropic);
+                    this.vel.limit(2);
+                    this.pos.add(this.vel);
+                    
+                    // Add some random y jitter
+                    this.pos.y += p.random(-2,2);
+                    this.pos.y = p.constrain(this.pos.y, 0, p.height);
+
+
+                    if (this.pos.x > p.width - 20 || this.pos.x < 20) this.reset();
+                    
+                    this.path.push(this.pos.copy());
+                    if (this.path.length > 200) this.path.shift();
+                }
+
+                display() {
+                    // Draw river (valley width changes)
+                    p.noFill();
+                    for (let x = 0; x < p.width; x += 20) {
+                        let sharpness_a = 0.01 + (x / p.width) * 0.08;
+                        let valleyWidth = 150 / (1 + sharpness_a * 10); // Wider for smaller 'a'
+                        p.stroke(200, 200, 255, 100);
+                        p.line(x, p.height/2 - valleyWidth/2, x, p.height/2 + valleyWidth/2);
+                    }
+                    p.stroke(150,150,200);
+                    p.line(0, p.height/2, p.width, p.height/2); // River center
+
+                    // Draw path
+                    p.stroke(255,100,100,150);
+                    for(let i=0; i < this.path.length-1; i++) {
+                        p.line(this.path[i].x, this.path[i].y, this.path[i+1].x, this.path[i+1].y);
+                    }
+
+                    // Draw particle
+                    p.fill(255, 0, 0);
+                    p.noStroke();
+                    p.ellipse(this.pos.x, this.pos.y, 15, 15);
+
+                    // Draw forces
+                    // River bottom force (simplified as general forward push)
+                    p.stroke(0, 0, 255); p.fill(0,0,255);
+                    p.line(this.pos.x, this.pos.y, this.pos.x + 0.3 * 50, this.pos.y);
+                    p.text("F_btm", this.pos.x + 0.3*50 + 5, this.pos.y);
+
+
+                    if (showEntropicForce) {
+                        let sharpness_a = 0.01 + (this.pos.x / p.width) * 0.08;
+                        let entropicForceDisplayMag = -0.2 * ( (0.08/p.width) / sharpness_a );
+                        p.stroke(255, 165, 0); p.fill(255,165,0);
+                        p.line(this.pos.x, this.pos.y, this.pos.x + entropicForceDisplayMag * 200, this.pos.y); // Scaled for viz
+                        p.text("F_ent", this.pos.x + entropicForceDisplayMag*200 - 25, this.pos.y - 5);
+                    }
+                }
+            }
+
+            p.setup = () => {
+                const container = document.getElementById('entropicForceCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight);
+                particle = new Particle();
+                p.background(240, 245, 250);
+                particle.display();
+            };
+
+            p.draw = () => {
+                p.background(240, 245, 250);
+                particle.update();
+                particle.display();
+            };
+
+            document.getElementById('toggleEntropicForce').addEventListener('click', () => {
+                showEntropicForce = !showEntropicForce;
+            });
+            document.getElementById('resetEntropicForce').addEventListener('click', () => {
+                particle.reset(); playing = false; p.redraw();
+            });
+             // Auto-start this one for demo
+            document.getElementById('entropicForceCanvasContainer').addEventListener('mouseenter', () => {
+                if (!playing) { playing = true; p.loop(); }
+            });
+            document.getElementById('entropicForceCanvasContainer').addEventListener('mouseleave', () => {
+                if (playing) { playing = false; p.noLoop(); }
+            });
+        };
+        new p5(sketchEntropicForce, 'entropicForceCanvasContainer');
+
+        // P5.js Sketch 5: WSD Learning Rate Schedule
+        const sketchWSDSchedule = (p) => {
+            let time = 0;
+            const totalSteps = 500;
+            const warmupSteps = 100;
+            const stableSteps = 300;
+            // decaySteps = totalSteps - warmupSteps - stableSteps;
+            const maxLR = 0.01;
+            const minLR = 0.001;
+            let currentLR = 0;
+            let particlePos;
+            let particleVelY;
+            let playing = false;
+
+            function getLR(t) {
+                if (t < warmupSteps) {
+                    return (maxLR / warmupSteps) * t;
+                } else if (t < warmupSteps + stableSteps) {
+                    return maxLR;
+                } else if (t < totalSteps) {
+                    let decayProgress = (t - (warmupSteps + stableSteps)) / (totalSteps - warmupSteps - stableSteps);
+                    // Cosine decay
+                    return minLR + 0.5 * (maxLR - minLR) * (1 + p.cos(p.PI * decayProgress));
+                }
+                return minLR;
+            }
+            
+            p.setup = () => {
+                const container = document.getElementById('wsdScheduleCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight);
+                particlePos = p.createVector(50, p.height * 0.75); // Start particle lower in "valley"
+                particleVelY = 0;
+                p.background(240, 245, 250);
+                drawWSD();
+            };
+
+            function drawWSD() {
+                p.background(240, 245, 250);
+                // Draw LR graph
+                p.stroke(50);
+                p.noFill();
+                p.beginShape();
+                for (let t_graph = 0; t_graph < totalSteps; t_graph++) {
+                    let lr_val = getLR(t_graph);
+                    let x_graph = p.map(t_graph, 0, totalSteps, 0, p.width);
+                    let y_graph = p.map(lr_val, 0, maxLR * 1.2, p.height * 0.4, 0); // LR graph on top
+                    p.vertex(x_graph, y_graph);
+                }
+                p.endShape();
+                p.text("LR Schedule", 10, 15);
+                let currentXGraph = p.map(time, 0, totalSteps, 0, p.width);
+                let currentYGraph = p.map(currentLR, 0, maxLR * 1.2, p.height * 0.4, 0);
+                p.fill(255,0,0);
+                p.ellipse(currentXGraph, currentYGraph, 8, 8);
+
+
+                // Draw conceptual valley for particle
+                p.stroke(200, 200, 255);
+                p.line(0, p.height * 0.8, p.width, p.height * 0.8); // Valley bottom
+                p.line(0, p.height * 0.5, p.width, p.height * 0.5); // Valley top left
+                p.line(0, p.height * 1.0, p.width, p.height * 1.0); // Valley top right
+                
+                // Particle dynamics (simplified)
+                // Oscillation strength related to LR (temperature)
+                let oscillationStrength = currentLR * 500; // Scaled LR
+                let randomPerturbation = (p.random(-1, 1) * oscillationStrength);
+                
+                // Move towards valley bottom
+                let pullToCenter = (p.height * 0.8 - particlePos.y) * 0.1;
+                particleVelY += pullToCenter + randomPerturbation;
+                particleVelY *= 0.6; // Damping
+                particlePos.y += particleVelY;
+                particlePos.y = p.constrain(particlePos.y, p.height*0.5, p.height*1.0);
+
+                // Particle moves along x slowly (progress in training)
+                particlePos.x = p.map(time, 0, totalSteps, 50, p.width - 50);
+
+                p.fill(50, 150, 50);
+                if (time >= warmupSteps && time < warmupSteps + stableSteps) p.fill(50, 50, 150); // Stable
+                if (time >= warmupSteps + stableSteps) p.fill(150, 50, 150); // Decay
+                p.ellipse(particlePos.x, particlePos.y, 20, 20);
+
+                p.fill(0);
+                p.text(`Time: ${time}`, 10, p.height - 10);
+                p.text(`Current LR: ${currentLR.toFixed(4)}`, 100, p.height - 10);
+            }
+
+            p.draw = () => {
+                if (playing) {
+                    currentLR = getLR(time);
+                    time++;
+                    if (time > totalSteps) {
+                        time = 0; // Loop animation
+                        particlePos.y = p.height * 0.75; // Reset particle y
+                        particleVelY = 0;
+                    }
+                }
+                drawWSD();
+            };
+
+            document.getElementById('playWSD').addEventListener('click', () => {
+                playing = !playing;
+                if (playing && time >= totalSteps) { // Reset if played till end
+                     time = 0; particlePos.y = p.height * 0.75; particleVelY = 0;
+                }
+                if (!playing) p.noLoop(); else p.loop();
+            });
+        };
+        new p5(sketchWSDSchedule, 'wsdScheduleCanvasContainer');
+
+    </script>
+</body>
+</html>

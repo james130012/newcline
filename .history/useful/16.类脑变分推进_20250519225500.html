@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图解LLM训练：一场与热力学的邂逅</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            font-size: 18px; /* 接近“三号”字体 */
+            line-height: 1.8;
+            color: #333;
+            background-color: #f8f9fa; /* 更淡雅的背景 */
+        }
+        .container {
+            max-width: 1000px;
+            margin: 20px auto; /* 普通页边距 */
+            padding: 25px;
+            background-color: #ffffff;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+            border-radius: 10px;
+        }
+        h1, h2, h3 {
+            color: #1a5276; /* 更深的蓝色调 */
+            margin-bottom: 0.8em;
+            font-weight: 700;
+        }
+        h1 {
+            font-size: 2.6em;
+            text-align: center;
+            border-bottom: 3px solid #5dade2; /* 柔和的蓝色下划线 */
+            padding-bottom: 0.6em;
+            margin-bottom: 1.2em;
+        }
+        h2 {
+            font-size: 1.9em;
+            margin-top: 1.8em;
+        }
+        h3 {
+            font-size: 1.5em;
+            margin-top: 1.2em;
+            color: #1f618d;
+        }
+        p {
+            margin-bottom: 1.1em;
+        }
+        strong, .highlight {
+            color: #d35400; /* 突出显示用橙红色 */
+            font-weight: bold;
+        }
+        .formula {
+            font-family: 'Consolas', 'Courier New', monospace;
+            background-color: #eaf2f8; /* 淡蓝背景 */
+            padding: 10px 15px;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 0.6em 0;
+            color: #2874a6; /* 深蓝公式文本 */
+            font-weight: bold;
+            border: 1px solid #aed6f1;
+        }
+        .animation-container {
+            margin: 2.5em 0;
+            padding: 1.5em;
+            border: 1px solid #d4e6f1; /* 柔和边框 */
+            border-radius: 10px;
+            background-color: #fdfefe;
+        }
+        .animation-canvas-container {
+            width: 100%;
+            height: 320px; /* 为P5 Canvas固定高度 */
+            margin-bottom: 12px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #d6eaf8;
+        }
+        .animation-canvas-container canvas {
+            display: block;
+        }
+        .controls button {
+            background-color: #5dade2; /* 柔和蓝色按钮 */
+            color: white;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 12px;
+            font-size: 0.95em;
+            transition: background-color 0.25s ease, transform 0.1s ease;
+        }
+        .controls button:hover {
+            background-color: #3498db; /* 深一点的蓝色 */
+            transform: translateY(-1px);
+        }
+        .controls button:active {
+            transform: translateY(0px);
+        }
+        .caption {
+            font-size: 0.9em;
+            color: #566573; /* 深灰色说明文字 */
+            text-align: center;
+            margin-top: 0.8em;
+        }
+        /* 确保P5 canvas强制铺满父容器并有高度 */
+        #lossDecompositionCanvasContainer canvas,
+        #lrTemperatureEquipartitionCanvasContainer canvas,
+        #annealingCanvasContainer canvas,
+        #entropicForceCanvasContainer canvas,
+        #scientistsGalleryCanvasContainer canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .scientist-gallery-item {
+            display: inline-block;
+            text-align: center;
+            margin: 5px;
+            padding: 5px;
+            border: 2px solid transparent;
+            border-radius: 5px;
+            transition: border-color 0.3s;
+        }
+        .scientist-gallery-item.highlighted {
+            border-color: #d35400;
+        }
+        .scientist-gallery-item img {
+            width: 60px; height: auto; border-radius: 50%; margin-bottom: 3px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container my-8">
+        <h1>图解LLM训练：一场与热力学的奇妙交汇</h1>
+
+        <p>朋友们，眼前这张图可不简单！它像一张藏宝图，指引我们探索大型语言模型（LLM）训练背后那些与经典热力学惊人相似的物理规律。来自MIT的大神们用这张图巧妙地总结了他们的研究成果，让我们得以一窥LLM训练动态的“物理内涵”。这篇解读将带你<strong class="highlight">逐区解析</strong>这张图，配上活泼的动画，让你轻松get到其中的奥秘！</p>
+
+        <h2>Sec 2: “河谷”地貌与热力学第一定律 —— 能量守恒的启示</h2>
+        <p>训练LLM就像在复杂的地形（损失景观）上寻宝。这张图告诉我们，LLM的损失景观长得像一个<strong class="highlight">“河谷” (River-valley)</strong>：既有陡峭的“峡谷”（快方向x），优化器在其中快速震荡；也有平缓的“河道”（慢方向y），优化器沿其缓慢下降。总损失 <code class="formula">l = l_s + l_f</code>，这里的 <code class="formula">l_s</code> (慢损失) 对应河道的前进，<code class="formula">l_f</code> (快损失，或称“热损失”) 对应峡谷中的震荡。这和热力学第一定律 <code class="formula">ΔU = W + Q</code> (内能改变 = 做功 + 吸热) 是不是神似？<code class="formula">l_s</code> 的变化如同系统对外做“功” (W)，而 <code class="formula">l_f</code> 的变化则像是系统内部的“热量” (Q) 交换。</p>
+        <div class="animation-container">
+            <h3>动画1：“河谷”漫游与能量分配</h3>
+            <div id="lossDecompositionCanvasContainer" class="animation-canvas-container"></div>
+            <div class="controls">
+                <button id="playLossDecomposition">播放/暂停</button>
+                <button id="resetLossDecomposition">重置</button>
+            </div>
+            <p class="caption">概念动画：小球（优化器）在河谷中前进。观察其总损失如何分解为慢损失（沿河道下降）和快损失（峡谷内震荡能量）。</p>
+        </div>
+
+        <h2>Sec 3: 快动态的稳定态 —— 温度、均分与热容</h2>
+        <p>当优化器在“峡谷”中达到一种动态稳定时，其行为可以用热力学概念来描述：</p>
+        <ul>
+            <li><strong>学习率 η 如同温度 T</strong>：图中标出 η (learning rate) 对应 T (temperature)。更高的学习率意味着更高的“温度”，峡谷中的粒子（参数）震荡更剧烈。平均快损失 <code class="formula">l_f = C(σ_g)η</code>，其中 C(σ_g) 与梯度噪声 σ_g 有关。</li>
+            <li><strong>能量均分定理</strong>：一个超酷的发现是，只要 η 和 σ_g 相同，这个平均快损失 <code class="formula">l_f</code> 与峡谷本身的陡峭程度 'a'（曲率）无关！这正呼应了物理学中的能量均分定理：<code class="formula">E = 1/2 * k_b * T</code>，每个自由度的平均能量只取决于温度，不依赖于“弹簧常数”。</li>
+            <li><strong>热容</strong>：总的快损失 <code class="formula">L_f = N * l_f = N * C(σ_g)η</code> (N是快方向数量)。这可以类比热力学中的 <code class="formula">Q = C_v * T</code>，其中 <code class="formula">N * C(σ_g)</code> 就扮演了热容的角色。</li>
+        </ul>
+        <div class="animation-container">
+            <h3>动画2：学习率“调温”与能量均分</h3>
+            <div id="lrTemperatureEquipartitionCanvasContainer" class="animation-canvas-container"></div>
+            <div class="controls">
+                <button id="increaseTemp">升温 (增大学习率 η)</button>
+                <button id="decreaseTemp">降温 (减小学习率 η)</button>
+                <button id="toggleValleys">切换单/双峡谷</button>
+            </div>
+            <p class="caption">数据/对比动画：调节“温度”（学习率），观察粒子震荡幅度。切换到双峡谷模式，可以看到不同陡峭度的峡谷在同温下平均“热损失”相似。</p>
+        </div>
+
+        <h2>Sec 4: 快动态的衰减态 —— 退火、热传导与第二定律</h2>
+        <p>在训练后期，我们通常会减小学习率 η，这个过程叫“退火”(Annealing)。如果 η 降得太快，系统来不及达到新的平衡，就会陷入“非平衡态”，损失降不下去。这好比<strong class="highlight">热传导</strong>：一个热物体（T_obj）接触一个冷源（T_cool），最终 T_obj 不会低于 T_cool。这个过程也与热力学第二定律（熵增原理或其等效表述）有所关联，强调了过程的不可逆性和平衡态的趋向。</p>
+        <div class="animation-container">
+            <h3>动画3：模拟“退火”降温过程</h3>
+            <div id="annealingCanvasContainer" class="animation-canvas-container"></div>
+            <div class="controls">
+                <button id="startIdealAnneal">理想退火 (缓慢降温)</button>
+                <button id="startFastAnneal">快速退火 (快速降温)</button>
+            </div>
+            <p class="caption">过程动画：观察粒子在学习率（温度）衰减过程中的行为。缓慢衰减使其平稳落入低能态，快速衰减可能导致“卡住”。</p>
+        </div>
+
+        <h2>Sec 5: 慢动态的奥秘 —— 熵力与第三定律的影子</h2>
+        <p>优化器在“河道”中缓慢前进时，并非孤军奋战。峡谷中的快动态会通过一种<strong class="highlight">“熵力” (Entropic Force)</strong> 来影响它！熵 S 与峡谷的“宽度” σ (或陡峭度 'a' 的对数：<code class="formula">S ∝ log σ ∝ -1/2 log a</code>) 相关。这与玻尔兹曼熵公式 <code class="formula">S = k_b log Ω</code> (Ω 是微观状态数) 一脉相承，也隐约触碰到了热力学第三定律（绝对零度熵为零或极小）的边缘思想。</p>
+        <p>熵力 <code class="formula">f_ent = η∇S</code> (或 <code class="formula">T∇S</code>) <strong class="highlight">总是把优化器推向峡谷更宽（a更小，S更大）的地方</strong>。如果河床本身的驱动力 <code class="formula">f_drift = -l_s'(y)</code> 与熵力方向相反且熵力够大，就可能发生“熵捕获”，优化器被卡住啦！</p>
+        <div class="animation-container">
+            <h3>动画4：感受神秘的“熵力”</h3>
+            <div id="entropicForceCanvasContainer" class="animation-canvas-container"></div>
+            <div class="controls">
+                <button id="toggleEntropicForceDisplay">显示/隐藏熵力</button>
+                <button id="resetEntropicForceSim">重置模拟</button>
+            </div>
+            <p class="caption">因果链动画：小球在宽度变化的河道中前进。当熵力显示时，观察它如何影响小球的路径选择（倾向于走向更宽阔的区域）。</p>
+        </div>
+        
+        <h2>群星闪耀：致敬物理学巨匠</h2>
+        <p>这张图的右侧，还致敬了为热力学大厦添砖加瓦的物理学巨匠们：焦耳、迈耶（热力学第一定律），麦克斯韦、瓦特森（气体动理论与温度），克劳修斯、开尔文（热力学第二定律与热寂），能斯特、玻尔兹曼（热力学第三定律与熵统计解释）。正是他们的智慧之光，照亮了我们今天理解复杂系统（包括LLM）的道路。</p>
+        <div class="animation-container">
+            <h3>动画5：热力学先贤画廊</h3>
+            <div id="scientistsGalleryCanvasContainer" class="animation-canvas-container">
+                </div>
+            <div class="controls">
+                <button id="highlightLaw1">第一定律</button>
+                <button id="highlightTempEqui">温度/均分</button>
+                <button id="highlightLaw2">第二定律</button>
+                <button id="highlightLaw3Ent">熵/第三定律</button>
+                <button id="clearHighlights">清除高亮</button>
+            </div>
+            <p class="caption">互动探索：点击定律或概念，相关科学家的肖像将被高亮显示。</p>
+        </div>
+
+        <p>总而言之，这张图为我们提供了一个新奇又深刻的“物理滤镜”，通过它，LLM的训练不再那么神秘莫测。这些类比不仅有趣，更能指导我们设计出更棒的训练策略。科学的魅力就在于此——不同领域的知识竟能如此和谐地共鸣！</p>
+
+    </div>
+
+    <script>
+        // P5.js Sketch 1: Loss Decomposition
+        const sketchLossDecomposition = (p) => {
+            let particleX, particleY, velY, energyLF, totalLoss, slowLoss;
+            let playing = false;
+            const riverBed = [];
+            let time = 0;
+
+            function resetSim() {
+                particleX = p.width / 2;
+                particleY = 50;
+                velY = 0.3;
+                energyLF = 20;
+                slowLoss = 200;
+                totalLoss = slowLoss + energyLF;
+                riverBed.length = 0;
+                time = 0;
+            }
+
+            p.setup = () => {
+                const container = document.getElementById('lossDecompositionCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight);
+                resetSim();
+                p.background(240, 248, 255);
+                drawDecompositionScene();
+            };
+
+            function drawDecompositionScene() {
+                p.background(240, 248, 255);
+                
+                // Draw river valley (conceptual)
+                p.noFill();
+                p.stroke(180, 210, 250);
+                p.beginShape();
+                for(let i=0; i < p.width; i+=10) {
+                    p.vertex(i, p.height * 0.3 + p.sin(i*0.02 + time*0.01) * 30 + p.cos(i*0.01) * 20);
+                }
+                p.endShape();
+                p.beginShape();
+                for(let i=0; i < p.width; i+=10) {
+                     p.vertex(i, p.height * 0.7 - p.sin(i*0.025 + time*0.01) * 30 - p.cos(i*0.015) * 20);
+                }
+                p.endShape();
+
+                // Draw particle path (river bed)
+                p.stroke(100, 150, 230);
+                p.strokeWeight(2);
+                p.beginShape();
+                for(const pt of riverBed) {
+                    p.vertex(pt.x, pt.y);
+                }
+                p.endShape();
+                p.strokeWeight(1);
+
+                // Draw particle (oscillation represents l_f)
+                let displayX = particleX + p.sin(p.frameCount * 0.3) * (energyLF / 2);
+                p.fill(230, 80, 80);
+                p.noStroke();
+                p.ellipse(displayX, particleY, 20, 20);
+
+                // Display losses
+                p.fill(0);
+                p.textSize(14);
+                p.text(`l_s (慢损失/功W): ${slowLoss.toFixed(0)}`, 10, 20);
+                p.text(`l_f (快损失/热Q): ${energyLF.toFixed(0)}`, 10, 40);
+                p.text(`l_total (总损失/ΔU): ${totalLoss.toFixed(0)}`, 10, 60);
+            }
+            
+            p.draw = () => {
+                if (playing) {
+                    particleY += velY;
+                    slowLoss -= velY * 5; // Conceptual decrease
+                    energyLF = 15 + p.sin(time * 0.1) * 5 + p.random(-2,2); // Fluctuates
+                    totalLoss = slowLoss + energyLF;
+                    
+                    riverBed.push({x: particleX + p.sin(p.frameCount * 0.3) * (energyLF / 3), y: particleY});
+                    if(riverBed.length > 100) riverBed.shift();
+
+                    if (particleY > p.height - 50) {
+                        velY = 0; // Stop at bottom
+                    }
+                    time++;
+                }
+                drawDecompositionScene();
+            };
+
+            document.getElementById('playLossDecomposition').addEventListener('click', () => playing = !playing);
+            document.getElementById('resetLossDecomposition').addEventListener('click', () => {
+                resetSim();
+                playing = false;
+                p.redraw();
+            });
+        };
+        new p5(sketchLossDecomposition, 'lossDecompositionCanvasContainer');
+
+        // P5.js Sketch 2: LR as Temperature & Equipartition
+        const sketchLRTempEqui = (p) => {
+            let particles = [];
+            let numValleys = 1;
+            let temperature = 5; // η
+            const valleyCenters = [{x: 0, k: 0.01}, {x: 0, k: 0.003}]; // k is sharpness 'a'
+
+            class Particle {
+                constructor(valleyIdx) {
+                    this.valleyIdx = valleyIdx;
+                    this.x = valleyCenters[this.valleyIdx].x + p.random(-50,50);
+                    this.y = p.height/2 + p.random(-50,50);
+                    this.vx = 0; this.vy = 0;
+                }
+                update() {
+                    let vc = valleyCenters[this.valleyIdx];
+                    let targetX = vc.x;
+                    let targetY = p.height/2;
+                    
+                    let forceX = (targetX - this.x) * vc.k;
+                    let forceY = (targetY - this.y) * vc.k; // Same k for simplicity in y
+
+                    let thermalForceX = p.random(-1,1) * temperature * 0.1;
+                    let thermalForceY = p.random(-1,1) * temperature * 0.1;
+
+                    this.vx += forceX + thermalForceX;
+                    this.vy += forceY + thermalForceY;
+                    this.vx *= 0.8; this.vy *= 0.8; // Damping
+                    this.x += this.vx; this.y += this.vy;
+                }
+                getFastLoss() { // l_f = 0.5 * a * x^2 (simplified, using displacement squared)
+                    let displacementSq = p.pow(this.x - valleyCenters[this.valleyIdx].x, 2) + p.pow(this.y - p.height/2, 2);
+                    return 0.5 * valleyCenters[this.valleyIdx].k * displacementSq * 100; // Scaled for display
+                }
+                display() {
+                    p.fill(80,150,230,180);
+                    p.noStroke();
+                    p.ellipse(this.x, this.y, 12, 12);
+                }
+            }
+
+            function setupParticles() {
+                particles = [];
+                valleyCenters[0].x = numValleys === 1 ? p.width/2 : p.width/4;
+                valleyCenters[1].x = p.width*3/4;
+                for(let i=0; i<15; i++) {
+                    particles.push(new Particle(0));
+                    if (numValleys === 2) particles.push(new Particle(1));
+                }
+            }
+
+            p.setup = () => {
+                const container = document.getElementById('lrTemperatureEquipartitionCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight);
+                setupParticles();
+                p.background(240,248,255);
+                drawTempEquiScene();
+            };
+
+            function drawTempEquiScene() {
+                p.background(240,248,255);
+                p.textSize(14); p.fill(0);
+                p.text(`η (Temp): ${temperature.toFixed(1)}`, 10, 20);
+
+                let avgLoss = [0,0];
+                let count = [0,0];
+
+                particles.forEach(pt => {
+                    pt.update();
+                    pt.display();
+                    avgLoss[pt.valleyIdx] += pt.getFastLoss();
+                    count[pt.valleyIdx]++;
+                });
+
+                for(let i=0; i<numValleys; i++) {
+                    p.noFill(); p.stroke(200);
+                    p.ellipse(valleyCenters[i].x, p.height/2, 150 / (valleyCenters[i].k * 50 + 1), 150); // Visual sharpness
+                    if(count[i] > 0) avgLoss[i] /= count[i];
+                    p.fill(0);
+                    p.text(`Valley ${i+1} (a=${valleyCenters[i].k.toFixed(3)})`, valleyCenters[i].x - 40, 30);
+                    p.text(`Avg l_f: ${avgLoss[i].toFixed(2)}`, valleyCenters[i].x - 40, 50);
+                }
+            }
+
+            p.draw = () => {
+                drawTempEquiScene();
+            };
+            document.getElementById('increaseTemp').addEventListener('click', () => temperature = p.min(15, temperature + 1));
+            document.getElementById('decreaseTemp').addEventListener('click', () => temperature = p.max(1, temperature - 1));
+            document.getElementById('toggleValleys').addEventListener('click', () => {
+                numValleys = (numValleys === 1) ? 2 : 1;
+                setupParticles();
+            });
+        };
+        new p5(sketchLRTempEqui, 'lrTemperatureEquipartitionCanvasContainer');
+
+        // P5.js Sketch 3: Annealing
+        const sketchAnnealing = (p) => {
+            let particles = [];
+            let currentTemp;
+            let targetTemp = 1;
+            let coolingRate;
+            let annealingMode = ''; // 'ideal', 'fast'
+
+            class Particle { /* Same as sketchLRTempEqui's particle, simplified */
+                constructor() { this.x = p.width/2 + p.random(-50,50); this.y = p.height/2 + p.random(-50,50); this.vx=0; this.vy=0;}
+                update() {
+                    let forceX = (p.width/2 - this.x) * 0.01; let forceY = (p.height/2 - this.y) * 0.01;
+                    let thermX = p.random(-1,1)*currentTemp*0.1; let thermY = p.random(-1,1)*currentTemp*0.1;
+                    this.vx += forceX + thermX; this.vy += forceY + thermY;
+                    this.vx *=0.8; this.vy *=0.8; this.x += this.vx; this.y += this.vy;
+                }
+                display() { p.fill(150,80,230,180); p.noStroke(); p.ellipse(this.x,this.y,10,10); }
+            }
+            
+            function startAnneal(mode) {
+                annealingMode = mode;
+                currentTemp = 15; // Start hot
+                coolingRate = (mode === 'ideal') ? 0.02 : 0.2; // Ideal is slower
+                if (particles.length === 0) for(let i=0; i<20; i++) particles.push(new Particle());
+                p.loop();
+            }
+
+            p.setup = () => {
+                const container = document.getElementById('annealingCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight);
+                currentTemp = 15;
+                 for(let i=0; i<20; i++) particles.push(new Particle());
+                p.background(240,248,255);
+                drawAnnealingScene();
+                p.noLoop();
+            };
+            
+            function drawAnnealingScene() {
+                 p.background(240,248,255);
+                p.noFill(); p.stroke(200); p.ellipse(p.width/2, p.height/2, 200,200); // Valley
+                particles.forEach(pt => { pt.update(); pt.display();});
+                p.fill(0); p.textSize(14);
+                p.text(`Current Temp (η): ${currentTemp.toFixed(1)}`,10,20);
+                if(annealingMode) p.text(`Mode: ${annealingMode}`, 10, 40);
+            }
+
+            p.draw = () => {
+                if (annealingMode && currentTemp > targetTemp) {
+                    currentTemp -= coolingRate;
+                    currentTemp = p.max(currentTemp, targetTemp);
+                } else if (annealingMode && currentTemp <= targetTemp) {
+                    annealingMode = ''; // Stop annealing
+                    p.noLoop();
+                }
+                drawAnnealingScene();
+            };
+            document.getElementById('startIdealAnneal').addEventListener('click', () => startAnneal('ideal'));
+            document.getElementById('startFastAnneal').addEventListener('click', () => startAnneal('fast'));
+        };
+        new p5(sketchAnnealing, 'annealingCanvasContainer');
+        
+        // P5.js Sketch 4: Entropic Force
+        const sketchEntropicForceSim = (p) => {
+            let particle;
+            let showForce = false;
+            let playing = false;
+
+            class Particle {
+                constructor() { this.reset(); }
+                reset() { this.pos = p.createVector(50, p.height/2); this.vel = p.createVector(1,0); this.path = [];}
+                update() {
+                    if(!playing) return;
+                    // Valley sharpness 'a(y)' changes with x position. Let's make it a(x)
+                    // Wider valley (smaller 'a') on left, narrower (larger 'a') on right
+                    let sharpness_a = 0.005 + (this.pos.x / p.width) * 0.02; // 'a' increases with x
+
+                    // River drift force (main push to the right)
+                    let driftForce = p.createVector(0.05, (p.height/2 - this.pos.y)*0.01); // Slight centering in y
+
+                    // Entropic force: F_ent = - T * d(log a)/dx. If a increases with x, d(log a)/dx > 0, so F_ent is to the left
+                    let entropicForceMag = 0;
+                    if (showForce) {
+                        // d(log a)/dx = (1/a) * da/dx. Here da/dx = 0.02/p.width
+                        let dLogA_dx = (1/sharpness_a) * (0.02/p.width);
+                        entropicForceMag = -0.5 * dLogA_dx * 1000; // Scaled T and constant factor
+                    }
+                    let forceEntropic = p.createVector(entropicForceMag, 0);
+                    
+                    this.vel.add(driftForce);
+                    this.vel.add(forceEntropic);
+                    this.vel.limit(1.5);
+                    this.pos.add(this.vel);
+                    this.pos.y += p.random(-3,3); // Jiggle
+
+                    if (this.pos.x > p.width - 20 || this.pos.x < 20) this.reset();
+                    this.path.push(this.pos.copy());
+                    if(this.path.length > 150) this.path.shift();
+                }
+                display() {
+                    // Draw river with changing width
+                    for(let x_coord = 0; x_coord < p.width; x_coord += 20) {
+                        let current_a = 0.005 + (x_coord / p.width) * 0.02;
+                        let valley_width = 80 / (current_a * 100 + 1); // Smaller 'a' -> wider
+                        p.stroke(200,220,255,100);
+                        p.line(x_coord, p.height/2 - valley_width, x_coord, p.height/2 + valley_width);
+                    }
+                    p.stroke(150,180,230); p.line(0,p.height/2,p.width,p.height/2); // Center
+
+                    p.stroke(230,100,100,150);
+                    p.beginShape(); p.noFill();
+                    for(const pt of this.path) p.vertex(pt.x, pt.y);
+                    p.endShape();
+
+                    p.fill(200,50,50); p.noStroke(); p.ellipse(this.pos.x, this.pos.y, 15,15);
+
+                    if(showForce && playing) { // Draw entropic force arrow
+                        let sharpness_a = 0.005 + (this.pos.x / p.width) * 0.02;
+                        let dLogA_dx = (1/sharpness_a) * (0.02/p.width);
+                        let entropicForceDisplay = -0.5 * dLogA_dx * 1000;
+                        p.stroke(255,140,0); p.strokeWeight(2);
+                        p.line(this.pos.x, this.pos.y, this.pos.x + entropicForceDisplay*30, this.pos.y);
+                        p.fill(255,140,0); p.text("F_ent", this.pos.x + entropicForceDisplay*30 - (entropicForceDisplay > 0 ? 0 : 30) , this.pos.y - 5);
+                        p.strokeWeight(1);
+                    }
+                }
+            }
+            p.setup = () => {
+                const container = document.getElementById('entropicForceCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight);
+                particle = new Particle();
+                p.background(240,248,255); particle.display();
+            };
+            p.draw = () => { p.background(240,248,255); particle.update(); particle.display(); };
+            document.getElementById('toggleEntropicForceDisplay').addEventListener('click', () => showForce = !showForce);
+            document.getElementById('resetEntropicForceSim').addEventListener('click', () => {particle.reset(); playing = false; p.redraw();});
+            // Auto-play on mouse enter for this one
+             document.getElementById('entropicForceCanvasContainer').addEventListener('mouseenter', () => { if (!playing) { playing = true; p.loop(); }});
+             document.getElementById('entropicForceCanvasContainer').addEventListener('mouseleave', () => { if (playing) { playing = false; p.noLoop(); }});
+        };
+        new p5(sketchEntropicForceSim, 'entropicForceCanvasContainer');
+
+        // P5.js Sketch 5: Scientists Gallery
+        const sketchScientists = (p) => {
+            const scientists = [
+                { name: "Mayer", laws: ["1st"], imgUrl: "https://placehold.co/60x60/E6E6FA/333?text=Mayer" }, // Placeholder
+                { name: "Joule", laws: ["1st"], imgUrl: "https://placehold.co/60x60/E6E6FA/333?text=Joule" },
+                { name: "Maxwell", laws: ["Temp/Equi"], imgUrl: "https://placehold.co/60x60/D8BFD8/333?text=Maxwell" },
+                { name: "Waterston", laws: ["Temp/Equi"], imgUrl: "https://placehold.co/60x60/D8BFD8/333?text=Wat." },
+                { name: "Clausius", laws: ["2nd"], imgUrl: "https://placehold.co/60x60/ADD8E6/333?text=Clausius" },
+                { name: "Kelvin", laws: ["2nd"], imgUrl: "https://placehold.co/60x60/ADD8E6/333?text=Kelvin" },
+                { name: "Nernst", laws: ["3rd/Ent"], imgUrl: "https://placehold.co/60x60/90EE90/333?text=Nernst" },
+                { name: "Boltzmann", laws: ["3rd/Ent"], imgUrl: "https://placehold.co/60x60/90EE90/333?text=Boltz." }
+            ];
+            let loadedImages = {};
+            let highlightedLaw = null;
+            let galleryDiv;
+
+            p.preload = () => {
+                scientists.forEach(s => {
+                    // In a real scenario, you'd use actual image URLs. P5's loadImage is for direct image files.
+                    // For placeholders, we'll create divs directly.
+                });
+            };
+
+            p.setup = () => {
+                const container = document.getElementById('scientistsGalleryCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight); // Canvas for background/titles
+                galleryDiv = p.createDiv().parent(container); // Create a div for HTML elements
+                galleryDiv.style('display', 'flex');
+                galleryDiv.style('flex-wrap', 'wrap');
+                galleryDiv.style('justify-content', 'center');
+                galleryDiv.style('align-items: center');
+                galleryDiv.style('height', '100%');
+                
+                scientists.forEach((s, i) => {
+                    let item = p.createDiv().parent(galleryDiv);
+                    item.addClass('scientist-gallery-item');
+                    item.id(`sci-${s.name}`);
+                    let img = p.createImg(s.imgUrl, s.name).parent(item);
+                    img.style('width', '60px').style('height', '60px').style('border-radius', '50%').style('margin-bottom', '3px');
+                    let nameTag = p.createP(s.name).parent(item);
+                    nameTag.style('font-size', '12px').style('margin', '0');
+                });
+                p.noLoop(); // Static display, updates handled by button clicks
+                drawScientistsScene();
+            };
+
+            function drawScientistsScene() {
+                p.background(245, 250, 255);
+                p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(18);
+                p.fill(50);
+                p.text("热力学先贤 (点击下方按钮高亮)", p.width/2, 30);
+
+                scientists.forEach(s => {
+                    let divEl = document.getElementById(`sci-${s.name}`);
+                    if (highlightedLaw && s.laws.includes(highlightedLaw)) {
+                        divEl.classList.add('highlighted');
+                    } else {
+                        divEl.classList.remove('highlighted');
+                    }
+                });
+            }
+            
+            window.highlightScientistsByLaw = (law) => {
+                highlightedLaw = law;
+                drawScientistsScene(); // Redraw highlights
+            };
+            
+            document.getElementById('highlightLaw1').addEventListener('click', () => highlightScientistsByLaw("1st"));
+            document.getElementById('highlightTempEqui').addEventListener('click', () => highlightScientistsByLaw("Temp/Equi"));
+            document.getElementById('highlightLaw2').addEventListener('click', () => highlightScientistsByLaw("2nd"));
+            document.getElementById('highlightLaw3Ent').addEventListener('click', () => highlightScientistsByLaw("3rd/Ent"));
+            document.getElementById('clearHighlights').addEventListener('click', () => { highlightedLaw = null; drawScientistsScene(); });
+
+        };
+        new p5(sketchScientists, 'scientistsGalleryCanvasContainer');
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深入解读：Extropic与热力学计算的物理逻辑</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        body {
+            font-family: 'LXGW WenKai TC', 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+            font-size: 20px; 
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        h1, h2, h3 {
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 2em;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: #3498db;
+        }
+        
+        h3 {
+            font-size: 1.5em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #e67e22;
+        }
+
+        p {
+            margin-bottom: 1.2em;
+            text-align: justify;
+        }
+
+        strong, .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .emphasis-block {
+            background-color: #eaf6ff;
+            border-left: 5px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-style: italic;
+        }
+
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #ecf0f1;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .animation-container {
+            margin: 30px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+        }
+        
+        .animation-container canvas {
+            display: block; 
+            margin: 0 auto 15px auto; 
+            border: 1px solid #ccc;
+            max-width: 100%; 
+            height: auto; 
+        }
+
+        .animation-controls button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'LXGW WenKai TC', 'Comic Sans MS', sans-serif;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        .animation-controls button:hover {
+            background-color: #2980b9;
+        }
+        
+        @media print {
+            @page {
+                size: A3;
+                margin: 2cm;
+            }
+            body {
+                font-size: 16pt; /* 三号字 (16pt) */
+                background-color: #fff;
+                color: #000;
+                width: 257mm; 
+            }
+            .container {
+                box-shadow: none;
+                border: none;
+                margin: 0;
+                padding: 0;
+                max-width: 100%;
+            }
+            h1, h2, h3, strong, .highlight {
+                color: #000 !important;
+            }
+            .animation-container {
+                display: none; 
+            }
+        }
+
+        #quantumVsThermoCanvasContainer, 
+        #mlPhysicalProcessCanvasContainer, 
+        #outOfEquilibriumCanvasContainer, 
+        #differentiablePhysicsCanvasContainer, 
+        #physicsWorldModelCanvasContainer {
+            width: 100%; 
+            height: 300px; 
+            margin-bottom: 15px; 
+        }
+        
+        #quantumVsThermoCanvasContainer canvas, 
+        #mlPhysicalProcessCanvasContainer canvas,
+        #outOfEquilibriumCanvasContainer canvas,
+        #differentiablePhysicsCanvasContainer canvas,
+        #physicsWorldModelCanvasContainer canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>深入解读：Extropic与热力学计算的物理逻辑</h1>
+
+        <p class="introduction">在Guillaume Verdon与Lex Fridman的访谈中，一个极具前瞻性的议题是其创立公司 <strong class="highlight">Extropic</strong> 及其核心技术方向——<strong class="highlight">热力学计算 (Thermodynamic Computing)</strong>。这一探索不仅代表了对传统计算范式的挑战，更深植于Verdon对物理学基本原理，特别是热力学与信息论的深刻理解。本篇将聚焦于此，从物理逻辑视角剖析Verdon关于热力学计算的论述，并探讨其潜在的技术细节与突破方向。</p>
+
+        <h2>从量子迷雾到热力学曙光：Extropic的缘起</h2>
+        <p>Verdon坦言，Extropic的创立源于他对量子计算发展路径的某种“不满”或“焦灼”。尽管量子计算在理论上拥有巨大潜力，但其面临的<strong class="highlight">“噪声”这一“最大敌人”</strong>，以及由此带来的对极端低温环境的依赖、复杂的量子纠错机制和漫长的商业化时间表，促使他和他的同事们（包括一些从IBM、AWS等量子计算领域转投而来的顶尖人才）开始思考新的可能性。</p>
+        <p>“当生成式AI正在吞噬世界，对算力的需求日益迫切时，”Verdon自问，“我们如何能从物理学、信息论、计算理论，最终从<strong class="highlight">热力学的第一性原理</strong>出发，为生成式AI设计出终极的物理基底？”这便是Extropic的核心使命：构建基于物理的计算系统和AI算法，这些算法直接受到<strong class="highlight">非平衡态热力学 (out-of-equilibrium thermodynamics)</strong> 的启发，甚至直接驾驭这些物理过程来进行机器学习。</p>
+        <div class="emphasis-block">
+            Verdon强调：“我们寻求构建的是一种将<strong class="highlight">机器学习本身视为一个物理过程</strong>的计算范式。” 这与传统计算将算法抽象于物理硬件之上，或量子计算极力抑制物理噪声以维持脆弱量子态的思路，形成了鲜明对比。
+        </div>
+
+        <div class="animation-container">
+            <h3>动画1：量子计算 vs. 热力学计算 (核心差异)</h3>
+            <p>对比量子计算力求抑制噪声、维持相干态，与热力学计算可能利用系统涨落、与环境耦合的理念。</p>
+            <div id="quantumVsThermoCanvasContainer"></div>
+            <div class="animation-controls">
+                <button onclick="quantumVsThermoSketch.toggleFocus()">切换焦点</button>
+                <button onclick="quantumVsThermoSketch.resetAnimation()">重置</button>
+            </div>
+        </div>
+
+        <h2>热力学计算的核心物理逻辑</h2>
+        <p>虽然Verdon在访谈中因Extropic刚公开不久，未透露具体的电路设计或已实现的技术突破细节，但其阐述的核心理念为我们勾勒出热力学计算的物理蓝图：</p>
+        
+        <h3>1. 非平衡态热力学：复杂性的摇篮</h3>
+        <p>经典计算通常在接近平衡态的、高度有序的逻辑门上操作。而宇宙中大量的复杂现象，尤其是生命本身，都发生在<strong class="highlight">远离平衡态的开放系统</strong>中。这些系统通过与环境交换能量和物质，维持着动态的、高度有序的结构（如耗散结构）。Verdon的思路似乎正是要借鉴这一点：计算过程可能发生在一个持续有能量输入、远离热平衡的物理系统中。这样的系统天然具有复杂的动态行为和模式形成能力，这些特性或许可以直接用于信息处理和学习。</p>
+        <p>例如，可以想象一个物理系统，其状态的演化（类似<formula>dS/dt > 0</formula>，但系统通过能量交换维持局部低熵）直接对应于一个计算任务的求解过程。其“计算”不再是预设逻辑门的序列操作，而是物理系统在特定约束和输入下的<strong class="highlight">自组织和演化</strong>。</p>
+
+        <div class="animation-container">
+            <h3>动画2：非平衡态系统与计算潜力</h3>
+            <p>展示一个系统在能量输入下从简单平衡态演化到复杂动态模式，暗示其计算潜力。</p>
+            <div id="outOfEquilibriumCanvasContainer"></div>
+            <div class="animation-controls">
+                <button onclick="outOfEquilibriumSketch.toggleEnergy()">开启/停止能量输入</button>
+                <button onclick="outOfEquilibriumSketch.resetAnimation()">重置</button>
+            </div>
+        </div>
+
+        <h3>2. 机器学习作为物理过程：硬件即学习</h3>
+        <p>“将机器学习视为一个物理过程”是Verdon反复强调的突破点。这意味着计算硬件本身的状态或其动态演化直接编码了学习模型或学习结果。数据输入可能改变系统的物理参数或边界条件，而系统根据其内在物理规律（如能量最小化、自由能最大化或某种特定的动力学吸引子）<strong class="highlight">自发地“松弛”到一个新的稳定状态或动态模式</strong>，这个新状态即代表了学习的结果。</p>
+        <p>这让人联想到物理退火算法，但Verdon的构想可能更为直接和底层。传统计算中的“噪声”或“热涨落”，在量子计算中是必须克服的敌人，但在热力学计算中，这些<strong class="highlight">随机性因素可能反而成为探索解空间、跳出局部最优的“资源”</strong>。正如Verdon所说，他们不再需要像量子计算那样“不断泵出系统中的熵”来维持一个“原始环境”。</p>
+
+        <div class="animation-container">
+            <h3>动画3：机器学习的物理实现 (概念)</h3>
+            <p>模拟一个物理系统（如粒子在能量景观中运动）在“数据”影响下，如何通过自身动力学达到一个“学习后”的稳定状态。</p>
+            <div id="mlPhysicalProcessCanvasContainer"></div>
+            <div class="animation-controls">
+                <button onclick="mlPhysicalProcessSketch.introduceData()">引入数据/扰动</button>
+                <button onclick="mlPhysicalProcessSketch.resetAnimation()">重置</button>
+            </div>
+        </div>
+        
+        <h3>3. 可微分物理系统：用梯度优化自然</h3>
+        <p>Verdon从其在TensorFlow Quantum项目中的经验（将可微分编程引入量子计算）中提炼出一个普适性框架：<strong class="highlight">通过微分来编程物质和物理</strong>。如果一个物理系统的行为可以通过一组参数来描述，并且可以定义一个衡量系统表现的损失函数（Loss Function），那么就可以通过计算损失函数相对于这些物理参数的梯度，来优化系统以完成特定任务。</p>
+        <p>这暗示Extropic的“热力学计算机”可能包含可调控的物理参数，其AI算法则通过类似梯度下降的方法，直接调整这些物理参数，从而“塑造”物理系统的行为，使其完成特定的机器学习任务。公式可以简化为：<formula>Adjust(Parameters) based on d(Loss)/d(Parameters)</formula>。</p>
+
+        <div class="animation-container">
+            <h3>动画4：可微分物理系统 (概念)</h3>
+            <p>展示一个带可调参数的物理系统，通过调整参数（模拟梯度下降）来优化某个目标函数（如最小化能量）。</p>
+            <div id="differentiablePhysicsCanvasContainer"></div>
+            <div class="animation-controls">
+                <button onclick="differentiablePhysicsSketch.tweakParam('A', 0.1)">参数A +</button>
+                <button onclick="differentiablePhysicsSketch.tweakParam('A', -0.1)">参数A -</button>
+                <button onclick="differentiablePhysicsSketch.tweakParam('B', 0.1)">参数B +</button>
+                <button onclick="differentiablePhysicsSketch.tweakParam('B', -0.1)">参数B -</button>
+                <button onclick="differentiablePhysicsSketch.resetAnimation()">重置</button>
+            </div>
+        </div>
+
+        <h2>Extropic对AI的愿景：物理AI与人形AI的融合</h2>
+        <p>Verdon展望，Extropic的目标不仅是运行类人AI（他称之为“拟人AI” Anthropomorphic AI），更关键的是开发一种<strong class="highlight">“基于物理的AI” (Physics-based AI)</strong>。这种AI能够更好地表征世界的真实物理过程，因为它本身就从物理规律中汲取灵感，可以整合量子、热力学、经典等不同尺度的物理模型，从而构建<strong class="highlight">更精确、多尺度的世界模型 (World Model)</strong>。</p>
+        <p>这个“物理世界建模引擎”可以作为AI理解和预测现实世界的基础，而“拟人AI”则可以作为与人类交互、进行高级推理的接口。两者的结合，在Verdon看来，是通向更通用人工智能（AGI）的路径。“你可以拥有科学，测试想法的游乐场（物理AI），以及合成科学家（拟人AI）。”</p>
+
+        <div class="animation-container">
+            <h3>动画5：物理AI的世界模型 (概念)</h3>
+            <p>展示一个AI核心如何从不同物理模块（量子、热力学、经典）获取信息，构建一个统一的多尺度世界表征。</p>
+            <div id="physicsWorldModelCanvasContainer"></div>
+            <div class="animation-controls">
+                <button onclick="physicsWorldModelSketch.triggerEvent('quantum_event')">量子事件</button>
+                <button onclick="physicsWorldModelSketch.triggerEvent('thermo_event')">热力学事件</button>
+                <button onclick="physicsWorldModelSketch.resetAnimation()">重置</button>
+            </div>
+        </div>
+
+        <h2>潜在突破与技术细节的推测</h2>
+        <p>尽管Verdon未详述技术细节，但基于其物理背景和访谈内容，我们可以推测Extropic的技术路径可能涉及：</p>
+        <ul>
+            <li><strong>新型材料与器件：</strong> 寻找或设计在室温或近室温下表现出有利于计算的、可控的非平衡热力学行为的材料和器件。这可能涉及随机共振、临界现象、或特定类型的涨落主导系统。</li>
+            <li><strong>模拟与数字的结合：</strong> 热力学计算本质上更偏向模拟计算，但为了与现有数字生态系统接口，可能需要创新的模数转换和控制机制。</li>
+            <li><strong>能量效率：</strong> 利用物理过程直接计算，有望大幅降低传统计算中因数据搬运、逻辑门开关等产生的能耗，实现<strong class="highlight">高能效计算</strong>，这对于大规模生成式AI至关重要。</li>
+            <li><strong>算法-硬件协同设计：</strong> AI算法的设计将深度耦合硬件的物理特性，不再是纯粹的软件抽象。</li>
+        </ul>
+        <p>Verdon提及的“热力学计算机” (Thermodynamic Computer) 本身就是一个大胆的宣称。其“突破”可能在于找到了<strong class="highlight">稳定、可控、且能高效映射到机器学习任务的特定非平衡物理系统及其控制方法</strong>。这可能意味着他们不再将热涨落视为纯粹的随机干扰，而是将其视为一种可资利用的、驱动系统探索和学习的“内在动力”。</p>
+
+        <h2>结论：回归物理，重塑计算</h2>
+        <p>Guillaume Verdon及其Extropic公司所倡导的热力学计算，是对计算本质的一次深刻反思。它试图摆脱传统计算对确定性逻辑的依赖和量子计算对极端环境的要求，转而从<strong class="highlight">宇宙中无处不在的热力学过程中汲取计算的灵感和力量</strong>。如果成功，这不仅可能为AI发展提供全新的、更高效的物理基础，更可能深化我们对信息、智能与物理世界之间关系的理解。这无疑是一条充满挑战但也极具吸引力的探索之路，其核心逻辑在于：<strong class="highlight">让计算回归物理，让物理驱动智能</strong>。</p>
+
+    </div>
+
+    <script>
+        // 全局 P5.js 实例
+        let quantumVsThermoSketch, mlPhysicalProcessSketch, outOfEquilibriumSketch, differentiablePhysicsSketch, physicsWorldModelSketch;
+
+        // 动画1: 量子计算 vs. 热力学计算
+        const sketchQuantumVsThermo = (p) => {
+            let focusThermo = false;
+            let q_particles = [];
+            let t_particles = [];
+            let time = 0;
+
+            p.setup = () => {
+                const container = document.getElementById('quantumVsThermoCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight).parent('quantumVsThermoCanvasContainer');
+                p.textAlign(p.CENTER, p.CENTER);
+                for (let i = 0; i < 15; i++) {
+                    q_particles.push({ x: p.random(p.width * 0.1, p.width * 0.4), y: p.random(p.height * 0.2, p.height * 0.8), vx: p.random(-0.3, 0.3), vy: p.random(-0.3, 0.3), size: 10 });
+                    t_particles.push({ x: p.random(p.width * 0.6, p.width * 0.9), y: p.random(p.height * 0.2, p.height * 0.8), vx: p.random(-0.8, 0.8), vy: p.random(-0.8, 0.8), size: p.random(5,12) });
+                }
+                p.noLoop(); 
+                p.redraw();
+            };
+
+            p.windowResized = () => {
+                const container = document.getElementById('quantumVsThermoCanvasContainer');
+                p.resizeCanvas(container.offsetWidth, container.offsetHeight);
+            };
+
+            p.draw = () => {
+                p.background(235, 245, 255); // Light blue background
+                time += 0.02;
+
+                // Quantum Side
+                p.fill(200, 220, 255, 150);
+                p.rect(0, 0, p.width / 2, p.height);
+                p.fill(0, 50, 100);
+                p.textSize(p.width/30 > 14 ? p.width/30 : 14);
+                p.text("量子计算", p.width * 0.25, p.height * 0.1);
+                p.textSize(p.width/45 > 10 ? p.width/45 : 10);
+                p.text("目标: 抑制噪声\n维持相干态、纠缠", p.width * 0.25, p.height * 0.85);
+
+                for (let pt of q_particles) {
+                    p.fill(0, 100, 200); // Qubit color
+                    p.ellipse(pt.x, pt.y, pt.size, pt.size);
+                    pt.x += pt.vx; pt.y += pt.vy;
+                    if (pt.x < p.width*0.05 || pt.x > p.width*0.45) pt.vx *= -1;
+                    if (pt.y < p.height*0.15 || pt.y > p.height*0.8) pt.vy *= -1;
+                    // Simulate noise
+                    if (p.random(1) < 0.05 && p.isLooping()) { p.fill(255, 0, 0, 100); p.ellipse(pt.x + p.random(-5,5), pt.y + p.random(-5,5), 15, 15); } // Noise flash
+                }
+                 // Shielding visual for quantum
+                p.stroke(100,100,200, 100); p.strokeWeight(10); p.noFill();
+                p.rect(5,5, p.width/2 - 10, p.height -10, 10);
+                p.noStroke();
+
+
+                // Thermo Side
+                p.fill(255, 230, 200, 150);
+                p.rect(p.width / 2, 0, p.width / 2, p.height);
+                p.fill(150, 50, 0);
+                p.textSize(p.width/30 > 14 ? p.width/30 : 14);
+                p.text("热力学计算", p.width * 0.75, p.height * 0.1);
+                 p.textSize(p.width/45 > 10 ? p.width/45 : 10);
+                p.text("思路: 利用涨落?\n与环境耦合、自组织", p.width * 0.75, p.height * 0.85);
+
+                for (let pt of t_particles) {
+                    p.fill(255, 120, 0); // Thermo particle color
+                    p.ellipse(pt.x, pt.y, pt.size, pt.size);
+                    pt.x += pt.vx * (1 + 0.5 * p.sin(time * 2 + pt.y * 0.1)); // More dynamic movement
+                    pt.y += pt.vy * (1 + 0.5 * p.cos(time * 2 + pt.x * 0.1));
+                    if (pt.x < p.width*0.55 || pt.x > p.width*0.95) pt.vx *= -1;
+                    if (pt.y < p.height*0.15 || pt.y > p.height*0.8) pt.vy *= -1;
+                     // Fluctuation visual
+                    if (p.random(1) < 0.1 && p.isLooping()) { p.fill(255, 200, 0, 100); p.ellipse(pt.x + p.random(-10,10), pt.y + p.random(-10,10), pt.size * 1.5, pt.size * 1.5);}
+                }
+                 // Environment interaction visual for thermo
+                p.stroke(200,100,50, 80); p.strokeWeight(5); p.noFill();
+                // Arrows indicating interaction with environment
+                if(p.isLooping()){
+                    for(let i=0; i<3; i++){
+                        let y_arr = p.height*0.3 + i * p.height*0.2;
+                        p.line(p.width/2 + 5, y_arr, p.width/2 + 25, y_arr + p.random(-10,10));
+                        p.line(p.width - 5, y_arr, p.width - 25, y_arr + p.random(-10,10));
+                    }
+                }
+                p.noStroke();
+
+
+                p.strokeWeight(4);
+                p.noFill();
+                if (focusThermo) { p.stroke(255, 100, 0); p.rect(p.width / 2 + 2, 2, p.width / 2 - 4, p.height - 4, 5); }
+                else { p.stroke(0, 100, 255); p.rect(2, 2, p.width / 2 - 4, p.height - 4, 5); }
+                p.noStroke();
+            };
+
+            p.toggleFocus = () => { focusThermo = !focusThermo; if(!p.isLooping()) p.loop(); setTimeout(() => {p.noLoop(); p.redraw();}, 800);};
+            p.resetAnimation = () => { focusThermo = false; time = 0; p.noLoop(); p.redraw(); };
+        };
+
+        // 动画2: 非平衡态系统与计算潜力
+        const sketchOutOfEquilibrium = (p) => {
+            let particles = [];
+            let energyInput = false;
+            let flowField;
+            const resolution = 20;
+            let cols, rows;
+
+            p.setup = () => {
+                const container = document.getElementById('outOfEquilibriumCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight).parent('outOfEquilibriumCanvasContainer');
+                cols = p.floor(p.width / resolution);
+                rows = p.floor(p.height / resolution);
+                flowField = new Array(cols * rows);
+                for (let i = 0; i < 100; i++) particles.push(new ParticleOE());
+                p.noLoop();
+                p.redraw();
+            };
+            
+            p.windowResized = () => {
+                const container = document.getElementById('outOfEquilibriumCanvasContainer');
+                p.resizeCanvas(container.offsetWidth, container.offsetHeight);
+                cols = p.floor(p.width / resolution);
+                rows = p.floor(p.height / resolution);
+                flowField = new Array(cols * rows);
+            };
+
+            class ParticleOE {
+                constructor() { this.pos = p.createVector(p.random(p.width), p.random(p.height)); this.vel = p.createVector(); this.acc = p.createVector(); this.maxSpeed = 2; }
+                update() { this.vel.add(this.acc); this.vel.limit(this.maxSpeed); this.pos.add(this.vel); this.acc.mult(0); this.edges(); }
+                applyForce(force) { this.acc.add(force); }
+                edges() { if (this.pos.x > p.width) this.pos.x = 0; if (this.pos.x < 0) this.pos.x = p.width; if (this.pos.y > p.height) this.pos.y = 0; if (this.pos.y < 0) this.pos.y = p.height; }
+                display() { p.stroke(0, 150, 150, 100); p.strokeWeight(2); p.point(this.pos.x, this.pos.y); }
+                follow(vectors) {
+                    let x = p.floor(this.pos.x / resolution);
+                    let y = p.floor(this.pos.y / resolution);
+                    let index = x + y * cols;
+                    if (index < 0 || index >= vectors.length || !vectors[index]) return; // Boundary check
+                    let force = vectors[index];
+                    this.applyForce(force);
+                }
+            }
+
+            p.draw = () => {
+                p.background(250, 245, 230); // Creamy background
+                
+                p.textSize(p.width/25 > 16 ? p.width/25 : 16);
+                p.fill(energyInput ? [230, 126, 34] : [41, 128, 185]);
+                p.textAlign(p.CENTER);
+                p.text(energyInput ? "能量输入：非平衡态 (复杂模式)" : "无能量输入：平衡态 (随机)", p.width / 2, p.height * 0.1);
+
+                let yoff = 0;
+                for (let y = 0; y < rows; y++) {
+                    let xoff = 0;
+                    for (let x = 0; x < cols; x++) {
+                        let index = x + y * cols;
+                        if (energyInput) { // Complex flow field with energy
+                            let angle = p.noise(xoff, yoff, p.frameCount * 0.01) * p.TWO_PI * 2;
+                            let v = p5.Vector.fromAngle(angle);
+                            v.setMag(0.5);
+                            flowField[index] = v;
+                        } else { // Random, weak forces without energy (equilibrium)
+                             let angle = p.random(p.TWO_PI);
+                             let v = p5.Vector.fromAngle(angle);
+                             v.setMag(0.05); // Very weak random motion
+                             flowField[index] = v;
+                        }
+                        xoff += 0.1;
+                    }
+                    yoff += 0.1;
+                }
+
+                for (let particle of particles) {
+                    particle.follow(flowField);
+                    particle.update();
+                    particle.display();
+                }
+            };
+            p.toggleEnergy = () => { energyInput = !energyInput; if(!p.isLooping() && energyInput) p.loop(); else if (!energyInput) {p.noLoop(); p.redraw();} };
+            p.resetAnimation = () => { energyInput = false; particles.forEach(pt => pt.pos = p.createVector(p.random(p.width), p.random(p.height))); p.noLoop(); p.redraw(); };
+        };
+
+        // 动画3: 机器学习的物理实现
+        const sketchMLPhysicalProcess = (p) => {
+            let particles = [];
+            let energyLandscape; // Will be a 2D array of heights
+            let dataPoint = null; // {x, y, influence}
+            const landscapeSize = 20;
+            let cellSize;
+
+            p.setup = () => {
+                const container = document.getElementById('mlPhysicalProcessCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight).parent('mlPhysicalProcessCanvasContainer');
+                cellSize = p.width / landscapeSize;
+                energyLandscape = Array(landscapeSize).fill(null).map(() => Array(landscapeSize).fill(0));
+                p.resetLandscape();
+                for (let i = 0; i < 30; i++) particles.push(new ParticleML(p.random(p.width), p.random(p.height)));
+                p.noLoop();
+                p.redraw();
+            };
+
+             p.windowResized = () => {
+                const container = document.getElementById('mlPhysicalProcessCanvasContainer');
+                p.resizeCanvas(container.offsetWidth, container.offsetHeight);
+                cellSize = p.width / landscapeSize;
+            };
+
+            p.resetLandscape = () => {
+                 for (let i = 0; i < landscapeSize; i++) {
+                    for (let j = 0; j < landscapeSize; j++) {
+                        // Smooth initial landscape
+                        energyLandscape[i][j] = p.map(p.noise(i * 0.1, j * 0.1), 0, 1, 50, 150);
+                    }
+                }
+                dataPoint = null; // Clear data point
+            }
+
+            class ParticleML {
+                constructor(x,y) { this.pos = p.createVector(x,y); this.vel = p.createVector(); this.acc = p.createVector(); this.maxSpeed = 1; this.damping = 0.95;}
+                update() { 
+                    this.vel.add(this.acc); 
+                    this.vel.mult(this.damping); // Damping to settle
+                    this.vel.limit(this.maxSpeed); 
+                    this.pos.add(this.vel); 
+                    this.acc.mult(0); 
+                    this.edges();
+                }
+                applyForce(force) { this.acc.add(force); }
+                edges() { 
+                    if (this.pos.x > p.width-1) {this.pos.x = p.width-1; this.vel.x *= -0.5;}
+                    if (this.pos.x < 0) {this.pos.x = 0; this.vel.x *= -0.5;}
+                    if (this.pos.y > p.height-1) {this.pos.y = p.height-1; this.vel.y *= -0.5;}
+                    if (this.pos.y < 0) {this.pos.y = 0; this.vel.y *= -0.5;}
+                }
+                display() { p.fill(50, 100, 200, 180); p.noStroke(); p.ellipse(this.pos.x, this.pos.y, 8, 8); }
+                
+                // Force based on gradient of energy landscape
+                applyLandscapeForce() {
+                    let i = p.constrain(p.floor(this.pos.x / cellSize), 0, landscapeSize - 2);
+                    let j = p.constrain(p.floor(this.pos.y / cellSize), 0, landscapeSize - 2);
+
+                    // Simple gradient: difference to neighbors
+                    let E_current = energyLandscape[i] ? energyLandscape[i][j] : 100;
+                    let E_right = energyLandscape[i+1] ? energyLandscape[i+1][j] : E_current;
+                    let E_down = energyLandscape[i] ? energyLandscape[i][j+1] : E_current;
+                    
+                    let forceX = -(E_right - E_current); // Move towards lower energy
+                    let forceY = -(E_down - E_current);
+                    
+                    this.applyForce(p.createVector(forceX, forceY).mult(0.05)); // Scale force
+                }
+            }
+
+            p.draw = () => {
+                p.background(240, 248, 255);
+                // Draw energy landscape
+                for (let i = 0; i < landscapeSize; i++) {
+                    for (let j = 0; j < landscapeSize; j++) {
+                        p.fill(255 - energyLandscape[i][j], 255 - energyLandscape[i][j] * 0.5, 255);
+                        p.noStroke();
+                        p.rect(i * cellSize, j * cellSize, cellSize, cellSize);
+                    }
+                }
+
+                if (dataPoint) { // Draw data point influence
+                    p.fill(255, 0, 0, 100);
+                    p.ellipse(dataPoint.x, dataPoint.y, dataPoint.influence * 2, dataPoint.influence * 2);
+                }
+                
+                p.textSize(p.width/30 > 16 ? p.width/30 : 16);
+                p.fill(0);
+                p.textAlign(p.CENTER);
+                p.text(dataPoint ? "数据引入，系统演化至新稳态 (学习)" : "物理系统初始状态", p.width/2, p.height*0.05);
+
+                for (let particle of particles) {
+                    particle.applyLandscapeForce();
+                    particle.update();
+                    particle.display();
+                }
+            };
+
+            p.introduceData = () => {
+                dataPoint = { x: p.random(p.width * 0.2, p.width * 0.8), y: p.random(p.height * 0.2, p.height * 0.8), influence: p.random(30, 60) };
+                // Modify landscape around data point (create a potential well)
+                for (let i = 0; i < landscapeSize; i++) {
+                    for (let j = 0; j < landscapeSize; j++) {
+                        let d = p.dist(i * cellSize, j * cellSize, dataPoint.x, dataPoint.y);
+                        if (d < dataPoint.influence) {
+                            energyLandscape[i][j] = p.max(0, energyLandscape[i][j] - p.map(d, 0, dataPoint.influence, 50, 0)); // Lower energy
+                        }
+                    }
+                }
+                if(!p.isLooping()) p.loop();
+                setTimeout(() => {p.noLoop(); p.redraw();}, 2000); // Run for a bit then stop
+            };
+            p.resetAnimation = () => { p.resetLandscape(); particles.forEach(pt => pt.pos = p.createVector(p.random(p.width), p.random(p.height))); p.noLoop(); p.redraw(); };
+        };
+        
+        // 动画4: 可微分物理系统
+        const sketchDifferentiablePhysics = (p) => {
+            let params = { A: 0.5, B: 0.5 }; // Normalized 0-1
+            let systemState = { x: 0, y: 0 }; // Some state derived from params
+            let loss = 0;
+            let target = { x: 0.7, y: 0.3 }; // Target state for loss calculation
+
+            p.setup = () => {
+                const container = document.getElementById('differentiablePhysicsCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight).parent('differentiablePhysicsCanvasContainer');
+                p.textAlign(p.CENTER, p.CENTER);
+                p.updateSystemAndLoss();
+                p.noLoop();
+                p.redraw();
+            };
+
+            p.windowResized = () => {
+                const container = document.getElementById('differentiablePhysicsCanvasContainer');
+                p.resizeCanvas(container.offsetWidth, container.offsetHeight);
+            };
+
+            p.updateSystemAndLoss = () => {
+                // Example: system state depends non-linearly on params
+                systemState.x = params.A * params.A + 0.2 * params.B;
+                systemState.y = 0.5 * params.A + params.B * params.B;
+                systemState.x = p.constrain(systemState.x, 0, 1);
+                systemState.y = p.constrain(systemState.y, 0, 1);
+                
+                loss = p.dist(systemState.x, systemState.y, target.x, target.y);
+            };
+
+            p.draw = () => {
+                p.background(245, 245, 240); // Light grey
+
+                // Display parameters
+                p.textSize(p.width/35 > 12 ? p.width/35 : 12);
+                p.fill(0);
+                p.text(`参数 A: ${params.A.toFixed(2)}`, p.width * 0.25, p.height * 0.2);
+                p.rect(p.width * 0.1, p.height * 0.25, p.width * 0.3, 20);
+                p.fill(0,150,0);
+                p.rect(p.width * 0.1, p.height * 0.25, p.width * 0.3 * params.A, 20);
+
+                p.fill(0);
+                p.text(`参数 B: ${params.B.toFixed(2)}`, p.width * 0.75, p.height * 0.2);
+                p.rect(p.width * 0.6, p.height * 0.25, p.width * 0.3, 20);
+                p.fill(0,150,0);
+                p.rect(p.width * 0.6, p.height * 0.25, p.width * 0.3 * params.B, 20);
+
+                // Display system state and target
+                let stateX = p.map(systemState.x, 0, 1, p.width * 0.1, p.width * 0.9);
+                let stateY = p.map(systemState.y, 0, 1, p.height * 0.4, p.height * 0.8);
+                p.fill(0, 0, 255); // Current state
+                p.ellipse(stateX, stateY, 20, 20);
+                p.text("当前状态", stateX, stateY + 20);
+
+                let targetX = p.map(target.x, 0, 1, p.width * 0.1, p.width * 0.9);
+                let targetY = p.map(target.y, 0, 1, p.height * 0.4, p.height * 0.8);
+                p.fill(255, 0, 0); // Target state
+                p.ellipse(targetX, targetY, 20, 20);
+                p.text("目标状态", targetX, targetY - 20);
+                
+                // Display Loss
+                p.fill(0);
+                p.textSize(p.width/30 > 14 ? p.width/30 : 14);
+                p.text(`损失 (与目标距离): ${loss.toFixed(3)}`, p.width / 2, p.height * 0.9);
+                
+                // Conceptual gradient arrow (simplified)
+                if (loss > 0.01) {
+                    p.stroke(200, 200, 0); p.strokeWeight(3);
+                    let gradX = (targetX - stateX) * 0.1; // Simplified gradient direction
+                    let gradY = (targetY - stateY) * 0.1;
+                    p.line(stateX, stateY, stateX + gradX, stateY + gradY);
+                    p.text("优化方向", stateX + gradX, stateY + gradY);
+                    p.noStroke();
+                }
+            };
+
+            p.tweakParam = (param, delta) => {
+                if (param === 'A') params.A = p.constrain(params.A + delta, 0, 1);
+                if (param === 'B') params.B = p.constrain(params.B + delta, 0, 1);
+                p.updateSystemAndLoss();
+                p.redraw();
+            };
+            p.resetAnimation = () => { params.A = 0.5; params.B = 0.5; p.updateSystemAndLoss(); p.redraw(); };
+        };
+        
+        // 动画5: 物理AI的世界模型
+        const sketchPhysicsWorldModel = (p) => {
+            let aiCore = { x: 0, y: 0, radius: 0 };
+            let modules = [
+                { name: "量子模块", x: 0, y: 0, color: [0, 150, 255], active: false, data: 0 },
+                { name: "热力学模块", x: 0, y: 0, color: [255, 100, 0], active: false, data: 0 },
+                { name: "经典模块", x: 0, y: 0, color: [100, 100, 100], active: false, data: 0 }
+            ];
+            let worldState = 0; // Integrated understanding
+
+            p.setup = () => {
+                const container = document.getElementById('physicsWorldModelCanvasContainer');
+                p.createCanvas(container.offsetWidth, container.offsetHeight).parent('physicsWorldModelCanvasContainer');
+                aiCore.x = p.width / 2; aiCore.y = p.height / 2; aiCore.radius = p.width / 10;
+                modules[0].x = p.width/4;     modules[0].y = p.height/3;
+                modules[1].x = p.width/2;     modules[1].y = p.height - p.height/3;
+                modules[2].x = p.width*3/4; modules[2].y = p.height/3;
+                p.textAlign(p.CENTER, p.CENTER);
+                p.noLoop();
+                p.redraw();
+            };
+
+            p.windowResized = () => {
+                const container = document.getElementById('physicsWorldModelCanvasContainer');
+                p.resizeCanvas(container.offsetWidth, container.offsetHeight);
+                aiCore.x = p.width / 2; aiCore.y = p.height / 2; aiCore.radius = p.width / 10;
+                modules[0].x = p.width/4;     modules[0].y = p.height/3;
+                modules[1].x = p.width/2;     modules[1].y = p.height - p.height/3;
+                modules[2].x = p.width*3/4; modules[2].y = p.height/3;
+            };
+
+            p.draw = () => {
+                p.background(230, 240, 230); // Light green background
+
+                // Draw modules
+                for (let mod of modules) {
+                    p.fill(mod.color[0], mod.color[1], mod.color[2], mod.active ? 255 : 100);
+                    p.ellipse(mod.x, mod.y, p.width/8, p.width/8);
+                    p.fill(0);
+                    p.textSize(p.width/45 > 10 ? p.width/45 : 10);
+                    p.text(mod.name, mod.x, mod.y);
+                    if (mod.active) { // Data flow line
+                        p.stroke(mod.color[0], mod.color[1], mod.color[2]);
+                        p.strokeWeight(2);
+                        p.line(mod.x, mod.y, aiCore.x, aiCore.y);
+                        p.noStroke();
+                    }
+                }
+
+                // Draw AI Core
+                p.fill(150, 50, 150, 200); // Purple for AI core
+                p.ellipse(aiCore.x, aiCore.y, aiCore.radius * 2, aiCore.radius * 2);
+                p.fill(255);
+                p.textSize(p.width/35 > 12 ? p.width/35 : 12);
+                p.text("物理AI核心", aiCore.x, aiCore.y - aiCore.radius*0.3);
+                p.textSize(p.width/40 > 10 ? p.width/40 : 10);
+                p.text(`世界理解: ${worldState.toFixed(2)}`, aiCore.x, aiCore.y + aiCore.radius*0.3);
+
+                // Update world state based on active modules
+                if (p.isLooping()) {
+                    worldState = 0;
+                    modules.forEach(m => { if(m.active) worldState += m.data * 0.1; }); // Simple integration
+                    worldState = p.constrain(worldState, 0, 1);
+                }
+            };
+
+            p.triggerEvent = (eventType) => {
+                modules.forEach(m => m.active = false); // Deactivate all
+                if (eventType === 'quantum_event') {
+                    modules[0].active = true; modules[0].data = p.random(0.5, 1);
+                } else if (eventType === 'thermo_event') {
+                    modules[1].active = true; modules[1].data = p.random(0.3, 0.8);
+                } else if (eventType === 'classical_event') { // Example, not used by button
+                    modules[2].active = true; modules[2].data = p.random(0.1, 0.6);
+                }
+                if(!p.isLooping()) p.loop();
+                setTimeout(() => {p.noLoop(); p.redraw();}, 1000);
+            };
+            p.resetAnimation = () => { modules.forEach(m => {m.active = false; m.data = 0;}); worldState = 0; p.noLoop(); p.redraw(); };
+        };
+
+        // Initialize sketches
+        window.onload = () => {
+            quantumVsThermoSketch = new p5(sketchQuantumVsThermo);
+            mlPhysicalProcessSketch = new p5(sketchMLPhysicalProcess);
+            outOfEquilibriumSketch = new p5(sketchOutOfEquilibrium);
+            differentiablePhysicsSketch = new p5(sketchDifferentiablePhysics);
+            physicsWorldModelSketch = new p5(sketchPhysicsWorldModel);
+        };
+    </script>
+</body>
+</html>
