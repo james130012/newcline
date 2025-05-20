@@ -1,0 +1,769 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>勾股定理、欧拉公式与宇宙奥秘：一场物理逻辑的思辨之旅</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.2/p5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <style>
+        /* 基本重置和页面设置 */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans SC', sans-serif; /* 清晰的正文 */
+            font-size: 18px; /* 模拟“三号”字体大小，提供良好可读性 */
+            line-height: 1.8;
+            background-color: #f8f9fa; /* 淡雅背景色 */
+            color: #343a40; /* 深灰文字，对比清晰 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* 容器样式，使其在A3纸张感觉上居中且有边距 */
+        .container {
+            width: 90%;
+            max-width: 1200px; /* 限制最大宽度，类似纸张 */
+            margin: 20px auto;
+            padding: 30px;
+            background-color: #ffffff; /* 白色内容背景 */
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 标题样式 */
+        h1, h2, h3 {
+            font-family: 'ZCOOL KuaiLe', cursive; /* 轻松活泼的标题字体 */
+            color: #007bff; /* 蓝色标题 */
+            margin-bottom: 0.75em;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.8em; /* 大标题 */
+            color: #2a9d8f; /* 青色，更活泼 */
+            border-bottom: 3px solid #2a9d8f;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h2 {
+            font-size: 2.2em;
+            color: #e76f51; /* 橙红色，强调章节 */
+            margin-top: 1.5em;
+        }
+        h3 {
+            font-size: 1.8em;
+            color: #f4a261; /* 暖黄色 */
+        }
+
+        /* 段落和文本样式 */
+        p {
+            margin-bottom: 1.2em;
+            text-align: justify; /* 两端对齐，更整洁 */
+        }
+
+        /* 强调文字 */
+        strong, .highlight {
+            color: #d62828; /* 红色强调 */
+            font-weight: bold;
+        }
+        .concept {
+            font-weight: 500;
+            color: #2a9d8f; /* 青色概念词 */
+            padding: 2px 4px;
+            background-color: #e9f5f4;
+            border-radius: 4px;
+        }
+
+        /* 公式文本样式 */
+        .formula {
+            display: block;
+            text-align: center;
+            font-family: 'Courier New', Courier, monospace; /* 等宽字体显示公式 */
+            font-size: 1.2em;
+            padding: 15px;
+            margin: 20px auto;
+            background-color: #e9ecef; /* 淡灰色背景 */
+            border-radius: 8px;
+            color: #495057;
+            max-width: 80%;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+        }
+
+        /* 动画容器 */
+        .animation-container {
+            width: 100%;
+            max-width: 600px; /* 动画最大宽度 */
+            height: 400px; /* 固定高度，确保canvas可见 */
+            margin: 20px auto;
+            border: 2px solid #007bff; /* 边框 */
+            border-radius: 8px;
+            overflow: hidden; /* 确保 P5 canvas 不会溢出 */
+            background-color: #f0f8ff; /* 淡蓝色背景 */
+            display: flex; /* 用于居中canvas */
+            justify-content: center;
+            align-items: center;
+        }
+        .animation-container canvas {
+            display: block; /* 移除canvas下方的额外空间 */
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 6px; /* 内部canvas也圆角 */
+        }
+        
+        /* 交互按钮样式 */
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .controls button, .controls input[type="range"], .controls label {
+            padding: 10px 18px;
+            font-size: 1em;
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #007bff; /* 蓝色按钮 */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .controls button:hover {
+            background-color: #0056b3; /* 深蓝色悬停 */
+            transform: translateY(-2px);
+        }
+        .controls button:active {
+            transform: translateY(1px);
+        }
+        .controls input[type="range"] {
+            vertical-align: middle;
+            cursor: grab;
+        }
+        .controls label {
+            background-color: transparent;
+            color: #343a40;
+            box-shadow: none;
+        }
+
+        /* 页脚 */
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #343a40; /* 深色页脚 */
+            color: #f8f9fa; /*浅色文字*/
+            width: 100%;
+        }
+        footer p {
+            margin: 0;
+            font-size: 0.9em;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                font-size: 16px; /* 移动设备上稍小字体 */
+            }
+            .container {
+                width: 95%;
+                padding: 20px;
+            }
+            h1 {
+                font-size: 2.2em;
+            }
+            h2 {
+                font-size: 1.8em;
+            }
+            .animation-container {
+                height: 300px; /* 移动设备上调整高度 */
+            }
+            .formula {
+                font-size: 1em;
+                max-width: 95%;
+            }
+            .controls button, .controls input[type="range"], .controls label {
+                padding: 8px 12px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>探索宇宙的数学基石：从勾股定理到欧拉公式</h1>
+        </header>
+
+        <main>
+            <article>
+                <section id="intro">
+                    <h2>引言：一个充满洞察力的猜想</h2>
+                    <p>“好像人类一直在玩勾股定理，欧拉公式似乎也是一种勾股定理的变体，斜边确定之后，就可以一直转，多几个维度就可以衍生出很多这个宇宙的物理规则了。” 这是一个非常有趣且富有洞察力的观点！它触及了数学与物理学核心的一些美妙联系。我们确实可以说，<strong class="highlight">勾股定理</strong> 和 <strong class="highlight">欧拉公式</strong> 是数学工具箱中两颗璀璨的明珠，它们以不同的方式捕捉了关于<span class="concept">空间、结构、变化与守恒</span>的基本思想。这两种工具，以及它们所蕴含的思想，在物理学的各个分支中都扮演着至关重要的角色。</p>
+                    <p>这篇解读将带你踏上一场从物理逻辑视角出发的思辨之旅，探讨这个观点背后的深意。我们将看到，这些看似简单的数学公式，是如何像乐高积木一样，搭建起我们理解宇宙的宏伟框架的。它们不仅仅是冰冷的符号，更是宇宙规律的优雅表达。</p>
+                </section>
+
+                <section id="pythagoras">
+                    <h2>勾股定理：<span class="concept">距离</span>与<span class="concept">正交性</span>的基石</h2>
+                    <p>勾股定理，即 <span class="formula">a^2 + b^2 = c^2</span>，是我们最早接触到的几何定理之一。它描述了直角三角形三边之间的关系。但它的意义远不止于此：</p>
+                    <ul>
+                        <li><strong>距离的度量：</strong> 它是欧几里得空间中计算两点间直线距离的基础。无论是二维平面上的 <span class="formula">d = sqrt((x2-x1)^2 + (y2-y1)^2)</span> 还是三维空间，乃至更高维抽象空间中的距离，其核心都烙印着勾股定理的影子。</li>
+                        <li><strong>正交性的体现：</strong> “直角”是关键，它代表了“正交”或“独立”。在物理学中，许多概念，如力的分解、速度分量、基向量等，都依赖于正交性，而勾股定理则为这些正交分量的合成提供了计算法则。</li>
+                        <li><strong>能量守恒的雏形：</strong> 在某些物理情境下，能量的不同形式（如动能和势能）可以看作是“正交”的贡献，总能量的平方可能与其他能量分量的平方和相关，这与勾股定理的形式有相似之处。</li>
+                    </ul>
+                    <p>想象一下，如果没有勾股定理，我们如何精确测量土地？导航系统如何定位？甚至连向量的模长（物理学中描述力、速度、场强等大小的工具）都无从谈起。它是我们描述静态结构和相对位置的根本。</p>
+                    <div id="pythagorasAnimationContainer" class="animation-container">
+                        </div>
+                    <div class="controls">
+                        <button id="pythagorasPlayPause">播放/暂停动画</button>
+                        <label for="pythagorasSliderA">边 a: <span id="pythagorasValueA">3</span></label>
+                        <input type="range" id="pythagorasSliderA" min="1" max="10" value="3" step="0.1">
+                        <label for="pythagorasSliderB">边 b: <span id="pythagorasValueB">4</span></label>
+                        <input type="range" id="pythagorasSliderB" min="1" max="10" value="4" step="0.1">
+                    </div>
+                </section>
+
+                <section id="euler">
+                    <h2>欧拉公式：<span class="concept">旋转</span>、<span class="concept">振荡</span>与<span class="concept">波</span>的语言</h2>
+                    <p>欧拉公式，<span class="formula">e^(i*x) = cos(x) + i*sin(x)</span>，被誉为数学中最美丽的公式之一。它巧妙地将五个最重要的数学常数（e, i, π, 1, 0，当x=π时，e^(i*π) + 1 = 0）联系起来，但其物理意义更为深远：</p>
+                    <ul>
+                        <li><strong>描述旋转：</strong> 在复平面上，<span class="concept">e^(i*x)</span> 代表一个模长为1的向量（“斜边”固定为1），随着x的增加，这个向量的端点在单位圆上旋转。这个“转”字，正是用户观点中的精髓！</li>
+                        <li><strong>连接指数与三角函数：</strong> 它揭示了指数函数与三角函数（正弦、余弦）的深刻联系。这意味着，许多涉及振荡、波动（如声波、光波、电磁波）的物理现象，可以用简洁的复指数形式来描述和分析。</li>
+                        <li><strong>相位信息：</strong> 复数不仅有大小（模），还有相位（辐角）。欧拉公式使得处理相位变得异常方便，这在干涉、衍射、量子力学等领域至关重要。</li>
+                    </ul>
+                    <p>从交流电路中的电流电压分析，到量子力学中粒子波函数的演化，再到信号处理中的傅里叶变换，欧拉公式无处不在。它为描述<strong class="highlight">动态过程</strong>和<strong class="highlight">周期性现象</strong>提供了强有力的数学语言。</p>
+                    <div id="eulerAnimationContainer" class="animation-container">
+                        </div>
+                    <div class="controls">
+                        <button id="eulerPlayPause">播放/暂停动画</button>
+                        <label for="eulerSliderX">角度 x: <span id="eulerValueX">0</span>°</label>
+                        <input type="range" id="eulerSliderX" min="0" max="360" value="0" step="1">
+                    </div>
+                </section>
+
+                <section id="connection">
+                    <h2>“变体”之说：勾股与欧拉的奇妙<span class="concept">统一性</span></h2>
+                    <p>那么，欧拉公式如何能被看作是勾股定理的一种“变体”呢？这里的联系非常精妙：</p>
+                    <p>考虑欧拉公式 <span class="formula">e^(i*x) = cos(x) + i*sin(x)</span>。这是一个复数，其实部是 <span class="concept">cos(x)</span>，虚部是 <span class="concept">sin(x)</span>。我们知道，复数的模长（绝对值）的平方等于其实部的平方加上虚部的平方。对于 <span class="concept">e^(i*x)</span>，其模长是1。所以：</p>
+                    <p class="formula">|e^(i*x)|^2 = (cos(x))^2 + (sin(x))^2</p>
+                    <p>因为 <span class="formula">|e^(i*x)| = 1</span>，所以我们得到：</p>
+                    <p class="formula">1^2 = (cos(x))^2 + (sin(x))^2</p>
+                    <p>这正是三角学中最基本的恒等式 <span class="highlight">(cos(x))^2 + (sin(x))^2 = 1</span>！这个恒等式本身就是勾股定理在单位圆上的直接体现：想象一个单位圆（半径为1，即“斜边”为1），圆上任意一点的坐标是 (cos(x), sin(x))，这里x是角度。根据勾股定理，水平分量cos(x)的平方加上垂直分量sin(x)的平方，等于斜边（半径）1的平方。</p>
+                    <p>所以，当欧拉公式描述一个模长（“斜边”）固定为1的向量在复平面上旋转时，其<strong class="highlight">实部和虚部始终满足勾股定理确定的约束</strong>。用户的直觉“斜边确定之后，就可以一直转”在这里得到了完美的诠释：模长（斜边）是1，而相位（角度x）则自由变化，驱动着旋转。</p>
+                    <div id="trigIdentityAnimationContainer" class="animation-container">
+                        </div>
+                    <div class="controls">
+                        <button id="trigPlayPause">播放/暂停动画</button>
+                        <label for="trigSliderAngle">角度: <span id="trigValueAngle">0</span>°</label>
+                        <input type="range" id="trigSliderAngle" min="0" max="360" value="0" step="1">
+                    </div>
+                </section>
+
+                <section id="dimensions">
+                    <h2>升维之旅：从平面到<span class="concept">宇宙时空</span></h2>
+                    <p>“多几个维度就可以衍生出很多这个宇宙的物理规则了。” 这个想法非常深刻，数学工具确实可以通过增加维度来描述更复杂的物理实在。</p>
+                    <ul>
+                        <li><strong>三维空间与向量：</strong> 勾股定理自然地从二维平面推广到三维空间，用于计算三维向量的模长 <span class="formula">|V| = sqrt(Vx^2 + Vy^2 + Vz^2)</span>。物理学中的力、速度、加速度、电场、磁场等都是三维向量。</li>
+                        <li><strong>狭义相对论与闵可夫斯基时空：</strong> 爱因斯坦的狭义相对论引入了四维时空的概念。在闵可夫斯基时空中，两个事件之间的“间隔”ds的平方由一个类似勾股定理但符号有所不同的公式给出：<span class="formula">ds^2 = (c*dt)^2 - dx^2 - dy^2 - dz^2</span>。这里的 <span class="concept">c*dt</span> 是时间分量，<span class="concept">dx, dy, dz</span> 是空间分量。这个间隔在洛伦兹变换（不同惯性参考系之间的变换）下保持不变，是狭义相对论的核心。尽管形式上是“伪欧几里得”的（因为时间项和空间项符号相反，导致了双曲几何），但其结构依然让人联想到勾股定理的“平方和”思想，只是变成了“平方差”。这种不变性，类似于旋转下的长度不变性。</li>
+                        <li><strong>广义相对论与弯曲时空：</strong> 广义相对论则将时空看作是弯曲的，由物质和能量的分布决定。局部来看，弯曲时空可以近似为平直的闵可夫斯基时空。描述这种弯曲时空需要更复杂的数学工具——张量和黎曼几何，但其基础仍然离不开距离和度量的概念。</li>
+                    </ul>
+                    <p>这些例子表明，通过将勾股定理的思想（距离、度量、分量的合成）推广到更高维度和更广义的几何结构，物理学得以描述从经典力学到相对论的广阔领域。</p>
+                    <div id="spacetimeAnimationContainer" class="animation-container">
+                        </div>
+                    <div class="controls">
+                        <button id="spacetimePlayPause">播放/暂停</button>
+                        <label for="spacetimeSliderV">相对速度 v/c: <span id="spacetimeValueV">0.5</span></label>
+                        <input type="range" id="spacetimeSliderV" min="0" max="0.99" value="0.5" step="0.01">
+                    </div>
+                </section>
+                
+                <section id="quantum">
+                    <h2>微观涟漪：<span class="concept">量子世界</span>中的数学魅影</h2>
+                    <p>在神秘的量子世界，欧拉公式和勾股定理（或其变体）同样扮演着核心角色：</p>
+                    <ul>
+                        <li><strong>波函数与概率幅：</strong> 量子力学用<span class="concept">波函数 Ψ(x, t)</span> 来描述粒子的状态。波函数通常是复数，其演化遵循薛定谔方程。波函数的模长的平方 <span class="formula">|Ψ(x, t)|^2 = Ψ*Ψ_conjugate</span> 代表粒子在某处出现的概率密度。计算模长平方的过程，<strong class="highlight">本质上就是复数域的勾股定理</strong>：如果 Ψ = a + ib, 那么 |Ψ|^2 = a^2 + b^2。</li>
+                        <li><strong>叠加态与干涉：</strong> 粒子的波函数可以表示为多个本征态的线性叠加，每个态都带有复数系数（包含振幅和相位）。这些相位，通过欧拉公式与振荡行为相关联，导致了量子干涉现象——这是量子力学最奇特的特征之一。</li>
+                        <li><strong>费曼路径积分：</strong> 理查德·费曼提出的路径积分方法，认为粒子从一点到另一点会经历所有可能的路径，每条路径贡献一个复数振幅 <span class="formula">e^(iS/ħ)</span>，其中S是路径的作用量，ħ是约化普朗克常数。总的跃迁振幅是所有路径贡献的叠加（积分）。这里，欧拉公式再次出现，将作用量（一个实数）映射到复平面上的旋转。</li>
+                    </ul>
+                    <p>可以说，量子力学的整个数学框架都建立在复数和线性代数之上，而欧拉公式是理解波函数行为和相位演化的关键，勾股定理（及其在复空间的推广）则用于从复振幅中提取可观测的概率。</p>
+                    <div id="waveSuperpositionAnimationContainer" class="animation-container">
+                        </div>
+                    <div class="controls">
+                        <button id="wavePlayPause">播放/暂停</button>
+                        <label for="waveSliderPhase">相位差: <span id="waveValuePhase">0</span>°</label>
+                        <input type="range" id="waveSliderPhase" min="0" max="360" value="0" step="1">
+                    </div>
+                </section>
+
+                <section id="conclusion">
+                    <h2>结论：数学——<span class="concept">宇宙的通用语言</span></h2>
+                    <p>回到最初的观点：“好像人类一直在玩勾股定理，欧拉公式似乎也是一种勾股定理的变体，斜边确定之后，就可以一直转，多几个维度就可以衍生出很多这个宇宙的物理规则了。”</p>
+                    <p>通过以上的分析，我们可以看到这个观点中蕴含着深刻的真理。勾股定理不仅仅是关于三角形的，它关乎<strong class="highlight">距离、正交性和度量衡</strong>的基本概念。欧拉公式则完美地描述了<strong class="highlight">旋转、振荡和周期性</strong>，并将它们与指数增长/衰减联系起来。而 <span class="concept">(cos(x))^2 + (sin(x))^2 = 1</span> 这个由欧拉公式直接导出的关系，正是勾股定理在单位圆上的体现，揭示了两者之间内在的和谐。</p>
+                    <p>当这些基本数学结构被推广到更高维度、复数域、甚至更抽象的数学空间（如希尔伯特空间、闵可夫斯基时空）时，它们确实成为了构建物理理论的基石。从牛顿力学中的向量分析，到电磁学中的波动方程，从狭义与广义相对论中的时空几何，再到量子力学中的概率幅和相位演化，我们都能看到这些“数学基因”在不断地重现和变奏。</p>
+                    <p>当然，宇宙的物理规则远比这两个公式本身要复杂和丰富。它们需要更高级的数学工具，如微积分、微分方程、群论、张量分析等等。但是，勾股定理和欧拉公式所代表的核心思想——<strong class="highlight">关于不变性、对称性、分量的合成、以及周期性运动的描述</strong>——无疑是这些高级理论的重要组成部分和灵感来源。它们如同物理学家手中的基本音符，通过巧妙的组合与升华，谱写出描述宇宙万千气象的宏伟乐章。</p>
+                    <p>所以，是的，从某种意义上说，我们确实在不同层次、不同维度上“玩”着勾股定理和欧拉公式的变体，不断探索它们如何帮助我们揭开宇宙的奥秘。这正是数学作为宇宙通用语言的魅力所在！</p>
+                </section>
+            </article>
+        </main>
+        <footer>
+            <p>&copy; 2025 宇宙思辨者. 内容仅供学习交流，部分观点具有启发性，科学理论以权威文献为准。</p>
+        </footer>
+    </div>
+
+    <script>
+        // P5.js Sketches
+
+        // --- Animation 1: Pythagorean Theorem ---
+        let sketchPythagoras = function(p) {
+            let sliderA, sliderB, playButton;
+            let a = 30, b = 40, c;
+            let angle = 0;
+            let playing = true;
+            let valueASpan, valueBSpan;
+
+            p.setup = function() {
+                let canvas = p.createCanvas(p.min(p.select('#pythagorasAnimationContainer').width, 600), p.select('#pythagorasAnimationContainer').height);
+                canvas.parent('pythagorasAnimationContainer');
+                p.angleMode(p.DEGREES);
+                
+                sliderA = p.select('#pythagorasSliderA');
+                sliderB = p.select('#pythagorasSliderB');
+                playButton = p.select('#pythagorasPlayPause');
+                valueASpan = p.select('#pythagorasValueA');
+                valueBSpan = p.select('#pythagorasValueB');
+
+                sliderA.input(() => { a = sliderA.value() * 10; valueASpan.html(sliderA.value()); p.redraw(); });
+                sliderB.input(() => { b = sliderB.value() * 10; valueBSpan.html(sliderB.value()); p.redraw(); });
+                playButton.mousePressed(() => { playing = !playing; if(playing) p.loop(); else p.noLoop(); });
+                
+                a = sliderA.value() * 10;
+                b = sliderB.value() * 10;
+                valueASpan.html(sliderA.value());
+                valueBSpan.html(sliderB.value());
+
+                if (playing) p.loop(); else p.noLoop();
+            };
+
+            p.draw = function() {
+                p.background(240, 248, 255); // AliceBlue
+                c = p.sqrt(a*a + b*b);
+
+                let centerX = p.width / 2;
+                let centerY = p.height * 0.6;
+                let scaleFactor = p.min(p.width / (a + b + 20), p.height / (b + 20)) * 0.8; // Dynamic scaling
+                
+                let scaledA = a * scaleFactor;
+                let scaledB = b * scaleFactor;
+                let scaledC = c * scaleFactor;
+
+                p.push();
+                p.translate(centerX - scaledA / 2, centerY + scaledB / 2); // Center the figure
+
+                // Draw squares
+                p.fill(255, 100, 100, 150); // Red for a^2
+                p.rect(0, -scaledA, scaledA, scaledA);
+                p.fill(100, 100, 255, 150); // Blue for b^2
+                p.rect(scaledA, 0, scaledB, scaledB);
+                
+                // Draw hypotenuse square
+                p.push();
+                p.translate(scaledA, -scaledA);
+                p.rotate(p.atan2(scaledA, scaledB));
+                p.fill(100, 255, 100, 150); // Green for c^2
+                p.rect(0, -scaledC, scaledC, scaledC);
+                p.pop();
+
+                // Draw triangle
+                p.fill(255, 200, 0, 200); // Orange triangle
+                p.stroke(0);
+                p.strokeWeight(2);
+                p.beginShape();
+                p.vertex(0, 0);
+                p.vertex(scaledA, 0);
+                p.vertex(scaledA, -scaledA);
+                p.endShape(p.CLOSE);
+
+                // Labels
+                p.fill(0);
+                p.noStroke();
+                p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(14 * scaleFactor * 2);
+                p.text("a", scaledA / 2, -scaledA - 10 * scaleFactor);
+                p.text("b", scaledA + scaledB / 2, -scaledA + 10 * scaleFactor);
+                p.push();
+                p.translate(scaledA/2, -scaledA/2);
+                p.rotate(p.atan2(scaledA, scaledB));
+                p.text("c", scaledC/2, -scaledC - 10 * scaleFactor);
+                p.pop();
+
+                p.pop();
+
+                // Formula display
+                p.fill(0);
+                p.textSize(16);
+                p.textAlign(p.CENTER, p.TOP);
+                p.text(`a=${(a/10).toFixed(1)}, b=${(b/10).toFixed(1)}, c=${(c/10).toFixed(1)}`, p.width/2, 10);
+                p.text(`a² + b² = c²`, p.width/2, 30);
+                p.text(`${(a/10).toFixed(1)}² + ${(b/10).toFixed(1)}² = ${(c/10).toFixed(1)}²`, p.width/2, 50);
+                p.text(`${(a*a/100).toFixed(2)} + ${(b*b/100).toFixed(2)} = ${(c*c/100).toFixed(2)}`, p.width/2, 70);
+
+                if (playing) {
+                    angle += 0.5; // Slow rotation for visual effect if needed, but not central to Pythagoras
+                }
+            };
+             // Ensure first frame is drawn
+            setTimeout(() => { if (p.redraw) p.redraw(); }, 0);
+        };
+        new p5(sketchPythagoras);
+
+        // --- Animation 2: Euler's Formula ---
+        let sketchEuler = function(p) {
+            let sliderX, playButton;
+            let angle = 0;
+            let playing = true;
+            let radius;
+            let valueXSpan;
+
+            p.setup = function() {
+                let canvas = p.createCanvas(p.min(p.select('#eulerAnimationContainer').width, 400), p.select('#eulerAnimationContainer').height);
+                canvas.parent('eulerAnimationContainer');
+                p.angleMode(p.DEGREES);
+                radius = p.min(p.width, p.height) * 0.35;
+
+                sliderX = p.select('#eulerSliderX');
+                playButton = p.select('#eulerPlayPause');
+                valueXSpan = p.select('#eulerValueX');
+
+                sliderX.input(() => { angle = parseFloat(sliderX.value()); valueXSpan.html(angle.toFixed(0)); p.redraw(); });
+                playButton.mousePressed(() => { playing = !playing; if(playing) p.loop(); else p.noLoop(); });
+                
+                angle = parseFloat(sliderX.value());
+                valueXSpan.html(angle.toFixed(0));
+                if (playing) p.loop(); else p.noLoop();
+            };
+
+            p.draw = function() {
+                p.background(240, 248, 255);
+                p.translate(p.width / 2, p.height / 2);
+
+                // Draw axes
+                p.stroke(150);
+                p.strokeWeight(1);
+                p.line(-p.width / 2, 0, p.width / 2, 0); // Real axis
+                p.line(0, -p.height / 2, 0, p.height / 2); // Imaginary axis
+                p.fill(0);
+                p.noStroke();
+                p.text("Re", p.width/2 - 20, -5);
+                p.text("Im", 5, -p.height/2 + 15);
+
+                // Draw unit circle
+                p.stroke(0, 0, 255, 100);
+                p.noFill();
+                p.ellipse(0, 0, radius * 2, radius * 2);
+
+                // Calculate point on circle
+                let x_coord = radius * p.cos(angle);
+                let y_coord = -radius * p.sin(angle); // Negative because P5 y-axis is inverted
+
+                // Draw radius vector
+                p.stroke(255, 0, 0); // Red vector
+                p.strokeWeight(3);
+                p.line(0, 0, x_coord, y_coord);
+
+                // Draw projections
+                p.stroke(0, 150, 0, 150); // Green for cos
+                p.strokeWeight(2);
+                p.line(x_coord, y_coord, x_coord, 0); 
+                p.stroke(200, 0, 200, 150); // Purple for sin
+                p.line(x_coord, y_coord, 0, y_coord);
+
+                // Draw point
+                p.fill(255, 0, 0);
+                p.noStroke();
+                p.ellipse(x_coord, y_coord, 8, 8);
+
+                // Text labels
+                p.fill(0);
+                p.textSize(14);
+                p.textAlign(p.LEFT);
+                p.text(`cos(${angle.toFixed(0)}°)`, x_coord / 2, -10);
+                p.textAlign(p.RIGHT);
+                p.text(`sin(${angle.toFixed(0)}°)`, -10, y_coord / 2);
+                p.textAlign(p.CENTER);
+                p.text(`e^(i*${angle.toFixed(0)}°) = cos(${angle.toFixed(0)}°) + i*sin(${angle.toFixed(0)}°)`, 0, p.height/2 - 20);
+
+
+                if (playing) {
+                    angle = (angle + 0.5) % 360;
+                    sliderX.value(angle);
+                    valueXSpan.html(angle.toFixed(0));
+                }
+            };
+            setTimeout(() => { if (p.redraw) p.redraw(); }, 0);
+        };
+        new p5(sketchEuler);
+
+        // --- Animation 3: Trig Identity (cos^2 + sin^2 = 1) ---
+        let sketchTrigIdentity = function(p) {
+            let angleSlider, playButton;
+            let angle = 0;
+            let playing = true;
+            let radius;
+            let valueAngleSpan;
+
+            p.setup = function() {
+                let canvas = p.createCanvas(p.min(p.select('#trigIdentityAnimationContainer').width, 400), p.select('#trigIdentityAnimationContainer').height);
+                canvas.parent('trigIdentityAnimationContainer');
+                p.angleMode(p.DEGREES);
+                radius = p.min(p.width, p.height) * 0.3;
+
+                angleSlider = p.select('#trigSliderAngle');
+                playButton = p.select('#trigPlayPause');
+                valueAngleSpan = p.select('#trigValueAngle');
+
+                angleSlider.input(() => { angle = parseFloat(angleSlider.value()); valueAngleSpan.html(angle.toFixed(0)); p.redraw(); });
+                playButton.mousePressed(() => { playing = !playing; if(playing) p.loop(); else p.noLoop(); });
+                
+                angle = parseFloat(angleSlider.value());
+                valueAngleSpan.html(angle.toFixed(0));
+                if (playing) p.loop(); else p.noLoop();
+            };
+
+            p.draw = function() {
+                p.background(240, 248, 255);
+                p.translate(p.width / 2, p.height * 0.6); // Shift down for text on top
+
+                // Unit circle
+                p.stroke(150);
+                p.noFill();
+                p.ellipse(0, 0, radius * 2, radius * 2);
+
+                let cos_val = p.cos(angle);
+                let sin_val = p.sin(angle);
+                let x = radius * cos_val;
+                let y = -radius * sin_val; // P5 y-axis inverted
+
+                // Triangle sides
+                p.strokeWeight(2);
+                p.stroke(0, 0, 255); // Blue for cos(angle)
+                p.line(0, 0, x, 0);
+                p.stroke(255, 0, 0); // Red for sin(angle)
+                p.line(x, 0, x, y);
+                p.stroke(0, 128, 0); // Green for hypotenuse (radius=1)
+                p.line(0, 0, x, y);
+
+                // Point on circle
+                p.fill(0);
+                p.noStroke();
+                p.ellipse(x, y, 8, 8);
+
+                // Labels
+                p.fill(0,0,255);
+                p.text(`cos(${angle.toFixed(0)}°)`, x / 2, 15);
+                p.fill(255,0,0);
+                p.text(`sin(${angle.toFixed(0)}°)`, x + 5, y / 2);
+                p.fill(0,128,0);
+                p.text("1", x/2 - 10, y/2 - 5);
+
+                // Equation
+                p.fill(0);
+                p.textAlign(p.CENTER, p.TOP);
+                p.textSize(16);
+                let cosSq = p.pow(cos_val, 2);
+                let sinSq = p.pow(sin_val, 2);
+                p.text(`cos²(${angle.toFixed(0)}°) + sin²(${angle.toFixed(0)}°) = 1`, 0, -p.height * 0.6 + 20);
+                p.text(`${cosSq.toFixed(2)} + ${sinSq.toFixed(2)} = ${(cosSq + sinSq).toFixed(2)}`, 0, -p.height * 0.6 + 45);
+                
+                if (playing) {
+                    angle = (angle + 0.5) % 360;
+                    angleSlider.value(angle);
+                    valueAngleSpan.html(angle.toFixed(0));
+                }
+            };
+            setTimeout(() => { if (p.redraw) p.redraw(); }, 0);
+        };
+        new p5(sketchTrigIdentity);
+
+        // --- Animation 4: Spacetime Diagram (Conceptual Lorentz Transformation) ---
+        let sketchSpacetime = function(p) {
+            let vSlider, playButton;
+            let beta = 0.5; // v/c
+            let playing = true;
+            let time = 0;
+            let valueVSpan;
+
+            p.setup = function() {
+                let canvas = p.createCanvas(p.min(p.select('#spacetimeAnimationContainer').width, 400), p.select('#spacetimeAnimationContainer').height);
+                canvas.parent('spacetimeAnimationContainer');
+                
+                vSlider = p.select('#spacetimeSliderV');
+                playButton = p.select('#spacetimePlayPause');
+                valueVSpan = p.select('#spacetimeValueV');
+
+                vSlider.input(() => { beta = parseFloat(vSlider.value()); valueVSpan.html(beta.toFixed(2)); p.redraw(); });
+                playButton.mousePressed(() => { playing = !playing; if(playing) p.loop(); else p.noLoop(); });
+                
+                beta = parseFloat(vSlider.value());
+                valueVSpan.html(beta.toFixed(2));
+                if (playing) p.loop(); else p.noLoop();
+            };
+
+            p.draw = function() {
+                p.background(240, 248, 255);
+                p.translate(p.width / 2, p.height / 2);
+                let scale = p.min(p.width, p.height) / 3;
+
+                // Stationary frame (S) axes (x, ct)
+                p.stroke(0);
+                p.strokeWeight(1);
+                p.line(-p.width/2, 0, p.width/2, 0); // x-axis
+                p.line(0, -p.height/2, 0, p.height/2); // ct-axis
+                p.fill(0);
+                p.noStroke();
+                p.text("x", p.width/2 - 15, -5);
+                p.text("ct", 5, -p.height/2 + 15);
+
+                // Moving frame (S') axes (x', ct')
+                // gamma factor
+                let gamma = 1 / p.sqrt(1 - beta*beta);
+                
+                // ct' axis: x = beta * ct  (slope = 1/beta for ct vs x, or beta for x vs ct)
+                // x' axis: ct = beta * x   (slope = beta for ct vs x)
+                p.stroke(255, 0, 0, 150); // Red for S'
+                p.strokeWeight(2);
+                
+                // ct' axis (line where x' = 0)
+                // In S frame: x = v*t => x = beta * (ct)
+                p.line(0,0, beta * scale, scale);
+                p.line(0,0, -beta * scale, -scale);
+                
+                // x' axis (line where t' = 0)
+                // In S frame: t = (v/c^2)*x => ct = beta * x
+                p.line(0,0, scale, beta*scale);
+                p.line(0,0, -scale, -beta*scale);
+
+                p.fill(255,0,0);
+                p.noStroke();
+                // Label for x' (along the x' axis)
+                p.push();
+                p.rotate(p.atan(beta));
+                p.text("x'", scale * 0.8, -5);
+                p.pop();
+                // Label for ct' (along the ct' axis)
+                p.push();
+                p.rotate(p.atan(1/beta)); // Angle with y-axis (ct) is atan(beta)
+                p.text("ct'", 5, -scale * 0.8 );
+                p.pop();
+
+
+                // An event
+                let eventX = p.cos(time * 2) * scale * 0.3; // Some arbitrary event
+                let eventCT = p.sin(time * 2) * scale * 0.3 + scale * 0.2;
+
+                p.fill(0,0,255);
+                p.ellipse(eventX, -eventCT, 10, 10); // Draw event (y is inverted)
+
+                // Spacetime interval (conceptual)
+                // s^2 = (ct)^2 - x^2
+                // For light cone: (ct)^2 - x^2 = 0 => ct = +/- x
+                p.stroke(200, 200, 0, 100); // Yellow for light cone
+                p.line(0,0, p.width/2, -p.width/2);
+                p.line(0,0, -p.width/2, p.width/2);
+                p.line(0,0, p.width/2, p.width/2);
+                p.line(0,0, -p.width/2, -p.width/2);
+
+
+                p.fill(0);
+                p.noStroke();
+                p.textAlign(p.CENTER, p.BOTTOM);
+                p.text(`Invariant interval: s² = (cΔt)² - (Δx)²`, 0, p.height/2 - 10);
+
+                if (playing) {
+                    time += 0.01;
+                }
+            };
+            setTimeout(() => { if (p.redraw) p.redraw(); }, 0);
+        };
+        new p5(sketchSpacetime);
+
+        // --- Animation 5: Wave Superposition (Conceptual for Quantum) ---
+        let sketchWaveSuperposition = function(p) {
+            let phaseSlider, playButton;
+            let phaseOffset = 0; // degrees
+            let playing = true;
+            let t = 0;
+            let valuePhaseSpan;
+
+            p.setup = function() {
+                let canvas = p.createCanvas(p.min(p.select('#waveSuperpositionAnimationContainer').width, 600), p.select('#waveSuperpositionAnimationContainer').height);
+                canvas.parent('waveSuperpositionAnimationContainer');
+                p.angleMode(p.DEGREES);
+
+                phaseSlider = p.select('#waveSliderPhase');
+                playButton = p.select('#wavePlayPause');
+                valuePhaseSpan = p.select('#waveValuePhase');
+
+                phaseSlider.input(() => { phaseOffset = parseFloat(phaseSlider.value()); valuePhaseSpan.html(phaseOffset.toFixed(0)); p.redraw(); });
+                playButton.mousePressed(() => { playing = !playing; if(playing) p.loop(); else p.noLoop(); });
+                
+                phaseOffset = parseFloat(phaseSlider.value());
+                valuePhaseSpan.html(phaseOffset.toFixed(0));
+                if (playing) p.loop(); else p.noLoop();
+            };
+
+            p.draw = function() {
+                p.background(240, 248, 255);
+                let amplitude = p.height / 6;
+                let waveLength = 200;
+
+                // Wave 1
+                p.stroke(0, 0, 255, 150); // Blue
+                p.noFill();
+                p.strokeWeight(2);
+                p.beginShape();
+                for (let x = 0; x < p.width; x += 5) {
+                    let y = p.height / 3 + amplitude * p.sin(360 * (x / waveLength) - t);
+                    p.vertex(x, y);
+                }
+                p.endShape();
+
+                // Wave 2
+                p.stroke(255, 0, 0, 150); // Red
+                p.beginShape();
+                for (let x = 0; x < p.width; x += 5) {
+                    let y = p.height / 3 + amplitude * p.sin(360 * (x / waveLength) - t + phaseOffset);
+                    p.vertex(x, y);
+                }
+                p.endShape();
+
+                // Superposition
+                p.stroke(0, 128, 0); // Green
+                p.strokeWeight(3);
+                p.beginShape();
+                for (let x = 0; x < p.width; x += 5) {
+                    let y1 = amplitude * p.sin(360 * (x / waveLength) - t);
+                    let y2 = amplitude * p.sin(360 * (x / waveLength) - t + phaseOffset);
+                    p.vertex(x, p.height * (2/3) + y1 + y2); // Plot superposition lower
+                }
+                p.endShape();
+                
+                p.fill(0);
+                p.noStroke();
+                p.textSize(14);
+                p.text("波 1 (蓝色)", 10, p.height/3 - amplitude - 5);
+                p.text("波 2 (红色, 相位差: " + phaseOffset.toFixed(0) + "°)", 10, p.height/3 + amplitude + 15);
+                p.text("叠加波 (绿色)", 10, p.height*(2/3) - amplitude*2 - 5);
+
+
+                if (playing) {
+                    t = (t + 2) % 360;
+                }
+            };
+            setTimeout(() => { if (p.redraw) p.redraw(); }, 0);
+        };
+        new p5(sketchWaveSuperposition);
+
+    </script>
+</body>
+</html>

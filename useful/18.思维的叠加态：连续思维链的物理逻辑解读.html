@@ -1,0 +1,770 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>思维的叠加态：连续思维链的物理逻辑解读</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', 'Inter', sans-serif;
+            font-size: 20px; /* 模拟三号字体在A3上的感觉，网页上调整为较大阅读字号 */
+            line-height: 1.8;
+            color: #333;
+            background-color: #f8f9fa; /* 干净的背景色 */
+        }
+        h1, h2, h3 {
+            font-weight: 500;
+            color: #1a202c; /* 深色标题 */
+        }
+        h1 {
+            font-size: 2.8em; /* 大标题 */
+            text-align: center;
+            margin-bottom: 1em;
+            color: #2c5282; /* 蓝色系标题 */
+        }
+        h2 {
+            font-size: 2em; /* 中标题 */
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+            border-bottom: 2px solid #4a5568; /* 标题下划线 */
+            padding-bottom: 0.3em;
+            color: #2d3748;
+        }
+        h3 {
+            font-size: 1.6em; /* 小标题 */
+            margin-top: 1.2em;
+            margin-bottom: 0.6em;
+            color: #4a5568;
+        }
+        .content-container {
+            max-width: 1000px; /* 限制内容宽度，提升阅读体验 */
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff; /* 内容区域白色背景 */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* 轻微阴影 */
+            border-radius: 12px; /* 圆角 */
+        }
+        .highlight {
+            background-color: #e2e8f0; /* 浅灰色背景高亮 */
+            color: #2c5282; /* 蓝色文字高亮 */
+            padding: 0.2em 0.4em;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .important-text {
+            color: #c53030; /* 红色重要文本 */
+            font-weight: 700;
+        }
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #edf2f7;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #2d3748;
+        }
+        .animation-container {
+            margin: 2em 0;
+            padding: 1.5em;
+            border: 1px solid #cbd5e0; /* 动画容器边框 */
+            border-radius: 8px;
+            background-color: #f7fafc; /* 动画容器背景 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .animation-canvas {
+            width: 100%;
+            max-width: 600px; /* 限制动画最大宽度 */
+            height: 350px; /* 固定高度，P5.js会填充 */
+            border-radius: 6px;
+            margin-bottom: 1em;
+            background-color: #fff; /* 画布背景 */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        /* 强制P5 canvas铺满父容器，并有固定高度 */
+        #superpositionConceptCanvas canvas,
+        #graphReachabilityCanvas canvas,
+        #efficiencyComparisonCanvas canvas,
+        #attentionMechanismCanvas canvas,
+        #causalChainCanvas canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+        .animation-controls button {
+            background-color: #4299e1; /* 蓝色按钮 */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin: 0 5px;
+            transition: background-color 0.3s ease;
+        }
+        .animation-controls button:hover {
+            background-color: #2b6cb0; /* 深蓝色悬停 */
+        }
+        /* 适配手机浏览 */
+        @media (max-width: 768px) {
+            body {
+                font-size: 18px; /* 手机上稍小字体 */
+            }
+            h1 {
+                font-size: 2em;
+            }
+            h2 {
+                font-size: 1.5em;
+            }
+            h3 {
+                font-size: 1.2em;
+            }
+            .content-container {
+                padding: 15px;
+                border-radius: 0; /* 手机上无圆角 */
+            }
+            .animation-canvas {
+                height: 300px; /* 手机上稍小动画高度 */
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="content-container my-8">
+        <h1><span class="highlight">思维的叠加态</span>：连续思维链的物理逻辑解读</h1>
+
+        <section>
+            <h2>卷首语：当AI思考拥有“平行宇宙”</h2>
+            <p>在人工智能的浪潮之巅，大型语言模型（LLM）如同一位初出茅庐的学霸，虽然在许多领域展现出惊人的才华，但在面对<strong class="important-text">复杂推理</strong>的“奥数题”时，仍不免显得有些吃力。传统的“思维链”（Chain-of-Thought, CoT）技术，就像给这位学霸一支笔，让它一步步写下解题思路，确实有所助益。然而，这种“单线程”的思考方式，在遇到千头万绪的难题时，效率和准确性仍有提升空间。</p>
+            <p>今天，我们要一起探索一篇富有洞察力的研究论文——《Reasoning by Superposition: A Theoretical Perspective on Chain of Continuous Thought》。这篇论文为我们揭示了一种全新的AI思考范式：“<span class="highlight">连续思维链</span>”（Chain-of-Continuous-Thought, COCONUT），其核心奥秘，便是借鉴了量子物理中引人入胜的概念——“<strong class="important-text">叠加态</strong>”。想象一下，如果AI在思考时，能像拥有“平行宇宙”般同时探索多种可能性，那将是怎样一番景象？</p>
+        </section>
+
+        <section>
+            <h2>一、核心思想：AI的“思维叠加态”是什么？</h2>
+            <p>“叠加态”，这个词听起来是不是有点玄乎？在量子物理中，一个粒子可以同时处于多种状态的叠加，比如一个电子可以同时在多个位置。论文巧妙地将这个概念引入AI的推理过程。所谓AI的“<span class="highlight">思维叠加态</span>”，指的是模型内部的一个“连续思维向量”（continuous thought vector）能够<strong class="important-text">同时编码和表征多种潜在的推理路径、信息片段或解决方案</strong>。</p>
+            <p>打个比方：一位经验丰富的侦探在破解一个复杂案件时，他不会死磕一条线索，而是会<strong class="important-text">同时关注和分析来自不同方向的多条线索</strong>。每条线索都是一种“可能性”，侦探的大脑就像一个高效的处理器，将这些可能性“叠加”在一起进行综合研判。连续思维链中的AI，正是这样一位“多线程”思考的侦探。</p>
+            <p>相比之下，传统的离散思维链更像是一位新手侦探，他可能一次只能追踪一条线索，如果这条路走不通，就得折返回来，再尝试另一条。这种方式不仅效率较低，还容易陷入局部最优，错失真正的答案。而“思维叠加态”则允许AI在每一步都保持对多种可能性的探索，如同在思维的棋盘上<strong class="important-text">同时落下多颗棋子</strong>，大大提升了找到最优解的几率和效率。</p>
+            
+            <div class="animation-container">
+                <h3>动画1：概念演示 - 离散思维 vs. 叠加态思维</h3>
+                <div id="superpositionConceptCanvas" class="animation-canvas"></div>
+                <div class="animation-controls">
+                    <button id="playSuperposition">播放/暂停</button>
+                    <button id="resetSuperposition">重置</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">演示：左侧为单路径的离散思维，右侧为多路径并行的叠加态思维。</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>二、“物理逻辑”的深层解读：不只是比喻</h2>
+            <p>论文中提及的“叠加态”，并不仅仅是一个生动的比喻，它更深层次地触及了模型处理信息的“<span class="highlight">物理机制</span>”或“<strong class="important-text">计算逻辑</strong>”。这里的“物理”，并非指传统意义上的实体物质，而是指信息在模型内部是如何被表征、存储、转换和交互的动态过程。</p>
+            <p>在连续思维链中，思维不再是一系列孤立的、离散的符号（tokens），而是一个<strong class="important-text">连续的、高维的向量</strong>。这个向量存在于模型的“潜空间”（latent space）中，如同一个微观的能量场。这个“场”的特性在于：</p>
+            <ul>
+                <li><strong class="highlight">流动性与融合性</strong>：连续的思维向量可以更平滑地演变和融合多种信息源，而不是像离散符号那样进行僵硬的拼接。</li>
+                <li><strong class="highlight">并行处理</strong>：在叠加态下，模型可以同时对潜空间中的多种“可能性”进行加权、筛选和组合，这是一种内在的并行计算能力。想象一下水波的叠加，多个波源产生的水波可以同时存在并相互作用，最终形成复杂的干涉图样。AI的叠加态思维也有类似之处，多种推理线索（波）同时传播并相互影响。</li>
+                <li><strong class="highlight">整体性表征</strong>：叠加态允许模型捕捉到问题更全局、更整体的特征，而不是局限于局部的、线性的信息片段。</li>
+            </ul>
+            <p>因此，从“物理逻辑”的视角看，连续思维链通过引入叠加态，使得LLM的信息处理方式从传统的<strong class="important-text">串行符号处理</strong>，向一种更接近生物神经系统或量子计算的<strong class="important-text">并行、分布式、整体性信息处理</strong>模式迈进了一步。这是一种在计算层面实现的“多路径探索”和“可能性编码”的机制。</p>
+        </section>
+
+        <section>
+            <h2>三、案例剖析：“图的可达性”挑战与叠加态的威力</h2>
+            <p>为了验证“叠加态推理”的实际效果，论文选择了一个经典的推理问题——“<span class="highlight">图的可达性</span>”（Directed Graph Reachability）作为试金石。简单来说，这个问题就是判断在一个有向图中，从一个指定的起始节点出发，能否找到一条路径到达某个目标节点。</p>
+            <p>这个问题看似简单，却能很好地检验模型的<strong class="important-text">搜索、规划和关系理解能力</strong>。想象一下，在一个庞大而复杂的社交网络中，判断两个人之间是否存在间接联系，就是一个典型的图可达性问题。</p>
+            <p>那么，搭载了“连续思维链”（COCONUT）的AI是如何利用叠加态来高效解决这个问题的呢？</p>
+            <ul>
+                <li><strong>并行广度优先搜索（BFS）的模拟</strong>：在每一步连续思考中，模型不再是选择图中的某一条边向前试探，而是像进行了一次“<span class="highlight">广度优先搜索</span>”的扩展。当前的“思维叠加态”会编码所有从上一批节点出发、一步之内可以到达的新节点集合。</li>
+                <li><strong>信息叠加与更新</strong>：新探索到的节点信息会融入（叠加）到下一个思维向量中，形成一个新的、包含了更广阔探索边界的“叠加态”。</li>
+                <li><strong>效率的飞跃</strong>：论文证明，对于一个直径为 D（即图中任意两点间最短路径的最大长度）的图，一个两层Transformer模型仅需 <strong class="important-text">D 个连续思维步骤</strong> 就能解决可达性问题。这远胜于传统离散CoT方法可能需要的 O(n²) 步骤（n为节点数），尤其在大型图中优势巨大。这就像拥有了一张“上帝视角”的地图，能够迅速把握全局路径。</li>
+            </ul>
+            <p>这种效率的提升，正是“叠加态”并行探索能力的直接体现。它避免了在复杂路径中“迷路”或反复试错的窘境。</p>
+
+            <div class="animation-container">
+                <h3>动画2：过程演示 - 叠加态解决图的可达性</h3>
+                <div id="graphReachabilityCanvas" class="animation-canvas"></div>
+                <div class="animation-controls">
+                    <button id="playGraph">播放/暂停</button>
+                    <button id="resetGraph">重置</button>
+                    <button id="nextStepGraph">下一步</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">演示：一个有向图，从起始节点开始，通过叠加态（波纹）并行扩展搜索边界，判断是否能到达目标节点。</p>
+            </div>
+            
+            <div class="animation-container">
+                <h3>动画3：对比演示 - 连续CoT vs. 离散CoT 效率</h3>
+                <div id="efficiencyComparisonCanvas" class="animation-canvas"></div>
+                <div class="animation-controls">
+                    <button id="playEfficiency">播放/暂停</button>
+                    <button id="resetEfficiency">重置</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">演示：上方为连续CoT（D步），下方为离散CoT（模拟O(n²)步），展示解决图可达性问题的效率差异。</p>
+            </div>
+
+        </section>
+
+        <section>
+            <h2>四、AI如何“炼成”叠加态：简化的工作原理</h2>
+            <p>如此神奇的“叠加态”是如何在AI模型中实现的呢？论文指出，一个相对简单的<strong class="important-text">两层Transformer架构</strong>就足以支持这种能力。其核心在于精巧的机制设计和模型的<strong class="important-text">自学习能力</strong>。</p>
+            <p>在模型内部，一个关键的组件被称为“<span class="highlight">注意力选择器</span>”（Attention Chooser）。顾名思义，它能帮助模型在每一步思考时，从输入的众多信息（如图中的节点、边）中，<strong class="important-text">智能地选择并关注那些与当前推理任务最相关的部分</strong>。例如，在图的可达性任务中，当模型处于某个节点的“叠加态”时，注意力选择器会帮助它重点关注从这些节点出发的边，以及这些边指向的目标节点。</p>
+            <p>更令人惊叹的是，模型并非被硬编码去执行这种叠加态推理。相反，通过在包含推理步骤的数据上进行训练，模型能够<strong class="important-text">自发地学习并涌现出这种将多个搜索前沿编码为叠加态的能力</strong>。它学会了在连续的潜空间中，将不同的信息路径和可能性“融合”起来，形成一个动态的、包含多种假设的“思维场”。这有点像水流在复杂的河道中，自然会形成各种涡旋和分流，模型在信息流的处理中也自发形成了这种高效的“叠加”模式。</p>
+            <p>这种“涌现”特性，是现代深度学习模型最迷人的地方之一，它表明了简单的结构通过大规模数据训练，也可能演化出复杂的、意想不到的高级认知能力。</p>
+
+            <div class="animation-container">
+                <h3>动画4：探索与模拟 - 连续思维中的注意力机制</h3>
+                <div id="attentionMechanismCanvas" class="animation-canvas"></div>
+                <div class="animation-controls">
+                    <button id="generateThought">生成下一思维</button>
+                    <button id="resetAttention">重置</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">演示：一个连续思维向量（中央方块）如何同时“注意”到多个输入信息（周围小方块），形成新的叠加态。</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>五、深远影响与未来展望：AI推理的新纪元？</h2>
+            <p>“连续思维链”及其“叠加态推理”机制的提出，对于AI领域，尤其是LLM的推理能力发展，具有<strong class="important-text">里程碑式的意义</strong>。</p>
+            <ul>
+                <li><strong>推理效率与鲁棒性的双提升</strong>：通过并行探索，模型能更快、更准确地解决复杂问题，同时对于输入中的噪声或模糊信息也可能表现出更好的鲁棒性。</li>
+                <li><strong>解锁更复杂的应用场景</strong>：这种增强的推理能力，有望让LLM在科学发现、药物研发、复杂系统控制、多步骤规划等更具挑战性的领域大放异彩。想象一下，AI能够像顶尖科学家一样，在浩如烟海的文献和实验数据中，同时评估多种假说，那将极大地加速创新进程。</li>
+                <li><strong>对齐人类思维的可能</strong>：人类的思考过程也并非总是线性的，我们常常会“灵光一闪”，同时联想到多种可能性。连续思维链在某种程度上，似乎更接近这种直觉式的、并行的思维模式。</li>
+            </ul>
+            <p>当然，这项研究也开启了更多值得探索的未来方向。例如，论文作者提到，可以进一步研究离散CoT解决图可达性问题所需步数的精确下限，以更严格地区分连续与离散思维的表达能力；还可以探究这种叠加态推理机制在更广泛任务上的普适性和优势。</p>
+            <p>一个简单的公式可以帮助我们理解信息处理的本质，比如牛顿的万有引力定律：<span class="formula">F = G * (m1 * m2) / r^2</span>。它描述了物体间的相互作用。类似地，模型内部的“思维向量”也通过复杂的“力场”（注意力权重、参数矩阵）相互作用，形成最终的推理结果。叠加态的引入，使得这个“力场”的运作方式更加高效和强大。</p>
+
+            <div class="animation-container">
+                <h3>动画5：因果链演示 - 叠加态如何提升推理</h3>
+                <div id="causalChainCanvas" class="animation-canvas"></div>
+                <div class="animation-controls">
+                    <button id="playCausal">播放/暂停</button>
+                    <button id="resetCausal">重置</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">演示：对比叠加态推理（上）与离散推理（下）在解决问题时的路径和效率。</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>结语：思维的“量子跃迁”</h2>
+            <p>总而言之，论文提出的“<span class="highlight">连续思维链</span>”及其核心的“<strong class="important-text">叠加态推理</strong>”机制，为大型语言模型的思考方式带来了革命性的启示。它不仅仅是一种技术上的改进，更像是一次AI思维模式从“经典”向“量子”的某种“跃迁”——尽管这只是一个类比。</p>
+            <p>从“<span class="highlight">物理逻辑</span>”的视角审视，这种新范式代表了AI内部信息处理机制向着<strong class="important-text">更高效的并行化、整体化和动态化</strong>方向演进。模型不再是简单地在符号序列上爬行，而是在一个连续的、充满可能性的“思维空间”中进行多路径导航。这无疑为突破当前LLM在复杂推理任务上的瓶颈，铺设了一条充满希望的道路。</p>
+            <p>未来，我们有理由期待，掌握了“叠加态”思考艺术的AI，将能够以更接近人类智慧（甚至在某些方面超越）的方式，理解世界、解决问题，开启人工智能发展的新篇章。这不仅仅是代码的堆砌，更是对智能本质的一次深刻探索。</p>
+        </section>
+
+        <footer class="text-center text-gray-500 text-sm mt-12 pb-8">
+            <p>基于论文 "Reasoning by Superposition: A Theoretical Perspective on Chain of Continuous Thought" 的解读。</p>
+            <p>动画与内容仅为概念性阐释，旨在帮助理解。</p>
+        </footer>
+    </div>
+
+    <script>
+        // P5.js Animation 1: Superposition Concept
+        const sketch1 = (p) => {
+            let particlesDiscrete = [];
+            let particlesSuperposition = [];
+            let targetDiscrete, targetSuperposition;
+            let playing = true;
+            const numSuperpositionPaths = 5;
+
+            p.setup = () => {
+                const canvasContainer = document.getElementById('superpositionConceptCanvas');
+                let canvas = p.createCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+                canvas.parent('superpositionConceptCanvas');
+                p.resetSketch();
+                document.getElementById('playSuperposition').onclick = () => { playing = !playing; };
+                document.getElementById('resetSuperposition').onclick = () => p.resetSketch();
+                p.frameRate(30);
+            };
+
+            p.resetSketch = () => {
+                particlesDiscrete = [{ x: p.width * 0.25, y: p.height * 0.1, path: [] }];
+                targetDiscrete = p.createVector(p.width * 0.25, p.height * 0.9);
+
+                particlesSuperposition = [];
+                for (let i = 0; i < numSuperpositionPaths; i++) {
+                    particlesSuperposition.push({ x: p.width * 0.75, y: p.height * 0.1, path: [], angle: p.random(p.PI * 0.25, p.PI * 0.75) });
+                }
+                targetSuperposition = p.createVector(p.width * 0.75, p.height * 0.9); // Common target area
+                p.loop();
+            };
+            
+            p.windowResized = () => {
+                const canvasContainer = document.getElementById('superpositionConceptCanvas');
+                p.resizeCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+                p.resetSketch(); // Re-initialize on resize
+            };
+
+            p.draw = () => {
+                p.background(255);
+                p.strokeWeight(1);
+                p.fill(150);
+                p.textAlign(p.CENTER);
+                p.textSize(16);
+                p.text("离散思维 (单路径)", p.width * 0.25, p.height * 0.05);
+                p.text("叠加态思维 (多路径)", p.width * 0.75, p.height * 0.05);
+
+                if (!playing) return;
+
+                // Discrete
+                let pD = particlesDiscrete[0];
+                pD.path.push(p.createVector(pD.x, pD.y));
+                if (pD.path.length > 100) pD.path.shift();
+                
+                let dirD = p5.Vector.sub(targetDiscrete, p.createVector(pD.x, pD.y));
+                if (dirD.mag() > 1) {
+                    dirD.normalize();
+                    pD.x += dirD.x * 2;
+                    pD.y += dirD.y * 2;
+                } else {
+                     // Reset or stop
+                }
+                
+                p.stroke(0, 0, 255); // Blue for discrete
+                p.strokeWeight(2);
+                for (let i = 0; i < pD.path.length - 1; i++) {
+                    p.line(pD.path[i].x, pD.path[i].y, pD.path[i+1].x, pD.path[i+1].y);
+                }
+                p.fill(0, 0, 255);
+                p.ellipse(pD.x, pD.y, 10, 10);
+                p.ellipse(targetDiscrete.x, targetDiscrete.y, 15, 15);
+
+
+                // Superposition
+                p.stroke(255, 0, 0, 100); // Red for superposition paths (semi-transparent)
+                p.strokeWeight(2);
+                particlesSuperposition.forEach(pS => {
+                    pS.path.push(p.createVector(pS.x, pS.y));
+                    if (pS.path.length > 70) pS.path.shift();
+
+                    // Move towards general target direction with some randomness
+                    let randomAngleOffset = p.random(-p.PI / 8, p.PI / 8);
+                    pS.x += p.cos(pS.angle + randomAngleOffset) * p.random(1,3);
+                    pS.y += p.sin(pS.angle + randomAngleOffset) * p.random(1,3);
+                    
+                    // Boundary check (simple wrap around for demo)
+                    if (pS.x > p.width * 0.95 || pS.x < p.width * 0.55 || pS.y > p.height * 0.95) {
+                         pS.x = p.width * 0.75; pS.y = p.height * 0.1; pS.path = []; // Reset individual path
+                    }
+
+                    for (let i = 0; i < pS.path.length - 1; i++) {
+                        p.line(pS.path[i].x, pS.path[i].y, pS.path[i+1].x, pS.path[i+1].y);
+                    }
+                    p.fill(255,0,0);
+                    p.ellipse(pS.x, pS.y, 8, 8);
+                });
+                p.fill(255,0,0);
+                p.ellipse(targetSuperposition.x, targetSuperposition.y, 15, 15); // Target area
+            };
+        };
+        new p5(sketch1);
+
+        // P5.js Animation 2: Graph Reachability
+        const sketch2 = (p) => {
+            let nodes = [];
+            let edges = [];
+            let startNode, endNode;
+            let reachableSet = new Set();
+            let frontier = new Set();
+            let currentStep = 0;
+            const maxSteps = 5; // Corresponds to D (diameter)
+            let playing = false;
+
+            p.setup = () => {
+                const canvasContainer = document.getElementById('graphReachabilityCanvas');
+                let canvas = p.createCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+                canvas.parent('graphReachabilityCanvas');
+                p.resetSketch();
+                document.getElementById('playGraph').onclick = () => { playing = !playing; if(playing) p.loop(); else p.noLoop(); };
+                document.getElementById('resetGraph').onclick = () => { p.resetSketch(); p.redraw(); };
+                document.getElementById('nextStepGraph').onclick = () => { p.expandFrontier(); p.redraw(); };
+                p.frameRate(5); // Slower for step-by-step
+                p.noLoop(); // Start paused
+                p.redraw(); // Initial draw
+            };
+            
+            p.windowResized = () => {
+                const canvasContainer = document.getElementById('graphReachabilityCanvas');
+                p.resizeCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+                p.resetSketch(); 
+                p.redraw();
+            };
+
+            p.resetSketch = () => {
+                nodes = [];
+                edges = [];
+                reachableSet.clear();
+                frontier.clear();
+                currentStep = 0;
+                playing = false;
+
+                // Create a simple graph
+                nodes.push({ id: 0, x: p.width * 0.1, y: p.height * 0.5, label: 'S' }); // Start
+                nodes.push({ id: 1, x: p.width * 0.3, y: p.height * 0.3, label: 'A' });
+                nodes.push({ id: 2, x: p.width * 0.3, y: p.height * 0.7, label: 'B' });
+                nodes.push({ id: 3, x: p.width * 0.5, y: p.height * 0.5, label: 'C' });
+                nodes.push({ id: 4, x: p.width * 0.7, y: p.height * 0.3, label: 'D' });
+                nodes.push({ id: 5, x: p.width * 0.7, y: p.height * 0.7, label: 'E' }); // End
+                nodes.push({ id: 6, x: p.width * 0.9, y: p.height * 0.5, label: 'F' }); // End
+
+                startNode = nodes[0];
+                endNode = nodes[6];
+
+                edges.push({ from: 0, to: 1 });
+                edges.push({ from: 0, to: 2 });
+                edges.push({ from: 1, to: 3 });
+                edges.push({ from: 2, to: 3 });
+                edges.push({ from: 3, to: 4 });
+                edges.push({ from: 3, to: 5 });
+                edges.push({ from: 4, to: 6 });
+                // edges.push({ from: 5, to: 6 }); // Alternative path
+
+                reachableSet.add(startNode.id);
+                frontier.add(startNode.id);
+                p.noLoop();
+            };
+
+            p.expandFrontier = () => {
+                if (currentStep >= maxSteps || frontier.size === 0) {
+                    playing = false;
+                    p.noLoop();
+                    return;
+                }
+                let newFrontier = new Set();
+                frontier.forEach(nodeId => {
+                    edges.forEach(edge => {
+                        if (edge.from === nodeId && !reachableSet.has(edge.to)) {
+                            newFrontier.add(edge.to);
+                            reachableSet.add(edge.to);
+                        }
+                    });
+                });
+                frontier = newFrontier;
+                currentStep++;
+            };
+
+            p.draw = () => {
+                p.background(255);
+                p.strokeWeight(1);
+
+                // Draw edges
+                p.stroke(150);
+                edges.forEach(edge => {
+                    let n1 = nodes[edge.from];
+                    let n2 = nodes[edge.to];
+                    p.line(n1.x, n1.y, n2.x, n2.y);
+                    // Arrow head
+                    p.push();
+                    p.translate(n2.x, n2.y);
+                    let angle = p.atan2(n1.y - n2.y, n1.x - n2.x);
+                    p.rotate(angle - p.PI / 2);
+                    p.fill(150);
+                    p.triangle(-5, 5, 5, 5, 0, -5);
+                    p.pop();
+                });
+
+                // Draw nodes
+                nodes.forEach(node => {
+                    p.stroke(0);
+                    if (node.id === startNode.id) p.fill(0, 255, 0); // Green for start
+                    else if (node.id === endNode.id) p.fill(255, 0, 0); // Red for end
+                    else if (frontier.has(node.id)) p.fill(255, 165, 0, 200); // Orange for frontier (wave)
+                    else if (reachableSet.has(node.id)) p.fill(173, 216, 230); // Light blue for reachable
+                    else p.fill(200);
+
+                    p.ellipse(node.x, node.y, 30, 30);
+                    p.fill(0);
+                    p.textAlign(p.CENTER, p.CENTER);
+                    p.textSize(12);
+                    p.text(node.label, node.x, node.y);
+                });
+
+                p.fill(0);
+                p.textAlign(p.LEFT);
+                p.textSize(14);
+                p.text(`步骤: ${currentStep}/${maxSteps}`, 10, 20);
+                if (reachableSet.has(endNode.id)) {
+                    p.text("目标已到达!", 10, 40);
+                    playing = false;
+                    p.noLoop();
+                } else if (currentStep >= maxSteps || (frontier.size === 0 && currentStep > 0)) {
+                     p.text("未能到达目标或已达最大步数",10,40);
+                     playing = false;
+                     p.noLoop();
+                }
+
+
+                if (playing) {
+                    p.expandFrontier();
+                }
+            };
+        };
+        new p5(sketch2);
+
+        // P5.js Animation 3: Efficiency Comparison
+        const sketch3 = (p) => {
+            let progressCoT = 0;
+            let progressCoconut = 0;
+            const totalStepsCoT = 100; // Simulate O(n^2)
+            const totalStepsCoconut = 10; // Simulate D
+            let playing = true;
+
+            p.setup = () => {
+                const canvasContainer = document.getElementById('efficiencyComparisonCanvas');
+                let canvas = p.createCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+                canvas.parent('efficiencyComparisonCanvas');
+                p.resetSketch();
+                document.getElementById('playEfficiency').onclick = () => { playing = !playing; };
+                document.getElementById('resetEfficiency').onclick = () => p.resetSketch();
+                p.frameRate(10);
+            };
+            
+            p.windowResized = () => {
+                const canvasContainer = document.getElementById('efficiencyComparisonCanvas');
+                p.resizeCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+                p.resetSketch();
+            };
+
+            p.resetSketch = () => {
+                progressCoT = 0;
+                progressCoconut = 0;
+                p.loop();
+            };
+
+            p.draw = () => {
+                p.background(255);
+                p.textSize(16);
+                p.fill(0);
+                p.textAlign(p.LEFT);
+
+                // COCONUT (Continuous CoT)
+                p.text("连续CoT (D步)", 20, p.height * 0.25 - 10);
+                p.fill(200);
+                p.rect(20, p.height * 0.25, p.width - 40, 30, 5);
+                p.fill(76, 175, 80); // Green
+                p.rect(20, p.height * 0.25, p.map(progressCoconut, 0, totalStepsCoconut, 0, p.width - 40), 30, 5);
+                p.fill(0);
+                p.text(`${progressCoconut}/${totalStepsCoconut}`, p.width - 70, p.height * 0.25 + 20);
+
+
+                // Discrete CoT
+                p.text("离散CoT (O(n²)步)", 20, p.height * 0.65 - 10);
+                p.fill(200);
+                p.rect(20, p.height * 0.65, p.width - 40, 30, 5);
+                p.fill(244, 67, 54); // Red
+                p.rect(20, p.height * 0.65, p.map(progressCoT, 0, totalStepsCoT, 0, p.width - 40), 30, 5);
+                p.fill(0);
+                p.text(`${progressCoT}/${totalStepsCoT}`, p.width - 70, p.height * 0.65 + 20);
+
+                if (playing) {
+                    if (progressCoconut < totalStepsCoconut) progressCoconut++;
+                    if (progressCoT < totalStepsCoT) progressCoT++;
+                }
+                
+                if (progressCoconut >= totalStepsCoconut && progressCoT >= totalStepsCoT) {
+                    p.noLoop(); // Stop when both finish
+                }
+            };
+        };
+        new p5(sketch3);
+
+        // P5.js Animation 4: Attention Mechanism
+        const sketch4 = (p) => {
+            let thoughtVector;
+            let inputTokens = [];
+            const numTokens = 5;
+            let attentionWeights = [];
+
+            p.setup = () => {
+                const canvasContainer = document.getElementById('attentionMechanismCanvas');
+                let canvas = p.createCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+                canvas.parent('attentionMechanismCanvas');
+                p.resetSketch();
+                document.getElementById('generateThought').onclick = () => p.generateNextThought();
+                document.getElementById('resetAttention').onclick = () => p.resetSketch();
+                p.noLoop();
+                p.redraw();
+            };
+            
+            p.windowResized = () => {
+                const canvasContainer = document.getElementById('attentionMechanismCanvas');
+                p.resizeCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+                p.resetSketch();
+            };
+
+            p.generateNextThought = () => {
+                attentionWeights = [];
+                let sumWeights = 0;
+                for (let i = 0; i < numTokens; i++) {
+                    let weight = p.random(0.1, 1); // Simulate attention strength
+                    attentionWeights.push(weight);
+                    sumWeights += weight;
+                }
+                // Normalize (optional, for visualization)
+                // for (let i = 0; i < numTokens; i++) attentionWeights[i] /= sumWeights;
+
+                // Simulate thought vector update (e.g., change color based on attended tokens)
+                let r = 0, g = 0, b = 0;
+                for (let i = 0; i < numTokens; i++) {
+                    r += inputTokens[i].color.levels[0] * attentionWeights[i];
+                    g += inputTokens[i].color.levels[1] * attentionWeights[i];
+                    b += inputTokens[i].color.levels[2] * attentionWeights[i];
+                }
+                let avgCount = attentionWeights.filter(w => w > 0.3).length || 1; // Count strongly attended
+                thoughtVector.color = p.color(r/avgCount, g/avgCount, b/avgCount);
+                p.redraw();
+            };
+            
+            p.resetSketch = () => {
+                thoughtVector = { x: p.width / 2, y: p.height / 2, size: 60, color: p.color(200) };
+                inputTokens = [];
+                attentionWeights = [];
+                for (let i = 0; i < numTokens; i++) {
+                    let angle = p.TWO_PI / numTokens * i;
+                    inputTokens.push({
+                        x: p.width / 2 + p.cos(angle) * (p.width * 0.35),
+                        y: p.height / 2 + p.sin(angle) * (p.height * 0.35),
+                        size: 30,
+                        color: p.color(p.random(100, 255), p.random(100, 255), p.random(100, 255)),
+                        label: `Info ${i+1}`
+                    });
+                }
+                p.redraw();
+            };
+
+            p.draw = () => {
+                p.background(255);
+
+                // Draw attention lines
+                for (let i = 0; i < inputTokens.length; i++) {
+                    if (attentionWeights[i]) {
+                        p.strokeWeight(p.map(attentionWeights[i], 0, 1, 0.5, 4));
+                        p.stroke(0, 0, 255, p.map(attentionWeights[i], 0, 1, 50, 200)); // Blue attention lines
+                        p.line(thoughtVector.x, thoughtVector.y, inputTokens[i].x, inputTokens[i].y);
+                    }
+                }
+                
+                // Draw thought vector
+                p.fill(thoughtVector.color);
+                p.stroke(50);
+                p.strokeWeight(2);
+                p.ellipse(thoughtVector.x, thoughtVector.y, thoughtVector.size, thoughtVector.size);
+                p.fill(0);
+                p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(12);
+                p.text("连续思维", thoughtVector.x, thoughtVector.y);
+
+                // Draw input tokens
+                inputTokens.forEach(token => {
+                    p.fill(token.color);
+                    p.stroke(50);
+                    p.strokeWeight(1);
+                    p.ellipse(token.x, token.y, token.size, token.size);
+                    p.fill(0);
+                    p.text(token.label, token.x, token.y);
+                });
+                 p.fill(0);
+                 p.textAlign(p.LEFT);
+                 p.text("点击'生成下一思维'模拟注意力分配", 10, 20);
+            };
+        };
+        new p5(sketch4);
+
+        // P5.js Animation 5: Causal Chain
+        const sketch5 = (p) => {
+            let playing = true;
+            let progress = 0; // 0 to 1
+            const animDuration = 200; // frames
+
+            p.setup = () => {
+                const canvasContainer = document.getElementById('causalChainCanvas');
+                let canvas = p.createCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+                canvas.parent('causalChainCanvas');
+                document.getElementById('playCausal').onclick = () => { playing = !playing; };
+                document.getElementById('resetCausal').onclick = () => { progress = 0; p.loop(); };
+                p.frameRate(30);
+            };
+
+            p.windowResized = () => {
+                const canvasContainer = document.getElementById('causalChainCanvas');
+                p.resizeCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+            };
+            
+            const drawPath = (startY, label, isSuperposition) => {
+                let xProblem = p.width * 0.1;
+                let xThought = p.width * 0.35;
+                let xExplore = p.width * 0.6;
+                let xAnswer = p.width * 0.85;
+                let y = startY;
+
+                p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(14);
+
+                // Problem
+                p.fill(200); p.rect(xProblem - 40, y - 15, 80, 30, 5);
+                p.fill(0); p.text("问题输入", xProblem, y);
+
+                // Arrow
+                if (progress > 0.1) { p.line(xProblem + 40, y, xThought - 40, y); p.text(">", xProblem + 50, y-10); }
+
+                // Thought
+                if (progress > 0.2) {
+                    p.fill(isSuperposition ? p.color(144, 238, 144) : p.color(255, 192, 203)); // Light green / Light pink
+                    p.rect(xThought - 40, y - 15, 80, 30, 5);
+                    p.fill(0); p.text(isSuperposition ? "叠加态思维" : "离散思维", xThought, y);
+                }
+
+                // Arrow
+                if (progress > 0.3) { p.line(xThought + 40, y, xExplore - 40, y); p.text(">", xThought + 50, y-10); }
+                
+                // Exploration
+                if (progress > 0.4) {
+                    p.fill(isSuperposition ? p.color(173, 216, 230) : p.color(255, 228, 181)); // Light blue / Pale yellow
+                    p.rect(xExplore - 40, y - 15, 80, 30, 5);
+                    p.fill(0); p.text(isSuperposition ? "并行探索" : "串行探索", xExplore, y);
+                    if (isSuperposition && progress > 0.5) {
+                        p.line(xExplore, y + 15, xExplore - 15, y + 35);
+                        p.line(xExplore, y + 15, xExplore + 15, y + 35);
+                    } else if (!isSuperposition && progress > 0.5) {
+                         p.line(xExplore, y + 15, xExplore, y + 35); // Single path down
+                         if(progress > 0.6) p.text("可能死胡同", xExplore, y+50);
+                    }
+                }
+
+                // Arrow
+                if (progress > 0.7) { p.line(xExplore + 40, y, xAnswer - 40, y); p.text(">", xExplore + 50, y-10);}
+                
+                // Answer
+                if (progress > 0.8) {
+                    p.fill(isSuperposition ? p.color(50, 205, 50) : p.color(255, 99, 71)); // Green / Tomato
+                    p.rect(xAnswer - 40, y - 15, 80, 30, 5);
+                    p.fill(0); p.text(isSuperposition ? "高效正确" : "低效/错误", xAnswer, y);
+                }
+                p.fill(0);p.textAlign(p.LEFT); p.text(label, 10, y);
+            };
+
+            p.draw = () => {
+                p.background(255);
+                p.stroke(0);
+                p.strokeWeight(1.5);
+
+                drawPath(p.height * 0.3, "叠加态路径:", true);
+                drawPath(p.height * 0.7, "离散路径:", false);
+
+                if (playing) {
+                    progress += 1 / animDuration;
+                    if (progress > 1) {
+                        progress = 1;
+                        p.noLoop(); // Animation finished
+                    }
+                }
+            };
+        };
+        new p5(sketch5);
+
+    </script>
+</body>
+</html>

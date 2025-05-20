@@ -1,0 +1,711 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diffusion Explorer 项目解读</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+Mono+TC&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'LXGW WenKai Mono TC', 'ZCOOL KuaiLe', sans-serif;
+            font-size: 20px; /* 约等于三号字体，根据屏幕密度可能略有差异 */
+            line-height: 1.8;
+            background-color: #f0f9ff; /* 淡蓝色背景 */
+            color: #333;
+        }
+        h1, h2, h3 {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            color: #1e3a8a; /* 深蓝色标题 */
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 0.8em;
+        }
+        h2 {
+            font-size: 2em;
+            margin-top: 1.5em;
+            margin-bottom: 0.6em;
+            border-bottom: 2px solid #93c5fd; /* 淡蓝色下划线 */
+            padding-bottom: 0.3em;
+        }
+        h3 {
+            font-size: 1.5em;
+            margin-top: 1em;
+            margin-bottom: 0.4em;
+            color: #1d4ed8; /* 中蓝色副标题 */
+        }
+        .content-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .highlight {
+            background-color: #e0f2fe; /* 更淡的蓝色高亮 */
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #0c4a6e; /* 深蓝高亮文字 */
+        }
+        .canvas-container {
+            margin: 20px auto;
+            border: 1px solid #93c5fd;
+            border-radius: 8px;
+            overflow: hidden;
+            width: 100%; /* 确保容器宽度 */
+            height: 320px; /* 为canvas强制设定高度 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8fafc;
+        }
+        .canvas-container canvas {
+            display: block; /* p5.js canvas 默认是 inline */
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        .controls button {
+            background-color: #3b82f6; /* 蓝色按钮 */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls button:hover {
+            background-color: #2563eb; /* 深一点的蓝色 */
+        }
+        .controls button:active {
+            transform: translateY(1px);
+        }
+        @media (max-width: 768px) {
+            body {
+                font-size: 18px;
+            }
+            h1 { font-size: 2em; }
+            h2 { font-size: 1.6em; }
+            h3 { font-size: 1.3em; }
+            .content-container {
+                padding: 15px;
+            }
+            .canvas-container {
+                height: 250px;
+            }
+        }
+        /* 强制 P5 canvas 铺满其父容器 */
+        #forwardDiffusionCanvasContainer > canvas,
+        #reverseDiffusionCanvasContainer > canvas,
+        #unetCanvasContainer > canvas,
+        #latentSpaceCanvasContainer > canvas,
+        #modelComparisonCanvasContainer > canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+    </style>
+</head>
+<body class="bg-blue-50">
+    <div class="content-container my-8">
+        <header class="text-center py-8">
+            <h1 class="text-5xl font-bold">Diffusion Explorer 项目深度解读</h1>
+            <p class="text-xl text-gray-600 mt-2">从物理逻辑视角探索扩散模型的奥秘</p>
+            <p class="text-sm text-red-500 mt-4">注意: 本分析基于对 "helblazer811/Diffusion-Explorer" 项目的公开信息检索。由于无法直接访问代码库，部分内容可能基于对典型扩散模型探索工具的推测。</p>
+        </header>
+
+        <article class="prose lg:prose-xl max-w-none">
+            <h2>引言：当AI执起创世画笔</h2>
+            <p>近年来，人工智能（AI）在图像生成领域取得了令人瞩目的成就。其中，<span class="highlight">扩散模型（Diffusion Models）</span>作为一种新兴的生成模型，凭借其生成图像的高质量和多样性，成为了研究的热点。想象一下，AI 如同拥有了一支魔法画笔，能够从一片混沌中逐渐勾勒出栩栩如生的图像。`Diffusion-Explorer` 项目（如果其目标如其名所示）很可能旨在揭开这支“魔法画笔”背后的秘密，为我们提供一个观察、理解甚至“调教”扩散模型工作过程的窗口。</p>
+            <p>从“物理逻辑”的视角来看，扩散模型借鉴了物理学中粒子扩散的思想。正如墨水在水中会逐渐扩散开来，直至均匀分布；扩散模型则反其道而行之，从完全无序的噪声状态，一步步“逆转”扩散过程，最终生成具有特定结构和意义的数据（如图像）。这个过程充满了精妙的数学和计算逻辑。</p>
+
+            <h2>第一章：扩散模型——混沌与秩序的协奏曲</h2>
+            <p>要理解 Diffusion Explorer 可能探索的是什么，我们首先需要了解扩散模型的基本原理。这个过程主要包含两个核心阶段：<span class="highlight">正向扩散（Forward Diffusion Process）</span>和<span class="highlight">反向扩散（Reverse Diffusion Process）</span>。</p>
+
+            <h3>1.1 正向扩散：从清晰到混沌的旅程</h3>
+            <p>正向扩散过程，就像是给一幅清晰的画作逐渐喷洒上随机的“墨点”（噪声），直到画面完全被墨点覆盖，原始信息荡然无存。在数学上，这个过程通常被建模为在每个时间步（timestep）向数据中添加少量高斯噪声。经过足够多的时间步，原始数据会逐渐演变成一个纯粹的、与原始数据无关的标准高斯噪声分布。</p>
+            <p>这个过程可以用一个简单的公式来描述（概念性）：<br>
+            <code>X_t = sqrt(alpha_t) * X_{t-1} + sqrt(1 - alpha_t) * epsilon</code><br>
+            其中，<code>X_t</code> 是在时间步 t 的数据，<code>X_{t-1}</code> 是前一时间步的数据，<code>alpha_t</code> 是一个控制噪声添加速率的参数，而 <code>epsilon</code> 是随机噪声。随着 t 的增大，<code>alpha_t</code> 累积效应使得原始数据 <code>X_0</code> 的影响越来越小，噪声的影响越来越大。</p>
+            <div id="forwardDiffusionCanvasContainer" class="canvas-container">
+                </div>
+            <div class="controls">
+                <button id="playForward">播放正向扩散</button>
+                <button id="pauseForward">暂停</button>
+                <button id="resetForward">重置</button>
+            </div>
+            <p>上面的动画演示了正向扩散的概念。一个简单的形状（比如一个圆圈）会随着时间的推移，逐渐被随机噪声所淹没，最终变得难以辨认。这模拟了数据信息熵逐渐增加，趋向无序状态的过程。</p>
+
+            <h3>1.2 反向扩散：在混沌中重塑秩序</h3>
+            <p>反向扩散过程，则是整个扩散模型的精髓所在，也是其“生成”能力的核心。它试图从一个纯噪声图像开始，逐步去除噪声，恢复出原始数据分布中的一个样本。这就像一位技艺高超的雕塑家，从一块璞玉（噪声）中精心雕琢，最终呈现出一件艺术品（清晰图像）。</p>
+            <p>这个“去噪”的步骤，是通过训练一个深度神经网络（通常是 <span class="highlight">U-Net 架构</span>）来实现的。该网络学习在给定当前噪声图像 <code>X_t</code> 和时间步 <code>t</code> 的条件下，预测添加到 <code>X_{t-1}</code> 上的噪声 <code>epsilon_theta(X_t, t)</code>，或者直接预测去噪后的 <code>X_{t-1}</code>。通过迭代这个去噪步骤，从完全的噪声 <code>X_T</code> 开始，模型就能逐步生成清晰的图像 <code>X_0</code>。</p>
+            <p>其核心思想是：如果我们能精确地估计每一步加入的噪声，那么我们就能通过减去这些噪声来逆转这个过程。公式（概念性）：<br>
+            <code>X_{t-1} = (1/sqrt(alpha_t)) * (X_t - (sqrt(1 - alpha_t_bar) / sqrt(1 - alpha_t)) * predicted_noise_t) + sigma_t * Z</code><br>
+            这里的 <code>predicted_noise_t</code> 就是神经网络的输出，<code>alpha_t_bar</code> 是 <code>alpha_t</code> 的累积乘积，<code>sigma_t * Z</code> 是为了增加生成多样性而引入的随机项。</p>
+            <div id="reverseDiffusionCanvasContainer" class="canvas-container">
+                </div>
+            <div class="controls">
+                <button id="playReverse">播放反向扩散</button>
+                <button id="pauseReverse">暂停</button>
+                <button id="resetReverse">重置</button>
+            </div>
+            <p>上面的动画展示了反向扩散（去噪生成）的概念。从一团随机的噪点开始，通过模拟神经网络逐步去除噪声的过程，一个清晰的形状慢慢浮现。这体现了信息熵减少，系统从无序向有序演化的过程。</p>
+
+            <h2>第二章：Diffusion Explorer 的“透视镜”——核心功能猜想</h2>
+            <p>如果 `Diffusion-Explorer` 是一个用于探索和理解扩散模型的工具，它可能会提供以下一些核心功能，让我们能够“透视”模型的内部运作：</p>
+            
+            <h3>2.1 U-Net 架构：降噪大师的心脏</h3>
+            <p>扩散模型中用于预测和去除噪声的神经网络，最常采用的是一种名为 <span class="highlight">U-Net</span> 的架构。U-Net 因其形状像字母 "U" 而得名，它包含一个编码器（Encoder）路径来捕捉上下文信息，以及一个解码器（Decoder）路径来进行精确定位和重建。编码器和解码器之间通常还有跳跃连接（Skip Connections），这有助于网络更好地融合不同层级的特征，从而实现更精细的去噪效果。</p>
+            <div id="unetCanvasContainer" class="canvas-container">
+                </div>
+            <div class="controls">
+                <button id="playUnet">模拟数据流</button>
+                <button id="resetUnet">重置</button>
+            </div>
+            <p>此动画概念性地展示了U-Net的结构。数据（如一个像素块）从左侧输入，经过压缩路径（降采样），到达瓶颈层，然后通过扩展路径（升采样）逐步恢复细节，同时融合来自压缩路径的特征（跳跃连接）。最终输出预测的噪声或去噪后的图像部分。</p>
+
+            <h3>2.2 过程可视化与参数调整</h3>
+            <p>一个强大的 `Diffusion-Explorer` 工具可能会允许用户：</p>
+            <ul>
+                <li><span class="highlight">分步可视化：</span>清晰地展示正向或反向扩散的每一个时间步，图像是如何变化的。</li>
+                <li><span class="highlight">参数调整：</span>例如调整总的扩散步数（T）、噪声调度（noise schedule，即alpha_t的设定方式）、采样方法（如DDPM, DDIM）等，并观察这些参数对生成结果的影响。</li>
+                <li><span class="highlight">中间层特征图：</span>可能允许查看U-Net内部不同层的激活状态或特征图，以理解模型是如何“思考”的。</li>
+            </ul>
+            <p>这种交互式的探索对于理解模型的行为至关重要。例如，不同的噪声调度会影响生成图像的质量和细节；采样步数太少可能导致细节模糊，太多则会增加计算成本。</p>
+
+            <h2>第三章：潜空间漫游——AI的“梦境”探索</h2>
+            <p>虽然扩散模型不像变分自编码器（VAE）或生成对抗网络（GAN）那样具有一个明确定义的、易于操纵的“潜空间”（Latent Space），但其生成过程本身可以被视为一种从噪声空间到数据空间的映射。通过对初始噪声或者中间步骤的引导和控制，我们依然可以探索和影响最终的生成结果。</p>
+            
+            <h3>3.1 条件生成与引导</h3>
+            <p>现代扩散模型通常支持<span class="highlight">条件生成（Conditional Generation）</span>，例如根据文本描述（Text-to-Image）、类别标签或其他图像来生成特定内容的图像。`Diffusion-Explorer` 可能会提供界面来输入这些条件，并观察模型如何根据条件来引导去噪过程。</p>
+            <p>例如，在文本到图像生成中，文本提示会被编码成一个向量，这个向量在U-Net的去噪步骤中作为额外输入，影响着每一步噪声的预测。这就像给AI画师下达指令：“画一只戴着帽子的猫”，AI会努力让生成的图像符合这个描述。</p>
+
+            <h3>3.2 概念性的潜空间探索</h3>
+            <p>虽然不是直接的潜空间插值，但我们可以通过改变初始噪声向量或在生成过程中引入微小的扰动，来观察生成结果的变化。这可以帮助我们理解模型对输入噪声的敏感度以及生成多样性的来源。</p>
+            <div id="latentSpaceCanvasContainer" class="canvas-container">
+                </div>
+            <div class="controls">
+                <button id="playLatent">开始探索</button>
+                <button id="resetLatent">重置</button>
+            </div>
+            <p>这个动画概念性地模拟了“潜空间”的探索。想象画布上的每个点代表一个不同的初始噪声或某种高级特征组合。当用户在左侧“控制板”上移动一个点时，右侧的生成图像（此处用简单形状代替）会相应地平滑过渡或改变特征，展示了输入如何影响输出的概念。</p>
+
+            <h2>第四章：模型对比与展望——扩散模型的江湖地位</h2>
+            <p>生成模型领域群雄并起，除了扩散模型，还有我们熟知的GANs（生成对抗网络）、VAEs（变分自编码器）等。了解它们之间的区别和联系，有助于我们更全面地认识扩散模型的特性。</p>
+
+            <h3>4.1 与 GANs 和 VAEs 的简要对比</h3>
+            <ul>
+                <li><span class="highlight">GANs：</span>由一个生成器和一个判别器组成，两者相互博弈，共同进步。GANs以生成图像的锐利度著称，但训练不稳定是其一大挑战。</li>
+                <li><span class="highlight">VAEs：</span>通过编码器将数据映射到潜空间，再通过解码器从潜空间重建数据。VAEs通常能学到平滑的潜空间表示，但生成图像有时略显模糊。</li>
+                <li><span class="highlight">扩散模型：</span>通过迭代去噪生成图像，通常能达到非常高的图像质量和多样性，训练过程相对稳定，但采样速度（生成图像的速度）曾经是一个瓶颈，尽管后续研究已大幅改善。</li>
+            </ul>
+            <div id="modelComparisonCanvasContainer" class="canvas-container">
+                </div>
+            <div class="controls">
+                <button id="playComparison">播放对比</button>
+                <button id="resetComparison">重置</button>
+            </div>
+            <p>此动画概念性地对比了不同生成模型的工作流程。例如，左侧可能示意GAN的生成器与判别器互动，中间示意VAE的编码-解码过程，右侧示意扩散模型的迭代去噪过程。通过简单的图形和流程线，帮助理解它们核心机制的差异。</p>
+            
+            <h3>4.2 Diffusion Explorer 的意义与未来</h3>
+            <p>像 `Diffusion-Explorer` 这样的工具，其核心价值在于<span class="highlight">降低理解门槛、加速学习和研究、激发创造力</span>。通过交互式的探索：</p>
+            <ul>
+                <li>教育者和初学者可以更直观地理解复杂模型的内部机制。</li>
+                <li>研究人员可以更方便地调试模型、验证新想法、分析模型行为。</li>
+                <li>艺术家和设计师可以利用这类工具作为创作的辅助，探索AI生成的新可能。</li>
+            </ul>
+            <p>未来，随着扩散模型技术的不断发展，我们可以期待 `Diffusion-Explorer` 或类似工具集成更多高级功能，如更精细的引导控制、多模态融合的探索、模型可解释性分析等，成为连接人类智慧与AI创造力的重要桥梁。</p>
+
+            <h2>结语：探索永无止境</h2>
+            <p>从物理现象中汲取灵感，扩散模型为我们打开了通往机器创造新世界的大门。`Diffusion-Explorer` 项目，若能提供一个强大而直观的探索平台，无疑将助力我们更深入地理解和运用这项令人兴奋的技术。每一次参数的调整，每一次生成结果的观察，都是一次对AI“内心世界”的窥探，也是一次对未来无限可能的探索。</p>
+            <p>希望本篇基于公开信息和合理推测的解读，能为您理解 `Diffusion-Explorer` 项目（或广义上的扩散模型探索工具）提供一个有趣的物理逻辑视角。</p>
+        </article>
+
+        <footer class="text-center py-8 mt-12 border-t border-gray-300">
+            <p class="text-gray-600">&copy; 2025 AI模型探索者. 本内容仅供学习交流。</p>
+        </footer>
+    </div>
+
+    <script>
+        // P5.js Sketch Instances
+        let forwardSketchInstance, reverseSketchInstance, unetSketchInstance, latentSketchInstance, comparisonSketchInstance;
+
+        // Helper function to create a sketch
+        function createSketch(sketchFunction, containerId, controls) {
+            let p5Instance;
+            const sketch = (p) => {
+                let playing = false;
+                let needsRedraw = true; // For initial draw
+
+                p.setup = () => {
+                    const container = document.getElementById(containerId);
+                    const canvas = p.createCanvas(container.offsetWidth, container.offsetHeight);
+                    canvas.parent(containerId);
+                    // Call the specific setup function from sketchFunction
+                    if (sketchFunction.setup) sketchFunction.setup(p);
+                    
+                    // Attach button listeners
+                    if (controls.play) {
+                        document.getElementById(controls.play).addEventListener('click', () => { 
+                            playing = true; 
+                            needsRedraw = true; 
+                            if (p.loop && typeof p.loop === 'function') p.loop(); // Resume looping if p.noLoop() was called
+                        });
+                    }
+                    if (controls.pause) {
+                        document.getElementById(controls.pause).addEventListener('click', () => { 
+                            playing = false; 
+                            if (p.noLoop && typeof p.noLoop === 'function') p.noLoop(); // Stop looping
+                        });
+                    }
+                    if (controls.reset) {
+                        document.getElementById(controls.reset).addEventListener('click', () => {
+                            if (sketchFunction.reset) sketchFunction.reset(p);
+                            playing = controls.playOnReset || false;
+                            needsRedraw = true;
+                            if (playing && p.loop && typeof p.loop === 'function') p.loop();
+                            else if (!playing && p.noLoop && typeof p.noLoop === 'function') p.noLoop();
+                            p.redraw(); // Ensure reset is visible
+                        });
+                    }
+                    
+                    // Initial draw or if noLoop is used
+                    if (sketchFunction.draw && (needsRedraw || !playing)) {
+                         p.redraw(); // Request a redraw for the first frame
+                    }
+                    if (!playing && p.noLoop && typeof p.noLoop === 'function' && !controls.playOnReset) {
+                        p.noLoop();
+                    }
+                };
+
+                p.draw = () => {
+                    if (playing || needsRedraw) {
+                        if (sketchFunction.draw) sketchFunction.draw(p, playing);
+                        needsRedraw = false; 
+                    }
+                };
+                
+                p.windowResized = () => {
+                    const container = document.getElementById(containerId);
+                    p.resizeCanvas(container.offsetWidth, container.offsetHeight);
+                     if (sketchFunction.setup) sketchFunction.setup(p); // Re-initialize aspects if needed
+                    needsRedraw = true;
+                    p.redraw();
+                };
+                p5Instance = p;
+            };
+            return new p5(sketch, containerId); // Return the instance
+        }
+
+        // 1. Forward Diffusion Sketch
+        const forwardDiffusionSketch = {
+            setup: (p) => {
+                p.noiseLevel = 0;
+                p.maxNoise = 255;
+                p.targetX = p.width / 2;
+                p.targetY = p.height / 2;
+                p.targetRadius = p.min(p.width, p.height) * 0.3;
+                p.background(248, 250, 252); // Match canvas container bg
+                p.noStroke();
+                p.fill(59, 130, 246, 200); // Blue circle
+                p.ellipse(p.targetX, p.targetY, p.targetRadius * 2, p.targetRadius * 2);
+            },
+            draw: (p, playing) => {
+                p.background(248, 250, 252); // Clear background each frame
+                
+                // Draw the base shape
+                p.noStroke();
+                p.fill(59, 130, 246, 200 - p.noiseLevel * 0.7); // Fade out circle
+                p.ellipse(p.targetX, p.targetY, p.targetRadius * 2, p.targetRadius * 2);
+
+                if (playing && p.noiseLevel < p.maxNoise) {
+                    p.noiseLevel += 1;
+                }
+
+                // Add noise particles
+                p.fill(100, 100, 100, 150); // Grey noise
+                for (let i = 0; i < p.noiseLevel * (p.width * p.height / 10000); i++) {
+                    let x = p.random(p.width);
+                    let y = p.random(p.height);
+                    p.ellipse(x, y, p.random(1,3), p.random(1,3));
+                }
+                if (p.noiseLevel >= p.maxNoise && playing) {
+                   if (p.noLoop && typeof p.noLoop === 'function') p.noLoop(); // Stop when max noise reached
+                }
+            },
+            reset: (p) => {
+                p.noiseLevel = 0;
+                p.background(248, 250, 252);
+                p.fill(59, 130, 246, 200);
+                p.ellipse(p.targetX, p.targetY, p.targetRadius * 2, p.targetRadius * 2);
+            }
+        };
+
+        // 2. Reverse Diffusion Sketch
+        const reverseDiffusionSketch = {
+            setup: (p) => {
+                p.noiseLevel = 255;
+                p.minNoise = 0;
+                p.targetX = p.width / 2;
+                p.targetY = p.height / 2;
+                p.targetRadius = p.min(p.width, p.height) * 0.3;
+                p.background(248, 250, 252);
+                // Initial state: full noise
+                 p.fill(100, 100, 100, 150);
+                for (let i = 0; i < p.noiseLevel * (p.width * p.height / 10000); i++) {
+                    let x = p.random(p.width);
+                    let y = p.random(p.height);
+                    p.ellipse(x, y, p.random(1,3), p.random(1,3));
+                }
+            },
+            draw: (p, playing) => {
+                p.background(248, 250, 252);
+
+                if (playing && p.noiseLevel > p.minNoise) {
+                    p.noiseLevel -= 1;
+                }
+                
+                // Draw the emerging shape
+                p.noStroke();
+                p.fill(59, 130, 246, 200 - p.noiseLevel * 0.7);
+                p.ellipse(p.targetX, p.targetY, p.targetRadius * 2, p.targetRadius * 2);
+
+                // Remaining noise particles
+                p.fill(100, 100, 100, 150);
+                for (let i = 0; i < p.noiseLevel * (p.width * p.height / 10000); i++) {
+                    let x = p.random(p.width);
+                    let y = p.random(p.height);
+                    p.ellipse(x, y, p.random(1,3), p.random(1,3));
+                }
+                 if (p.noiseLevel <= p.minNoise && playing) {
+                   if (p.noLoop && typeof p.noLoop === 'function') p.noLoop();
+                }
+            },
+            reset: (p) => {
+                p.noiseLevel = 255;
+                p.background(248, 250, 252);
+                p.fill(100, 100, 100, 150);
+                for (let i = 0; i < p.noiseLevel * (p.width * p.height / 10000); i++) {
+                    let x = p.random(p.width);
+                    let y = p.random(p.height);
+                    p.ellipse(x, y, p.random(1,3), p.random(1,3));
+                }
+            }
+        };
+
+        // 3. U-Net Sketch
+        const unetSketch = {
+            setup: (p) => {
+                p.progress = 0;
+                p.numLevels = 3;
+                p.boxWidth = p.width * 0.15;
+                p.boxHeight = p.height * 0.1;
+                p.spacingX = p.width * 0.05;
+                p.spacingY = p.height * 0.15;
+                p.colors = [p.color(255, 165, 0), p.color(173, 216, 230), p.color(144, 238, 144)]; // Orange, LightBlue, LightGreen
+                p.particleX = 0;
+                p.particleY = p.height / 2;
+                p.particleSize = 10;
+                p.pathPoints = [];
+                
+                // Define path for particle
+                let startX = p.spacingX;
+                let currentY = p.height / 2 - p.boxHeight / 2;
+
+                // Encoder path
+                for (let i = 0; i < p.numLevels; i++) {
+                    p.pathPoints.push({x: startX + i * (p.boxWidth + p.spacingX) + p.boxWidth / 2, y: currentY + p.boxHeight / 2});
+                }
+                // Bottleneck
+                let bottleneckX = startX + (p.numLevels) * (p.boxWidth + p.spacingX) - p.spacingX / 2;
+                p.pathPoints.push({x: bottleneckX, y: currentY + p.boxHeight / 2 + p.spacingY});
+                
+                // Decoder path
+                for (let i = p.numLevels - 1; i >= 0; i--) {
+                     p.pathPoints.push({x: startX + i * (p.boxWidth + p.spacingX) + p.boxWidth / 2, y: currentY + p.boxHeight / 2 + 2 * p.spacingY});
+                }
+                p.pathPoints.push({x: p.width - p.spacingX, y: currentY + p.boxHeight / 2 + 2 * p.spacingY}); // Exit point
+                p.particleIndex = 0;
+                p.background(248, 250, 252);
+                unetSketch.drawUNetStructure(p); // Draw static structure once
+            },
+            drawUNetStructure: (p) => { // Helper to draw static U-Net
+                p.stroke(150);
+                p.strokeWeight(2);
+                let startX = p.spacingX;
+                let currentY = p.height / 2 - p.boxHeight / 2;
+
+                // Encoder blocks
+                for (let i = 0; i < p.numLevels; i++) {
+                    p.fill(p.colors[0]); // Encoder color
+                    p.rect(startX + i * (p.boxWidth + p.spacingX), currentY, p.boxWidth, p.boxHeight, 5);
+                    if (i < p.numLevels -1) { // Arrows down
+                        p.line(startX + i * (p.boxWidth + p.spacingX) + p.boxWidth, currentY + p.boxHeight / 2, 
+                               startX + (i+1) * (p.boxWidth + p.spacingX), currentY + p.boxHeight / 2);
+                    }
+                }
+                // Bottleneck
+                let bottleneckX = startX + (p.numLevels -1) * (p.boxWidth + p.spacingX) + p.boxWidth/2;
+                let bottleneckY = currentY + p.spacingY;
+                p.fill(p.colors[1]); // Bottleneck color
+                p.rect(bottleneckX - p.boxWidth/2, bottleneckY, p.boxWidth, p.boxHeight, 5);
+                // Arrow from last encoder to bottleneck
+                p.line(startX + (p.numLevels-1) * (p.boxWidth + p.spacingX) + p.boxWidth, currentY + p.boxHeight/2, bottleneckX, bottleneckY + p.boxHeight/2);
+
+
+                // Decoder blocks & Skip connections
+                let decoderY = currentY + 2 * p.spacingY;
+                for (let i = p.numLevels - 1; i >= 0; i--) {
+                    let decoderX = startX + i * (p.boxWidth + p.spacingX);
+                    p.fill(p.colors[2]); // Decoder color
+                    p.rect(decoderX, decoderY, p.boxWidth, p.boxHeight, 5);
+                    // Skip connection
+                    p.stroke(100,100,255,100); // Blue for skip
+                    p.line(startX + i * (p.boxWidth + p.spacingX) + p.boxWidth / 2, currentY + p.boxHeight, 
+                           decoderX + p.boxWidth / 2, decoderY);
+                    p.stroke(150); // Reset stroke
+                     if (i > 0) { // Arrows up
+                        p.line(decoderX, decoderY + p.boxHeight / 2, 
+                               startX + (i-1) * (p.boxWidth + p.spacingX) + p.boxWidth, decoderY + p.boxHeight / 2);
+                    }
+                }
+                 // Arrow from bottleneck to first decoder
+                p.line(bottleneckX, bottleneckY + p.boxHeight, startX + (p.numLevels-1)*(p.boxWidth+p.spacingX) + p.boxWidth/2, decoderY + p.boxHeight/2);
+            },
+            draw: (p, playing) => {
+                p.background(248, 250, 252);
+                unetSketch.drawUNetStructure(p); // Redraw static U-Net
+
+                if (playing) {
+                    if (p.particleIndex < p.pathPoints.length -1) {
+                        let target = p.pathPoints[p.particleIndex + 1];
+                        let current = {x: p.particleX, y: p.particleY};
+                        let distToTarget = p.dist(current.x, current.y, target.x, target.y);
+                        let speed = 5;
+                        if (distToTarget > speed) {
+                            p.particleX = p.lerp(p.particleX, target.x, speed / distToTarget);
+                            p.particleY = p.lerp(p.particleY, target.y, speed / distToTarget);
+                        } else {
+                            p.particleX = target.x;
+                            p.particleY = target.y;
+                            p.particleIndex++;
+                        }
+                    } else {
+                        // Reached end, maybe stop or loop particle
+                         if (p.noLoop && typeof p.noLoop === 'function') p.noLoop();
+                    }
+                }
+                
+                p.fill(255, 0, 0); // Red particle
+                p.noStroke();
+                p.ellipse(p.particleX, p.particleY, p.particleSize, p.particleSize);
+            },
+            reset: (p) => {
+                p.progress = 0;
+                p.particleX = p.pathPoints[0].x;
+                p.particleY = p.pathPoints[0].y;
+                p.particleIndex = 0;
+                p.background(248, 250, 252);
+                unetSketch.drawUNetStructure(p);
+            }
+        };
+
+        // 4. Latent Space Sketch
+        const latentSpaceSketch = {
+            setup: (p) => {
+                p.controlX = p.width * 0.25;
+                p.controlY = p.height / 2;
+                p.controlRadius = 10;
+                p.isDragging = false;
+                
+                // Output display area
+                p.outputX = p.width * 0.75;
+                p.outputY = p.height / 2;
+                p.outputSize = p.min(p.width * 0.3, p.height * 0.6);
+                p.background(248, 250, 252);
+                latentSpaceSketch.drawAreas(p);
+            },
+            drawAreas: (p) => {
+                // Control area (conceptual latent space)
+                p.fill(220);
+                p.noStroke();
+                p.rect(p.width*0.05, p.height*0.1, p.width*0.4, p.height*0.8, 10);
+                p.fill(50);
+                p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(14);
+                p.text("控制区域 (概念潜空间)", p.width*0.25, p.height*0.05);
+
+                // Output area
+                p.fill(220);
+                p.rect(p.width*0.55, p.height*0.1, p.width*0.4, p.height*0.8, 10);
+                p.fill(50);
+                p.text("生成结果预览", p.width*0.75, p.height*0.05);
+            },
+            draw: (p, playing) => {
+                p.background(248, 250, 252);
+                latentSpaceSketch.drawAreas(p);
+
+                if (p.isDragging && playing) {
+                    p.controlX = p.constrain(p.mouseX, p.width*0.05, p.width*0.45 - p.controlRadius);
+                    p.controlY = p.constrain(p.mouseY, p.height*0.1, p.height*0.9 - p.controlRadius);
+                }
+
+                // Draw control point
+                p.fill(255, 0, 0);
+                p.noStroke();
+                p.ellipse(p.controlX, p.controlY, p.controlRadius * 2, p.controlRadius * 2);
+
+                // Draw output shape based on control point
+                let normX = p.map(p.controlX, p.width*0.05, p.width*0.45 - p.controlRadius, 0, 1);
+                let normY = p.map(p.controlY, p.height*0.1, p.height*0.9 - p.controlRadius, 0, 1);
+                
+                p.push();
+                p.translate(p.outputX, p.outputY);
+                p.fill(normX * 255, normY * 255, (1-normX) * 255, 200);
+                let sizeFactor = p.map(normY, 0, 1, 0.5, 1.5);
+                let corners = 3 + p.floor(normX * 5); // 3 to 8 corners
+                
+                p.beginShape();
+                for (let i = 0; i < corners; i++) {
+                    let angle = p.map(i, 0, corners, 0, p.TWO_PI);
+                    let r = p.outputSize / 2 * sizeFactor * (0.8 + normX * 0.2 * p.cos(angle * 3 + normY * p.PI));
+                    p.vertex(r * p.cos(angle), r * p.sin(angle));
+                }
+                p.endShape(p.CLOSE);
+                p.pop();
+            },
+            reset: (p) => {
+                p.controlX = p.width * 0.25;
+                p.controlY = p.height / 2;
+                p.isDragging = false;
+                p.background(248, 250, 252);
+                latentSpaceSketch.drawAreas(p);
+            },
+            mousePressed: (p) => { // p5 instance method
+                if (p.dist(p.mouseX, p.mouseY, p.controlX, p.controlY) < p.controlRadius) {
+                    p.isDragging = true;
+                }
+            },
+            mouseReleased: (p) => { // p5 instance method
+                p.isDragging = false;
+            }
+        };
+        
+        // 5. Model Comparison Sketch
+        const modelComparisonSketch = {
+            setup: (p) => {
+                p.models = [
+                    { name: "GAN", x: p.width * 0.2, y: p.height * 0.3, color: p.color(255, 100, 100), progress: 0, active: false },
+                    { name: "VAE", x: p.width * 0.5, y: p.height * 0.3, color: p.color(100, 255, 100), progress: 0, active: false },
+                    { name: "Diffusion", x: p.width * 0.8, y: p.height * 0.3, color: p.color(100, 100, 255), progress: 0, active: false }
+                ];
+                p.particleSize = 10;
+                p.targetY = p.height * 0.7;
+                p.background(248, 250, 252);
+                modelComparisonSketch.drawBase(p);
+            },
+            drawBase: (p) => {
+                p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(16);
+                p.models.forEach(model => {
+                    p.fill(model.color);
+                    p.noStroke();
+                    p.ellipse(model.x, model.y, 40, 40); // Model representation
+                    p.fill(0);
+                    p.text(model.name, model.x, model.y - 35);
+                    
+                    // Target area
+                    p.stroke(200);
+                    p.noFill();
+                    p.rect(model.x - 30, p.targetY - 20, 60, 40, 5); // Output box
+                });
+            },
+            draw: (p, playing) => {
+                p.background(248, 250, 252);
+                modelComparisonSketch.drawBase(p);
+
+                p.models.forEach(model => {
+                    if (playing || model.active) { // Animate if global play or individual active
+                        model.progress += 0.01;
+                        if (model.progress > 1) model.progress = 0; // Loop animation
+                    }
+
+                    let particleY = p.lerp(model.y, p.targetY, model.progress);
+                    p.fill(model.color);
+                    p.noStroke();
+                    if (model.name === "Diffusion") { // Diffusion: iterative
+                        for(let i=0; i < 5; i++) {
+                            let iterProgress = (model.progress + i*0.2) % 1;
+                            let iterY = p.lerp(model.y, p.targetY, iterProgress);
+                            p.ellipse(model.x + p.random(-5,5), iterY, p.particleSize * (1-iterProgress*0.5), p.particleSize * (1-iterProgress*0.5) );
+                        }
+                    } else if (model.name === "GAN") { // GAN: direct + feedback
+                        p.ellipse(model.x, particleY, p.particleSize, p.particleSize);
+                        if (model.progress > 0.5) { // Simulate discriminator feedback
+                            p.stroke(255,0,0,100);
+                            p.line(model.x, particleY, model.x + p.random(-20,20), particleY - p.random(10,30));
+                        }
+                    } else { // VAE: encode-decode like
+                         p.ellipse(model.x, particleY, p.particleSize, p.particleSize);
+                    }
+
+                    // "Generated" output (simple)
+                    if (model.progress > 0.9) {
+                        p.fill(model.color, 150);
+                        p.rect(model.x - 20, p.targetY - 15, 40, 30, 3);
+                    }
+                });
+            },
+            reset: (p) => {
+                p.models.forEach(model => { model.progress = 0; model.active = false; });
+                p.background(248, 250, 252);
+                modelComparisonSketch.drawBase(p);
+            }
+        };
+        
+        // Initialize sketches on window load
+        window.onload = () => {
+            forwardSketchInstance = createSketch(forwardDiffusionSketch, 'forwardDiffusionCanvasContainer', { play: 'playForward', pause: 'pauseForward', reset: 'resetForward' });
+            reverseSketchInstance = createSketch(reverseDiffusionSketch, 'reverseDiffusionCanvasContainer', { play: 'playReverse', pause: 'pauseReverse', reset: 'resetReverse' });
+            unetSketchInstance = createSketch(unetSketch, 'unetCanvasContainer', { play: 'playUnet', reset: 'resetUnet', playOnReset: true }); // Auto plays on reset
+            
+            // Latent space sketch needs mouse interaction handlers from p5 instance
+            latentSketchInstance = new p5(p => {
+                p.setup = () => latentSpaceSketch.setup(p);
+                p.draw = () => latentSpaceSketch.draw(p, p.isDragging || p.playingLatent); // playingLatent is a new flag
+                p.mousePressed = () => latentSpaceSketch.mousePressed(p);
+                p.mouseReleased = () => latentSpaceSketch.mouseReleased(p);
+                p.windowResized = () => {
+                    const container = document.getElementById('latentSpaceCanvasContainer');
+                    p.resizeCanvas(container.offsetWidth, container.offsetHeight);
+                    latentSpaceSketch.setup(p); // Re-initialize aspects
+                    p.redraw();
+                };
+                p.playingLatent = false; // Custom flag for this sketch's play button
+                document.getElementById('playLatent').addEventListener('click', () => p.playingLatent = true );
+                document.getElementById('resetLatent').addEventListener('click', () => {
+                    latentSpaceSketch.reset(p);
+                    p.playingLatent = false;
+                    p.redraw();
+                });
+            }, 'latentSpaceCanvasContainer');
+
+
+            comparisonSketchInstance = createSketch(modelComparisonSketch, 'modelComparisonCanvasContainer', { play: 'playComparison', reset: 'resetComparison', playOnReset: false });
+        };
+
+    </script>
+</body>
+</html>
