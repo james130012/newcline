@@ -1,0 +1,954 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>优化随时推理：预算相对策略优化的物理逻辑透视</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        :root {
+            --color-bg: #f8f9fa; /* 更轻盈柔和的背景 */
+            --color-surface: #ffffff;
+            --color-text-primary: #37474f; /* 柔和的深灰蓝 */
+            --color-text-secondary: #6c757d; /* 中性灰色 */
+            --color-heading: #263238; /* 更深的标题蓝灰 */
+            --color-accent: #1de9b6; /* 明亮的青色，科技感 */
+            --color-accent-dark: #00bfa5; /* 深一点的青色 */
+            --color-highlight: #ff6d00; /* 温暖的橙色突出 */
+            --color-border: #e9ecef; /* 更浅的边框 */
+            --color-button-bg: var(--color-accent);
+            --color-button-text: #ffffff;
+            --color-formula-bg: #e0f2f1; /* 淡青色公式背景 */
+            --color-formula-text: var(--color-heading);
+
+            --font-primary: 'LXGW WenKai Lite', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            --font-headings: 'LXGW WenKai Lite', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            
+            --shadow-soft: 0 5px 15px rgba(0,0,0,0.05);
+            --shadow-medium: 0 10px 25px rgba(0,0,0,0.07);
+            --border-radius-small: 8px;
+            --border-radius-medium: 12px;
+        }
+
+        *, *::after, *::before { box-sizing: border-box; }
+        body {
+            font-family: var(--font-primary);
+            font-size: 16pt; /* 三号字 (~16pt) */
+            line-height: 1.9; 
+            color: var(--color-text-primary);
+            background-color: var(--color-bg);
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            padding-top: 25px; 
+            padding-bottom: 25px;
+        }
+        a { text-decoration: none; color: var(--color-accent); outline: none; transition: color 0.2s ease-in-out; }
+        a:hover, a:focus { color: var(--color-accent-dark); outline: none; }
+
+        .page-wrapper {
+            max-width: 1200px; 
+            margin: 0 auto;
+            padding: 0 25px;
+        }
+        
+        .content-section {
+            background-color: var(--color-surface);
+            margin: 45px 0;
+            padding: 50px 60px; 
+            border-radius: var(--border-radius-medium);
+            box-shadow: var(--shadow-medium);
+            text-align: left;
+            border: 1px solid var(--color-border);
+        }
+
+        .content-section__title { /* H1 */
+            font-family: var(--font-headings);
+            font-size: 2.6em; 
+            color: var(--color-heading);
+            margin: 0 0 0.9em;
+            font-weight: 700;
+            text-align: center;
+            padding-bottom: 0.7em;
+            border-bottom: 4px solid var(--color-accent); 
+        }
+        
+        .content-section__subtitle { /* H2 */
+            font-family: var(--font-headings);
+            font-size: 1.9em;
+            color: var(--color-heading);
+            margin: 2.2em 0 1.2em;
+            font-weight: 600;
+            border-left: 7px solid var(--color-accent);
+            padding-left: 20px;
+            line-height: 1.5;
+        }
+
+        .content-section__sub-subtitle { /* H3 */
+            font-family: var(--font-headings);
+            font-size: 1.5em;
+            color: var(--color-accent-dark);
+            margin-top: 2.2em;
+            margin-bottom: 1em;
+            font-weight: 600;
+        }
+
+        .content-section p {
+            margin-bottom: 1.5em;
+            text-indent: 2em; 
+            text-align: justify; 
+            color: var(--color-text-primary);
+        }
+        .content-section ul, .content-section ol {
+            margin-left: 2.5em;
+            margin-bottom: 1.4em;
+            padding-left: 1.8em;
+        }
+        .content-section li { margin-bottom: 0.7em; }
+
+        strong { 
+            color: var(--color-accent-dark); 
+            font-weight: 600;
+        }
+        .highlight { 
+            color: var(--color-highlight);
+            font-weight: bold; 
+            background-color: #fff3e0; 
+            padding: 0.1em 0.4em;
+            border-radius: 4px;
+        }
+        .term-highlight { 
+            color: var(--color-highlight);
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-weight: 600;
+            background-color: #ffebee; 
+            padding: 0.1em 0.3em;
+            border-radius: 3px;
+        }
+
+        .formula {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            background-color: var(--color-formula-bg);
+            padding: 14px 20px;
+            border-radius: var(--border-radius-small);
+            display: inline-block;
+            margin: 12px auto; 
+            color: var(--color-formula-text);
+            border: 1px solid #b2dfdb; /* 淡青色边框 */
+            font-size: 1.05em; 
+            box-shadow: 0 3px 6px rgba(0,0,0,0.04);
+            text-align: center;
+        }
+        .formula-block-wrapper { 
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .animation-container {
+            margin: 50px auto;
+            padding: 35px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius-medium);
+            background-color: #f0f7f7; /* 淡青主题的动画背景 */
+            box-shadow: var(--shadow-soft);
+            max-width: 800px; 
+        }
+        .animation-canvas {
+            width: 100%;
+            height: 300px; 
+            margin: 25px auto;
+            display: block;
+            border-radius: var(--border-radius-small);
+            background-color: var(--color-surface);
+            border: 1px solid #b0bec5; /* 动画画布边框 */
+        }
+        #anytimeCurveCanvas { height: 350px; }
+        #brpoV1V2Canvas { height: 350px; }
+        
+        .control-buttons {
+            text-align: center;
+            margin-top: 25px;
+        }
+        .control-buttons button {
+            background-color: var(--color-button-bg);
+            color: var(--color-button-text);
+            padding: 15px 28px; 
+            border: none;
+            border-radius: var(--border-radius-small);
+            cursor: pointer;
+            font-size: 1em;
+            font-family: var(--font-primary);
+            font-weight: 500;
+            margin: 10px;
+            transition: background-color 0.2s ease-in-out, transform 0.15s ease, box-shadow 0.2s ease;
+            box-shadow: 0 3px 7px rgba(0,0,0,0.12);
+        }
+        .control-buttons button:hover {
+            background-color: var(--color-accent-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+        }
+        .control-buttons button:active { 
+            transform: translateY(0px); 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        @media print {
+            body { font-size: 12pt; background-color: #fff; padding-top: 0; padding-bottom: 0; }
+            .page-wrapper { width: 277mm; margin: 10mm auto; padding: 0; }
+            .content-section { padding: 10mm; margin: 0 0 5mm 0; box-shadow: none; border: 1px solid #ccc; border-radius: 0; }
+            .page-break { page-break-after: always; }
+            .no-print { display: none !important; }
+            canvas { max-width: 100% !important; height: auto !important; border: 1px solid #bbb !important; }
+            .animation-container { page-break-inside: avoid; border: 1px dashed #ddd; padding:15px;}
+            .content-section__title, .content-section__subtitle, .content-section__sub-subtitle { page-break-after: avoid; page-break-inside: avoid; }
+            p, ul, ol { page-break-inside: avoid; }
+            .control-buttons button { background-color: #eee; color: #333; border: 1px solid #ccc;}
+            .term-highlight, .highlight { background-color: transparent; color: var(--color-highlight); padding:0; border-radius:0;}
+        }
+
+        @font-face {
+            font-family: 'LXGW WenKai Lite';
+            src: url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-lite-webfont@1.7.0/lxgwwenkailite-regular.woff2') format('woff2');
+            font-weight: normal; font-style: normal;
+        }
+        @font-face {
+            font-family: 'LXGW WenKai Lite';
+            src: url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-lite-webfont@1.7.0/lxgwwenkailite-bold.woff2') format('woff2');
+            font-weight: bold; font-style: normal;
+        }
+
+        .text-center { text-align: center; }
+        .text-gray-600 { color: var(--color-text-secondary); }
+        .mb-12 { margin-bottom: 3rem; } 
+        .mt-2 { margin-top: 0.5rem; }
+        .text-sm { font-size: 0.9em; }
+
+        .page-footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 50px;
+            font-size: 0.9em;
+            color: var(--color-text-secondary);
+            border-top: 1px solid var(--color-border);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <section class="content-section" id="title-slide">
+            <h1 class="content-section__title">优化随时推理：预算相对策略优化的物理逻辑透视</h1>
+            <p class="text-center text-gray-600 mb-12 text-sm" style="text-indent:0;">深度解读论文 "Optimizing Anytime Reasoning via Budget Relative Policy Optimization" <br>(Penghui Qi, Zichen Liu, Tianyu Pang, et al.)</p>
+        </section>
+
+        <section class="content-section" id="intro">
+            <h2 class="content-section__subtitle">引言：为LLM推理注入“弹性势能”与“过程控制”</h2>
+            <p>在大型语言模型（LLMs）引领的智能浪潮中，如何让机器像人类一样深思熟虑、灵活应变，始终是研究者们孜孜以求的目标。特别是对于复杂的推理任务，往往需要模型投入大量的“<strong class="highlight">思考算力 (test-time compute)</strong>”。然而，现实场景中，我们并非总能拥有无限的计算资源或等待时间。这时，“<strong class="highlight">随时推理 (Anytime Reasoning)</strong>”的概念便应运而生，它赋予了模型一种宝贵的“弹性”——无论计算预算多寡，模型都能在被中断的任何时刻，给出当前思考深度下的最佳答案。这就像一个经验丰富的工程师，能根据项目时间和可用资源，动态调整工作策略，阶段性地产出成果。</p>
+            <p>近期，一篇名为《通过预算相对策略优化随时推理》（Optimizing Anytime Reasoning via Budget Relative Policy Optimization）的论文，为我们揭示了如何通过强化学习（RL）的精妙设计，让LLM掌握这种“随时可用、渐进优化”的推理能力。它不仅仅是提升最终答案的准确性，更关注整个思考过程的<strong class="highlight">效率和灵活性</strong>。本文将尝试从“物理逻辑”的视角，解读这篇论文的核心思想，探讨其如何像一个精密的物理系统一样，通过巧妙的“<strong class="highlight">资源分配 (budget sampling)</strong>”、“<strong class="highlight">过程反馈 (dense rewards)</strong>”和“<strong class="highlight">动态校准 (variance reduction with BRPO)</strong>”，实现推理能力的持续优化。</p>
+        </section>
+
+        <section class="content-section" id="anytime-reasoning-landscape">
+            <h2 class="content-section__subtitle">第一幕：随时推理的“效能曲线”——最大化“思考功”</h2>
+            <p>想象一下LLM的推理过程，如同一个能量不断注入的物理系统。随着“<strong class="highlight">思考预算 (Thinking Budget)</strong>”（可以理解为允许模型生成的token数量，或者消耗的计算时间）的增加，系统解决问题的“<strong class="highlight">成功概率 (Success Probability)</strong>”通常也会随之提升。这在论文的图1左侧被形象地描绘为一条上升的曲线。传统的优化方法，往往只关注在某个固定的、通常较大的预算下，系统能否达到最终的“成功态”。</p>
+            <p>然而，“随时推理”追求的是一种更全面的“效能”。它不仅仅关心“终点”的辉煌，更在意整个“旅途”的风景。论文提出的目标是最大化这条“成功概率-思考预算”曲线下的<strong class="highlight">面积</strong>。从物理逻辑上看，这好比我们不再仅仅追求系统最终能释放多大的总能量，而是要优化在不同能量注入水平下，系统持续对外“<strong class="highlight">做功</strong>”的累积总量。每一个预算点上的成功概率，都是在该“资源约束”下的“瞬时功率”，而整个面积，则代表了在预算先验分布下的“<strong class="highlight">总期望效用</strong>”或“<strong class="highlight">总思考功</strong>”。这种优化目标，天然地鼓励模型在早期预算阶段就努力提升性能，而不是把所有希望都寄托在最后的“临门一脚”。</p>
+            
+            <div class="animation-container no-print">
+                <h4 class="content-section__sub-subtitle text-center" style="margin-top:0; margin-bottom: 20px; color: var(--color-heading); border:none; padding-left:0; font-size: 1.2em;">动画1：“随时推理”的效能曲线与面积优化</h4>
+                <div id="anytimeCurveCanvas" class="animation-canvas" style="height: 350px;"></div>
+                <div class="control-buttons">
+                    <button onclick="playAnytimeCurveAnimation()">演示曲线生成</button>
+                    <button onclick="resetAnytimeCurveAnimation()">重置曲线</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2 text-center" style="text-indent:0;">交互说明：点击播放，观察成功概率如何随思考预算（横轴）增加而提升，同时动态展示曲线下面积的累积过程。目标是让这个“效能面积”尽可能大。</p>
+            </div>
+        </section>
+
+        <section class="content-section" id="dense-rewards">
+            <h2 class="content-section__subtitle">第二幕：点亮沿途的灯塔——预算截断与“密集奖励”机制</h2>
+            <p>传统的强化学习在优化长序列决策（如LLM的复杂推理链）时，常常面临一个棘手的问题——“<strong class="highlight">稀疏奖励 (Sparse Rewards)</strong>”。这就像在一段漫长的旅途中，只有到达终点时才能知道此行是否成功，中途没有任何路标或反馈。这种情况下，模型很难判断哪些中间步骤是有效的，哪些是无效的，导致学习效率低下，如同在黑暗中摸索。</p>
+            <p>为了照亮这条探索之路，论文引入了一种巧妙的“<strong class="highlight">过程控制</strong>”机制：在训练时，从一个预设的预算分布中<strong class="highlight">采样不同的思考预算点</strong>，并强制模型在这些预算点上（即思考过程被截断时）就尝试总结出答案。然后，对这些“中途”产生的答案进行验证并给予奖励。这就好比在漫漫征途中设立了多个“<strong class="highlight">检查点 (checkpoints)</strong>”，模型每到达一个检查点，就能获得一次即时反馈。这些在不同预算点上获得的、可验证的奖励信号，共同构成了“<strong class="highlight">密集奖励 (Dense Rewards)</strong>”流。</p>
+            <p>从物理系统的角度看，这种密集奖励机制，相当于对一个复杂动态系统在不同演化阶段进行<strong class="highlight">多次测量和校准</strong>。它使得系统（模型）能够更清晰地感知到其内部状态（思考过程）与外部评价（奖励）之间的因果联系，从而更有效地进行“<strong class="highlight">信用分配 (credit assignment)</strong>”——哪些“微小作用力”（单个token的生成）对最终的“宏观态”（正确答案）贡献更大，哪些又是南辕北辙。这极大地提升了学习的稳定性和效率，让模型不再“一条道走到黑”。</p>
+
+            <div class="animation-container no-print">
+                <h4 class="content-section__sub-subtitle text-center" style="margin-top:0; margin-bottom: 20px; color: var(--color-heading); border:none; padding-left:0; font-size: 1.2em;">动画2：稀疏奖励 vs. 密集奖励的导航效果</h4>
+                <div id="rewardComparisonCanvas" class="animation-canvas" style="height: 300px;"></div>
+                <div class="control-buttons">
+                    <button onclick="playRewardComparisonAnimation('sparse')">稀疏奖励导航</button>
+                    <button onclick="playRewardComparisonAnimation('dense')">密集奖励导航</button>
+                    <button onclick="resetRewardComparisonAnimation()">重置导航</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2 text-center" style="text-indent:0;">交互说明：选择不同奖励模式。稀疏模式下，粒子（代表推理过程）只有在终点才得到反馈；密集模式下，粒子在多个中间检查点获得反馈，更快找到通往目标的路径。</p>
+            </div>
+        </section>
+
+        <section class="content-section" id="brpo-variance-reduction">
+            <h2 class="content-section__subtitle">第三幕：BRPO的“双引擎”校准——稳定强化学习的“定盘星”</h2>
+            <p>在强化学习的波涛中航行，一个巨大的挑战是“<strong class="highlight">高方差 (high variance)</strong>”问题。简单来说，由于探索的随机性，模型对同一个状态下采取行动后得到的未来回报估计，可能会有很大的波动，这使得学习信号如同风中残烛，极不稳定，策略更新也容易“随波逐流”。为了给这艘学习之舟装上“<strong class="highlight">稳定舵</strong>”，论文引入了一种新颖的方差缩减技术——<strong class="highlight">预算相对策略优化 (Budget Relative Policy Optimization, BRPO)</strong>。</p>
+            <p>BRPO的精妙之处在于它构建了一个“<strong class="highlight">双引擎</strong>”的基线 (baseline) 来校准优势函数 <span class="formula">A_hat = R - V</span>（其中R是实际回报，V是基线估计的回报）。这个基线V由两部分加权构成：</p>
+            <ul>
+                <li><strong>V1: “历史功绩”基线</strong>：这部分利用了在<strong class="highlight">当前时间步t之前</strong>的那些已完成预算点 <span class="formula">b_j (j < j_t)</span> 上获得的<strong class="highlight">实际奖励</strong> <span class="formula">r_phi(x, z_&lt;=b_j)</span>。可以将其想象为系统的“<strong class="highlight">已积累势能</strong>”或“<strong class="highlight">当前进度条</strong>”。如果模型在较早的预算点上已经表现优异（获得了高奖励），那么V1就会提供一个较高的基线，这意味着后续的思考需要产生更大的“增量贡献”才会被认为是显著的“优势”。这种设计，使得优势函数的评估更加关注“<strong class="highlight">边际效益</strong>”，物理逻辑上非常直观。其公式大致为：<div class="formula-block-wrapper"><span class="formula">V1 = weighted_sum(previous_rewards_at_budgets) * sum(future_probabilities)</span></div></li>
+                <li><strong>V2: “群体智慧”基线</strong>：这部分则借鉴了GRPO等方法的思想，通过对<strong class="highlight">一批并行生成的完整思考路径</strong>在当前预算点 <span class="formula">j_t</span> 之后的回报进行平均，来估计期望回报。这好比派出多支“<strong class="highlight">勘探队</strong>”，综合它们的平均发现，来判断当前位置的“<strong class="highlight">普遍价值</strong>”。它提供了一个更全局的视角，平滑了个体探索路径的随机性。其公式为：<div class="formula-block-wrapper"><span class="formula">V2 = (1/G) * sum(R(x, z_i, j_t) for i in G_samples)</span></div></li>
+            </ul>
+            <p>论文指出（如图3所示），V1与未来回报R的相关性在思考初期可能较低（因为“历史”太短），但在后期则表现优越；而V2则反之。BRPO通过将这两者<strong class="highlight">动态加权组合</strong> <span class="formula">V = w1*V1 + w2*V2</span>，形成了一个在整个思考过程中都更为鲁棒和有效的基线，显著降低了梯度估计的方差，让策略学习的“航向”更加稳定、精准。</p>
+
+            <div class="animation-container no-print">
+                <h4 class="content-section__sub-subtitle text-center" style="margin-top:0; margin-bottom: 20px; color: var(--color-heading); border:none; padding-left:0; font-size: 1.2em;">动画3：BRPO的V1与V2基线如何稳定“优势评估”</h4>
+                <div id="brpoV1V2Canvas" class="animation-canvas" style="height: 350px;"></div>
+                <div class="control-buttons">
+                    <button onclick="playBrpoV1V2Animation()">演示BRPO基线</button>
+                    <button onclick="resetBrpoV1V2Animation()">重置演示</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2 text-center" style="text-indent:0;">交互说明：动画展示一个波动的“原始回报R”。V1（基于历史）和V2（基于群体）分别从不同角度提供基准。BRPO（V的组合）形成一个更平滑、更贴近R趋势的基线，从而使得“优势A=R-V”的信号更清晰。</p>
+            </div>
+        </section>
+        
+        <div class="page-break"></div> 
+
+        <section class="content-section" id="decoupled-optimization">
+            <h2 class="content-section__subtitle">第四幕：思考与总结的“双轨制”——解耦优化策略</h2>
+            <p>在LLM的推理过程中，实际上存在两个紧密关联但又有所区别的子过程：一是“<strong class="highlight">思考过程 (Thinking Process)</strong>”，即模型生成一系列中间步骤（如Chain-of-Thought）来分析和解决问题；二是“<strong class="highlight">总结过程 (Summary Process)</strong>”，即模型基于当前的思考内容，给出一个最终的答案。传统方法往往将这两者的策略（<span class="formula">pi_theta</span> 和 <span class="formula">pi_phi</span>）捆绑在一起，使用相同的优化目标和参数更新方式。</p>
+            <p>然而，这篇论文独具匠心地提出了一种“<strong class="highlight">解耦优化 (Decoupled Optimization)</strong>”的思路。他们认为，为了达到最佳的“随时推理”性能，特别是当思考过程可能在任意预算点被截断时，拥有一个高质量的、对不同长度思考都能做出优秀总结的“总结策略”至关重要。因此，他们建议在优化总结策略 <span class="formula">pi_phi</span> 时，可以采用与优化思考策略 <span class="formula">pi_theta</span> <strong class="highlight">不同的预算先验分布 p'_B</strong>。具体来说，论文中为总结策略使用了一个<strong class="highlight">均匀的预算分布</strong>进行训练，这意味着总结模型被训练得能够同等优秀地处理所有可能截断长度的思考链。</p>
+            <p>从物理系统的角度来看，这就像一个<strong class="highlight">两级火箭系统</strong>。第一级火箭（思考策略）负责将载荷（问题信息）推送到尽可能理想的轨道（高质量的思考链）；而第二级火箭（总结策略）则负责在任何可能的脱离点，都能精确地将“卫星”（答案）送入预定位置。这两级火箭的发动机设计和燃料配比（优化目标和数据分布）可以有所不同，以分别达到各自的最优性能。通过这种解耦，即使第一级火箭未能完成全部预定程序（思考被提前截断），强大的第二级火箭也能确保尽可能好的最终结果。这种设计，提升了整个推理系统的<strong class="highlight">鲁棒性和整体效能</strong>。</p>
+
+            <div class="animation-container no-print">
+                <h4 class="content-section__sub-subtitle text-center" style="margin-top:0; margin-bottom: 20px; color: var(--color-heading); border:none; padding-left:0; font-size: 1.2em;">动画4：思考与总结的“解耦齿轮系统”</h4>
+                <div id="decoupledGearsCanvas" class="animation-canvas" style="height: 300px;"></div>
+                <div class="control-buttons">
+                    <button onclick="playDecoupledGearsAnimation()">启动齿轮</button>
+                    <button onclick="resetDecoupledGearsAnimation()">重置系统</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2 text-center" style="text-indent:0;">交互说明：动画展示两个相互关联但独立驱动的齿轮。一个代表“思考策略”，另一个代表“总结策略”。它们可以根据不同的“能量输入”（预算分布）进行优化，共同驱动整个推理任务的完成。</p>
+            </div>
+        </section>
+        
+        <section class="content-section" id="action-coverage">
+            <h2 class="content-section__subtitle">第五幕：行动覆盖与探索——确保“思考空间”的充分利用</h2>
+            <p>虽然论文主要聚焦于预算和奖励机制，但其深层逻辑也与强化学习中的“<strong class="highlight">行动覆盖 (Action Coverage)</strong>”或“<strong class="highlight">状态空间探索 (State Space Exploration)</strong>”息息相关。一个高效的“随时推理”模型，不仅要能在给定预算下给出好答案，其思考过程本身也应该尽可能地探索问题解决的关键路径，避免过早陷入局部最优的“思维定势”。</p>
+            <p>从物理系统的角度看，模型的参数构成了其“<strong class="highlight">状态空间</strong>”，而每一步的思考（生成一个token）则是一次“<strong class="highlight">状态转移</strong>”。优化目标（如最大化曲线下面积）和密集奖励机制，实际上在引导模型探索那些能够更快、更持续产生高回报的“<strong class="highlight">高价值区域</strong>”。而BRPO中的V2成分，通过采样多条轨迹，也间接鼓励了对不同“<strong class="highlight">子空间</strong>”的探索，因为只有充分探索，才能得到更准确的平均回报估计。</p>
+            <p>虽然论文没有明确提出特定的探索算法，但其框架设计（如预算采样、多轨迹评估）本身就内含了促进更广阔行动覆盖的倾向。这就像在一个复杂的能量地貌中寻找全局最优路径，系统不能只沿着一条看似最陡峭的路往下冲，还需要在不同“<strong class="highlight">分支路径</strong>”上进行试探，以确保不会错过更优的整体解决方案。一个好的“随时推理”系统，其内部的“<strong class="highlight">探索动力学</strong>”必须是活跃且高效的。</p>
+             <div class="animation-container no-print">
+                <h4 class="content-section__sub-subtitle text-center" style="margin-top:0; margin-bottom: 20px; color: var(--color-heading); border:none; padding-left:0; font-size: 1.2em;">动画5：思考路径的探索与覆盖</h4>
+                <div id="actionCoverageCanvas" class="animation-canvas" style="height: 320px;"></div>
+                <div class="control-buttons">
+                    <button onclick="playActionCoverageAnimation()">开始探索</button>
+                    <button onclick="resetActionCoverageAnimation()">重新探索</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2 text-center" style="text-indent:0;">交互说明：动画模拟模型在一个简化的“问题空间”中探索不同的思考路径。目标是覆盖更多高价值区域（用颜色深浅表示），而不仅仅是快速找到一个局部最优解。</p>
+            </div>
+        </section>
+
+
+        <section class="content-section" id="conclusion">
+            <h2 class="content-section__subtitle">总结：迈向更智能、更高效的“物理化”AI推理</h2>
+            <p>《通过预算相对策略优化随时推理》这篇论文，为我们描绘了一幅将LLM推理过程精细化、物理化的美好蓝图。它不再将模型视为一个简单的“输入-输出”黑箱，而是深入其内部，运用强化学习的利器，从“<strong class="highlight">资源管理</strong>”（思考预算的动态分配）、“<strong class="highlight">过程监控</strong>”（密集奖励的实时反馈）、“<strong class="highlight">系统校准</strong>”（BRPO的方差缩减）到“<strong class="highlight">模块协同</strong>”（思考与总结的解耦优化），构建了一套富有“物理逻辑”的优化框架。</p>
+            <p>这种框架的核心思想，是将复杂的推理任务分解为一系列可在不同资源水平下评估和优化的子过程。通过引入“随时性”目标，模型被激励去学习如何在任何给定的“能量水平”（预算）下，都能最大化其“输出功率”（成功概率）。而密集奖励和BRPO等机制，则像精密的传感器和控制器，确保这个“能量转换系统”能够稳定、高效地运行。</p>
+            <p>这不仅仅是对LLM推理能力的一次技术提升，更体现了一种重要的研究范式转变——从单纯追求最终结果的“<strong class="highlight">结果导向</strong>”，转向更加关注过程效率和适应性的“<strong class="highlight">过程导向</strong>”。未来的LLM，或许会更像一个能够根据环境和任务需求，智能调控自身“新陈代谢速率”和“能量分配策略”的复杂生命体。而这背后，离不开这些借鉴了物理系统智慧的精巧算法设计。这场AI与“物理逻辑”的深度融合，无疑将为我们打开通往更通用、更强大人工智能的崭新大门。</p>
+        </section>
+
+        <footer class="page-footer no-print">
+            <p>&copy; 2024 “随时推理”物理逻辑透视。保留所有权利。</p>
+            <p style="font-size:0.8em; margin-top:10px;">灵感来源: Penghui Qi, Zichen Liu, Tianyu Pang, et al. 的论文研究。</p>
+        </footer>
+    </div>
+
+<script>
+    // 全局动画实例存储
+    let animInstances = {};
+
+    // --- 动画1: “随时推理”的效能曲线与面积优化 ---
+    const anytimeCurveSketch = (p) => {
+        let budgets = [0, 20, 40, 60, 80, 100]; // 代表不同思考预算点
+        let successProbs = [0, 0.3, 0.65, 0.85, 0.95, 0.98]; // 对应的成功概率
+        let currentPoint = 0;
+        let playing = false;
+        let pointsToDraw = [];
+        let areaAlpha = 0;
+        let padding = 60; // Moved padding to sketch scope
+
+        p.setup = () => {
+            let canvasContainer = p.select('#anytimeCurveCanvas');
+            let canvas = p.createCanvas(canvasContainer.width, canvasContainer.height);
+            canvas.parent('anytimeCurveCanvas');
+            p.frameRate(20);
+            p.resetSim();
+        };
+
+        p.resetSim = () => {
+            currentPoint = 0;
+            playing = false;
+            pointsToDraw = [];
+            areaAlpha = 0;
+            p.noLoop();
+            p.drawScene();
+        };
+
+        p.drawScene = () => {
+            p.background(250, 253, 255);
+            // let padding = 60; // Removed local definition
+            let plotWidth = p.width - 2 * padding;
+            let plotHeight = p.height - 2 * padding;
+
+            // 绘制坐标轴
+            p.stroke(100, 100, 120);
+            p.strokeWeight(2);
+            p.line(padding, p.height - padding, p.width - padding, p.height - padding); // X轴 (Budget)
+            p.line(padding, padding, padding, p.height - padding); // Y轴 (Success Prob)
+
+            // 轴标签
+            p.fill(70, 70, 90);
+            p.noStroke();
+            p.textSize(13);
+            p.textAlign(p.CENTER, p.TOP);
+            p.text("思考预算 (Token / Time)", p.width / 2, p.height - padding + 15);
+            p.textAlign(p.CENTER, p.CENTER);
+            p.push();
+            p.translate(padding - 30, p.height / 2);
+            p.rotate(-p.HALF_PI);
+            p.text("成功概率", 0, 0);
+            p.pop();
+
+            // 刻度
+            for (let i = 0; i <= 10; i++) {
+                let x = padding + i * (plotWidth / 10);
+                p.line(x, p.height - padding - 5, x, p.height - padding + 5);
+                p.text(i * 10, x, p.height - padding + 20); // Budget 0-100
+
+                let y = p.height - padding - i * (plotHeight / 10);
+                p.line(padding - 5, y, padding + 5, y);
+                p.textAlign(p.RIGHT, p.CENTER);
+                p.text((i * 0.1).toFixed(1), padding - 10, y); // Prob 0-1.0
+            }
+            
+            // 绘制曲线下的面积 (如果有点)
+            if (pointsToDraw.length > 1) {
+                p.fill(0, 191, 165, areaAlpha); // 青色面积，透明度渐变
+                p.noStroke();
+                p.beginShape();
+                p.vertex(padding, p.height - padding); // 左下角
+                for (let pt of pointsToDraw) {
+                    p.vertex(pt.x, pt.y);
+                }
+                if (pointsToDraw.length === budgets.length) { // 曲线完整后，封闭到右下角
+                     p.vertex(pointsToDraw[pointsToDraw.length-1].x, p.height - padding);
+                } else if (pointsToDraw.length > 0) { // 否则封闭到当前最后一个点的X轴投影
+                     p.vertex(pointsToDraw[pointsToDraw.length-1].x, p.height - padding);
+                }
+                p.endShape(p.CLOSE);
+            }
+
+            // 绘制曲线和平滑连接点
+            p.noFill();
+            p.stroke(255, 109, 0); // 橙色曲线
+            p.strokeWeight(3);
+            if (pointsToDraw.length > 1) {
+                p.beginShape();
+                // Add control points for curveVertex if there's only one point to make it visible
+                if (pointsToDraw.length === 1) {
+                     p.curveVertex(pointsToDraw[0].x, pointsToDraw[0].y); // Repeat first point for curveVertex
+                }
+                for (let pt of pointsToDraw) {
+                    p.curveVertex(pt.x, pt.y);
+                }
+                 // Repeat last point for curveVertex if there are points
+                if (pointsToDraw.length > 0) {
+                    p.curveVertex(pointsToDraw[pointsToDraw.length-1].x, pointsToDraw[pointsToDraw.length-1].y);
+                }
+                p.endShape();
+            }
+            
+            // 绘制点
+            p.fill(255, 109, 0); // 橙色点
+            p.noStroke();
+            for (let pt of pointsToDraw) {
+                p.ellipse(pt.x, pt.y, 8, 8);
+            }
+             // 标题
+            p.fill('#263238'); // Use direct hex color
+            p.textSize(16);
+            p.textAlign(p.CENTER, p.TOP);
+            p.text("“随时推理”效能：成功概率 vs 思考预算", p.width/2, 15);
+        };
+
+        p.draw = () => {
+            if (!playing) return;
+
+            if (currentPoint < budgets.length) {
+                let budgetVal = budgets[currentPoint]; // Renamed to avoid conflict with p5's budget
+                let prob = successProbs[currentPoint];
+                let x = p.map(budgetVal, 0, 100, padding, p.width - padding);
+                let y = p.map(prob, 0, 1, p.height - padding, padding);
+                pointsToDraw.push({ x: x, y: y });
+                currentPoint++;
+                if (areaAlpha < 100 && pointsToDraw.length > 1) {
+                    areaAlpha += 15; // 逐渐显示面积
+                }
+            } else {
+                playing = false; // 动画结束
+                p.noLoop();
+            }
+            p.drawScene();
+        };
+
+        p.play = () => {
+            if (currentPoint >= budgets.length) p.resetSim(); // 如果已结束，则重置
+            playing = true;
+            p.loop();
+        };
+        p.reset = () => p.resetSim();
+    };
+    // animInstances.anytimeCurve = new p5(anytimeCurveSketch, 'anytimeCurveCanvas'); // Instantiation moved to DOMContentLoaded
+
+
+    // --- 动画2: 稀疏奖励 vs. 密集奖励 ---
+    const rewardComparisonSketch = (p) => {
+        let particleSparse, particleDense;
+        let targetY;
+        let pathSparse = [], pathDense = [];
+        let playing = false;
+        let mode = 'dense'; // 'sparse' or 'dense'
+        let steps = 0;
+        let maxSteps = 150;
+        let sparseRewardSignal = false;
+        let denseRewardSignals = [];
+
+        p.setup = () => {
+            let canvasContainer = p.select('#rewardComparisonCanvas');
+            let canvas = p.createCanvas(canvasContainer.width, canvasContainer.height);
+            canvas.parent('rewardComparisonCanvas');
+            targetY = p.height * 0.2;
+            p.resetSim();
+        };
+
+        p.resetSim = () => {
+            particleSparse = p.createVector(p.width * 0.1, p.height * 0.8);
+            particleDense = p.createVector(p.width * 0.1, p.height * 0.8);
+            pathSparse = [particleSparse.copy()];
+            pathDense = [particleDense.copy()];
+            steps = 0;
+            playing = false;
+            sparseRewardSignal = false;
+            denseRewardSignals = [];
+            p.noLoop();
+            p.drawScene();
+        };
+
+        p.setMode = (newMode) => {
+            mode = newMode;
+            p.resetSim(); // 切换模式时重置
+        };
+
+        p.drawScene = () => {
+            p.background(253, 250, 255);
+            // 目标区域
+            p.fill(100, 221, 23, 100); // 浅绿色目标区
+            p.noStroke();
+            p.rect(0, targetY - 20, p.width, 40);
+            p.fill(76, 175, 80);
+            p.textAlign(p.CENTER, p.CENTER);
+            p.textSize(14);
+            p.text("目标区域", p.width / 2, targetY);
+
+            // 绘制路径和粒子
+            const drawParticleAndPath = (particle, path, color, isDense) => {
+                p.stroke(color);
+                p.strokeWeight(2);
+                p.noFill();
+                p.beginShape();
+                for (let v of path) {
+                    p.vertex(v.x, v.y);
+                }
+                p.endShape();
+                p.fill(color);
+                p.noStroke();
+                p.ellipse(particle.x, particle.y, 12, 12);
+
+                if (isDense) {
+                    p.stroke(0, 150, 136, 150); // 青色信号
+                    p.strokeWeight(1.5);
+                    for(let sig of denseRewardSignals) {
+                        p.line(sig.x - 5, sig.y - 5, sig.x + 5, sig.y + 5);
+                        p.line(sig.x + 5, sig.y - 5, sig.x - 5, sig.y + 5); // 'X' marks
+                    }
+                } else if (sparseRewardSignal) {
+                     p.fill(255,82,82, 200); // 红色信号
+                     p.ellipse(particle.x, particle.y, 20,20); // 放大显示信号
+                }
+            };
+
+            if (mode === 'sparse' || !playing) { // 如果是稀疏模式，或者暂停时，都画稀疏的
+                 drawParticleAndPath(particleSparse, pathSparse, p.color(255, 82, 82), false); // 红色
+            }
+            if (mode === 'dense' || !playing) { // 如果是密集模式，或者暂停时，都画密集的
+                 drawParticleAndPath(particleDense, pathDense, p.color(63, 81, 181), true);   // 蓝色
+            }
+             // 标题
+            p.fill('#263238'); // Use direct hex color
+            p.noStroke();
+            p.textSize(16);
+            p.textAlign(p.CENTER, p.TOP);
+            p.text(mode === 'sparse' ? "稀疏奖励导航：终点反馈" : "密集奖励导航：过程指引", p.width/2, 15);
+        };
+
+        p.draw = () => {
+            if (!playing || steps >= maxSteps) {
+                playing = false;
+                p.noLoop();
+                // 检查是否到达目标
+                if (mode === 'sparse' && particleSparse.y <= targetY + 10) sparseRewardSignal = true;
+                p.drawScene(); // 确保最后状态被画上
+                return;
+            }
+
+            // 移动逻辑
+            const moveParticle = (particle, path, isDense) => {
+                let steer = p.createVector(0, -1); // 基本向上移动
+                if (isDense) {
+                    // 密集奖励下，方向更明确
+                    let idealX = p.width / 2 + p.sin(steps * 0.05) * p.width * 0.2; // 稍微左右摇摆向中心
+                    let dirToTarget = p.createVector(idealX - particle.x, targetY - particle.y);
+                    steer = dirToTarget.normalize().mult(2.5);
+                     if (steps % 30 === 0 && steps > 0) { // 每隔一段给密集奖励信号
+                        denseRewardSignals.push(particle.copy());
+                        if(denseRewardSignals.length > 3) denseRewardSignals.shift();
+                    }
+                } else {
+                    // 稀疏奖励下，随机性更大
+                    steer.add(p.random(-0.8, 0.8), p.random(-0.5, 0.2)); // 更多随机扰动
+                    steer.normalize().mult(1.8);
+                }
+                particle.add(steer);
+                particle.x = p.constrain(particle.x, 0, p.width);
+                particle.y = p.constrain(particle.y, 0, p.height);
+                path.push(particle.copy());
+                if (path.length > 100) path.shift();
+            };
+
+            if (mode === 'sparse') moveParticle(particleSparse, pathSparse, false);
+            if (mode === 'dense') moveParticle(particleDense, pathDense, true);
+            
+            steps++;
+            p.drawScene();
+        };
+
+        p.play = (selectedMode) => {
+            if (selectedMode) p.setMode(selectedMode);
+            else if (steps >= maxSteps) p.resetSim(); // 如果只是普通播放键且已结束
+
+            playing = true;
+            p.loop();
+        };
+        p.reset = () => p.resetSim();
+    };
+    // animInstances.rewardComparison = new p5(rewardComparisonSketch, 'rewardComparisonCanvas'); // Instantiation moved to DOMContentLoaded
+
+
+    // --- 动画3: BRPO V1与V2基线 ---
+    const brpoV1V2Sketch = (p) => {
+        let R_values = []; // 实际回报
+        let V1_values = []; // V1基线
+        let V2_values = []; // V2基线
+        let BRPO_values = []; // 组合基线
+        let time = 0;
+        let maxTime = 200;
+        let playing = false;
+
+        p.setup = () => {
+            let canvasContainer = p.select('#brpoV1V2Canvas');
+            let canvas = p.createCanvas(canvasContainer.width, canvasContainer.height);
+            canvas.parent('brpoV1V2Canvas');
+            p.resetSim();
+        };
+
+        p.resetSim = () => {
+            R_values = []; V1_values = []; V2_values = []; BRPO_values = [];
+            time = 0;
+            playing = false;
+            p.noLoop();
+            p.drawScene();
+        };
+
+        p.drawScene = () => {
+            p.background(240, 247, 240);
+            let padding = 50;
+            // let plotHeight = p.height - 2 * padding; // Not used
+            // let plotWidth = p.width - 2 * padding;  // Not used
+
+            // 轴和标签
+            p.stroke(100,130,100); p.strokeWeight(1.5);
+            p.line(padding, p.height - padding, p.width - padding, p.height - padding); // X (Time)
+            p.line(padding, padding, padding, p.height - padding); // Y (Value)
+            p.fill(46,79,46); p.noStroke(); p.textSize(12);
+            p.textAlign(p.CENTER, p.TOP); p.text("时间步 / 思考深度", p.width/2, p.height - padding + 10);
+            p.textAlign(p.CENTER, p.CENTER); p.push(); p.translate(padding-25, p.height/2); p.rotate(-p.HALF_PI); p.text("回报/基线值",0,0); p.pop();
+
+            const plotLine = (data, color, weight = 2) => {
+                p.stroke(color); p.strokeWeight(weight); p.noFill();
+                p.beginShape();
+                for (let i = 0; i < data.length; i++) {
+                    let x = p.map(i, 0, maxTime, padding, p.width - padding);
+                    let y = p.map(data[i], -1, 1.5, p.height - padding, padding); // Value range
+                    p.vertex(x, y);
+                }
+                p.endShape();
+            };
+            
+            if (R_values.length > 0) plotLine(R_values, p.color(33, 150, 243, 150), 3); // 蓝色 R (较粗，半透明)
+            if (V1_values.length > 0) plotLine(V1_values, p.color(255, 193, 7, 200), 1.5);   // 黄色 V1
+            if (V2_values.length > 0) plotLine(V2_values, p.color(76, 175, 80, 200), 1.5);   // 绿色 V2
+            if (BRPO_values.length > 0) plotLine(BRPO_values, p.color(244, 67, 54), 2.5); // 红色 BRPO (最终基线)
+
+            // 图例
+            p.textSize(11); p.textAlign(p.LEFT, p.TOP);
+            p.fill(33,150,243); p.rect(padding + 10, padding + 10, 10,10); p.text("实际回报 (R)", padding + 25, padding + 8);
+            p.fill(255,193,7); p.rect(padding + 10, padding + 30, 10,10); p.text("V1 (历史功绩)", padding + 25, padding + 28);
+            p.fill(76,175,80); p.rect(padding + 10, padding + 50, 10,10); p.text("V2 (群体智慧)", padding + 25, padding + 48);
+            p.fill(244,67,54); p.rect(padding + 10, padding + 70, 10,10); p.text("BRPO (组合基线)", padding + 25, padding + 68);
+            
+            p.fill('#263238'); // Use direct hex color
+            p.noStroke(); p.textSize(16);
+            p.textAlign(p.CENTER, p.TOP); p.text("BRPO基线如何平滑优势评估 (A = R - V)", p.width/2, 15);
+        };
+
+        p.draw = () => {
+            if (!playing || time >= maxTime) {
+                playing = false; p.noLoop(); p.drawScene(); return;
+            }
+            // 生成模拟数据
+            let r_val = p.sin(time * 0.05) * 0.5 + p.noise(time * 0.1) * 0.8 - 0.2; // 波动较大的R
+            R_values.push(r_val);
+
+            let v1_val = 0;
+            if (R_values.length > 10) { // V1基于近期历史R的平滑
+                let sum = 0;
+                for(let i=R_values.length-10; i<R_values.length; i++) sum += R_values[i];
+                v1_val = sum/10 * 0.7 + (p.noise(time*0.08)-0.5)*0.2; // V1相对R平滑，但也有自身小波动
+            } else {  v1_val = (p.noise(time*0.08)-0.5)*0.2; }
+            V1_values.push(v1_val);
+
+            let v2_val = p.sin(time * 0.045) * 0.4 + (p.noise(time * 0.12 + 100) - 0.5) * 0.4; // V2有不同频率波动
+            V2_values.push(v2_val);
+            
+            let w1 = p.map(time, 0, maxTime, 0.2, 0.8); // V1的权重随时间增加（假设历史信息更可靠）
+            let brpo_val = w1 * v1_val + (1-w1) * v2_val;
+            BRPO_values.push(brpo_val);
+
+            time++;
+            p.drawScene();
+        };
+        p.play = () => { if (time >= maxTime) p.resetSim(); playing = true; p.loop();};
+        p.reset = () => p.resetSim();
+    };
+    // animInstances.brpoV1V2 = new p5(brpoV1V2Sketch, 'brpoV1V2Canvas'); // Instantiation moved to DOMContentLoaded
+
+    // --- 动画4: 思考与总结的“解耦齿轮系统” ---
+    const decoupledGearsSketch = (p) => {
+        let angle1 = 0, angle2 = 0;
+        let speed1 = 0.02, speed2 = 0.03; // 不同转速代表不同优化节奏/策略
+        let playing = false;
+        let gearRadius1 = 80, gearRadius2 = 60;
+        let numTeeth1 = 20, numTeeth2 = 15;
+
+        p.setup = () => {
+            let canvasContainer = p.select('#decoupledGearsCanvas');
+            let canvas = p.createCanvas(canvasContainer.width, canvasContainer.height);
+            canvas.parent('decoupledGearsCanvas');
+            p.resetSim();
+        };
+        p.resetSim = () => { angle1 = 0; angle2 = 0; playing = false; p.noLoop(); p.drawScene();};
+
+        const drawGear = (x, y, radius, numTeeth, angle, colorFill, colorStroke) => {
+            p.push();
+            p.translate(x, y);
+            p.rotate(angle);
+            p.fill(colorFill);
+            p.stroke(colorStroke);
+            p.strokeWeight(2);
+            let toothAngle = p.TWO_PI / numTeeth;
+            p.beginShape();
+            for (let i = 0; i < numTeeth; i++) {
+                p.vertex(radius * p.cos(i * toothAngle), radius * p.sin(i * toothAngle));
+                p.vertex((radius + 15) * p.cos(i * toothAngle + toothAngle / 3), (radius + 15) * p.sin(i * toothAngle + toothAngle / 3));
+                p.vertex((radius + 15) * p.cos(i * toothAngle + toothAngle * 2/3), (radius + 15) * p.sin(i * toothAngle + toothAngle * 2/3));
+                p.vertex(radius * p.cos((i + 1) * toothAngle), radius * p.sin((i + 1) * toothAngle));
+            }
+            p.endShape(p.CLOSE);
+            p.fill(colorStroke);
+            p.ellipse(0,0, radius*0.3, radius*0.3); // 中心轴
+            p.pop();
+        };
+        
+        p.drawScene = () => {
+            p.background(250, 253, 255);
+            let x1 = p.width / 2 - gearRadius1 * 0.8;
+            let y1 = p.height / 2;
+            let x2 = p.width / 2 + gearRadius2 * 0.8;
+            let y2 = p.height / 2;
+
+            drawGear(x1, y1, gearRadius1, numTeeth1, angle1, p.color(0, 176, 255, 200), p.color(0, 105, 255)); // 思考策略 - 蓝色系
+            drawGear(x2, y2, gearRadius2, numTeeth2, angle2, p.color(26, 233, 182, 200), p.color(0, 191, 165)); // 总结策略 - 青色系
+
+            p.fill('#263238'); // Use direct hex color
+            p.noStroke(); p.textSize(14); p.textAlign(p.CENTER);
+            p.text("思考策略模块", x1, y1 + gearRadius1 + 35);
+            p.text("总结策略模块", x2, y2 + gearRadius2 + 35);
+            
+            p.fill('#263238'); // Use direct hex color for title
+            p.textSize(16); p.textAlign(p.CENTER, p.TOP);
+            p.text("解耦优化：思考与总结的独立调校", p.width/2, 15);
+        };
+
+        p.draw = () => {
+            if (!playing) return;
+            angle1 += speed1;
+            angle2 -= speed2; // 反向转动，模拟配合
+            p.drawScene();
+        };
+        p.play = () => { playing = true; p.loop();};
+        p.reset = () => p.resetSim();
+    };
+    // animInstances.decoupledGears = new p5(decoupledGearsSketch, 'decoupledGearsCanvas'); // Instantiation moved to DOMContentLoaded
+
+    // --- 动画5: 思考路径的探索与覆盖 ---
+    const actionCoverageSketch = (p) => {
+        let particles = [];
+        let numParticles = 3; // 同时探索的多条路径
+        let target;
+        let grid = [];
+        let cols, rows;
+        let resolution = 25;
+        let playing = false;
+        let steps = 0;
+        let maxSteps = 200;
+
+        p.setup = () => {
+            let canvasContainer = p.select('#actionCoverageCanvas');
+            let canvas = p.createCanvas(canvasContainer.width, canvasContainer.height);
+            canvas.parent('actionCoverageCanvas');
+            cols = p.floor(p.width / resolution);
+            rows = p.floor(p.height / resolution);
+            p.resetSim();
+        };
+
+        p.resetSim = () => {
+            particles = [];
+            grid = new Array(cols).fill(null).map(() => new Array(rows).fill(0)); // 0 for unvisited, >0 for visited (heat)
+            target = p.createVector(p.random(p.width * 0.7, p.width * 0.9), p.random(p.height * 0.1, p.height * 0.3));
+            for (let i = 0; i < numParticles; i++) {
+                particles.push({
+                    pos: p.createVector(p.random(p.width * 0.1, p.width * 0.3), p.random(p.height * 0.7, p.height * 0.9)),
+                    path: [],
+                    color: p.color(p.random(150, 255), p.random(50, 150), p.random(50, 100), 200)
+                });
+            }
+            steps = 0;
+            playing = false;
+            p.noLoop();
+            p.drawScene();
+        };
+        
+        p.drawScene = () => {
+            p.background(240,245,240);
+            // 绘制网格覆盖情况 (热力图)
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    if (grid[i][j] > 0) {
+                        let alpha = p.map(grid[i][j], 0, 10, 30, 150); // 访问次数越多越深
+                        p.fill(67, 160, 71, alpha); // 探索过的区域用绿色标记
+                        p.noStroke();
+                        p.rect(i * resolution, j * resolution, resolution, resolution);
+                    }
+                }
+            }
+            // 绘制目标
+            p.fill(255, 87, 34); p.noStroke();
+            p.ellipse(target.x, target.y, 20, 20);
+            p.fill(0); p.textAlign(p.CENTER); p.textSize(10); p.text("Goal", target.x, target.y+18);
+
+            // 绘制粒子和路径
+            for (let particle of particles) {
+                p.stroke(particle.color); p.strokeWeight(1.5); p.noFill();
+                p.beginShape();
+                for (let v of particle.path) { p.vertex(v.x, v.y); }
+                p.endShape();
+                p.fill(particle.color); p.noStroke();
+                p.ellipse(particle.pos.x, particle.pos.y, 8, 8);
+            }
+            p.fill('#263238'); // Use direct hex color
+            p.noStroke(); p.textSize(16);
+            p.textAlign(p.CENTER, p.TOP); p.text("思考路径探索与问题空间覆盖", p.width/2, 15);
+        };
+
+        p.draw = () => {
+            if (!playing || steps >= maxSteps) {
+                playing = false; p.noLoop(); p.drawScene(); return;
+            }
+            for (let particle of particles) {
+                let dir = p5.Vector.sub(target, particle.pos);
+                dir.normalize();
+                dir.mult(p.random(1,3));
+                // 增加随机探索性
+                let wander = p5.Vector.random2D().mult(p.random(2,4));
+                particle.pos.add(dir).add(wander);
+                
+                particle.pos.x = p.constrain(particle.pos.x, 0, p.width);
+                particle.pos.y = p.constrain(particle.pos.y, 0, p.height);
+                particle.path.push(particle.pos.copy());
+                if(particle.path.length > 50) particle.path.shift();
+
+                // 更新网格访问
+                let col = p.floor(particle.pos.x / resolution);
+                let row = p.floor(particle.pos.y / resolution);
+                if (col >= 0 && col < cols && row >=0 && row < rows) {
+                    grid[col][row] = p.min(grid[col][row] + 1, 10); // 增加访问计数，上限10
+                }
+            }
+            steps++;
+            p.drawScene();
+        };
+        p.play = () => { if(steps >= maxSteps) p.resetSim(); playing = true; p.loop();};
+        p.reset = () => p.resetSim();
+    };
+    // animInstances.actionCoverage = new p5(actionCoverageSketch, 'actionCoverageCanvas'); // Instantiation moved to DOMContentLoaded
+
+
+    // --- 全局动画控制函数 ---
+    function playAnytimeCurveAnimation() { if (animInstances.anytimeCurve) animInstances.anytimeCurve.play(); }
+    function resetAnytimeCurveAnimation() { if (animInstances.anytimeCurve) animInstances.anytimeCurve.reset(); }
+    
+    function playRewardComparisonAnimation(mode) { if (animInstances.rewardComparison) animInstances.rewardComparison.play(mode); }
+    function resetRewardComparisonAnimation() { if (animInstances.rewardComparison) animInstances.rewardComparison.reset(); }
+    
+    function playBrpoV1V2Animation() { if (animInstances.brpoV1V2) animInstances.brpoV1V2.play(); }
+    function resetBrpoV1V2Animation() { if (animInstances.brpoV1V2) animInstances.brpoV1V2.reset(); }
+
+    function playDecoupledGearsAnimation() { if (animInstances.decoupledGears) animInstances.decoupledGears.play(); }
+    function resetDecoupledGearsAnimation() { if (animInstances.decoupledGears) animInstances.decoupledGears.reset(); }
+
+    function playActionCoverageAnimation() { if (animInstances.actionCoverage) animInstances.actionCoverage.play(); }
+    function resetActionCoverageAnimation() { if (animInstances.actionCoverage) animInstances.actionCoverage.reset(); }
+
+
+    // DOM加载完成后初始化P5实例
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => { 
+            // 这些检查确保对应的div存在，并且sketch函数已定义
+            if (typeof anytimeCurveSketch === 'function' && document.getElementById('anytimeCurveCanvas')) {
+                animInstances.anytimeCurve = new p5(anytimeCurveSketch, 'anytimeCurveCanvas');
+            }
+            if (typeof rewardComparisonSketch === 'function' && document.getElementById('rewardComparisonCanvas')) {
+                animInstances.rewardComparison = new p5(rewardComparisonSketch, 'rewardComparisonCanvas');
+            }
+            if (typeof brpoV1V2Sketch === 'function' && document.getElementById('brpoV1V2Canvas')) {
+                animInstances.brpoV1V2 = new p5(brpoV1V2Sketch, 'brpoV1V2Canvas');
+            }
+            if (typeof decoupledGearsSketch === 'function' && document.getElementById('decoupledGearsCanvas')) {
+                animInstances.decoupledGears = new p5(decoupledGearsSketch, 'decoupledGearsCanvas');
+            }
+             if (typeof actionCoverageSketch === 'function' && document.getElementById('actionCoverageCanvas')) {
+                animInstances.actionCoverage = new p5(actionCoverageSketch, 'actionCoverageCanvas');
+            }
+        }, 200); 
+    });
+</script>
+</body>
+</html>

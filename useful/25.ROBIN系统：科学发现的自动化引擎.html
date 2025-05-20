@@ -1,0 +1,847 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROBIN系统：科学发现的自动化引擎（物理逻辑视角解读）</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        :root {
+            --color-bg: #f6f8fa; /* GitHub-like background */
+            --color-surface: #ffffff;
+            --color-text-primary: #24292e; /* GitHub text color */
+            --color-text-secondary: #586069;
+            --color-heading: #0366d6;    /* GitHub link blue for headings */
+            --color-accent: #0366d6;     /* GitHub blue */
+            --color-accent-dark: #005cc5;
+            --color-highlight: #d73a49;  /* GitHub red for highlights */
+            --color-border: #e1e4e8;     /* GitHub border color */
+            --color-button-bg: #2ea44f;  /* GitHub green button */
+            --color-button-text: #ffffff;
+            --color-button-hover-bg: #2c974b;
+            --color-formula-bg: #f1f3f5;
+            --color-formula-text: var(--color-text-primary);
+
+            --font-primary: 'LXGW WenKai Lite', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            --font-headings: 'LXGW WenKai Lite', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            
+            --shadow-soft: 0 1px 3px rgba(27,31,35,0.1);
+            --shadow-medium: 0 3px 6px rgba(27,31,35,0.1);
+            --border-radius-small: 6px;
+            --border-radius-medium: 8px;
+        }
+
+        *, *::after, *::before { box-sizing: border-box; }
+        body {
+            font-family: var(--font-primary);
+            font-size: 16pt; /* 三号字 */
+            line-height: 1.75;
+            color: var(--color-text-primary);
+            background-color: var(--color-bg);
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        a { text-decoration: none; color: var(--color-accent); outline: none; transition: color 0.2s ease-in-out; }
+        a:hover, a:focus { color: var(--color-accent-dark); text-decoration: underline; }
+
+        .page-wrapper {
+            max-width: 1012px; /* GitHub main content width */
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        
+        .content-section {
+            background-color: var(--color-surface);
+            margin: 32px 0;
+            padding: 32px 40px;
+            border-radius: var(--border-radius-medium);
+            border: 1px solid var(--color-border);
+            text-align: left;
+        }
+
+        .content-section__title { /* H1 */
+            font-family: var(--font-headings);
+            font-size: 2.2em;
+            color: var(--color-heading);
+            margin: 0 0 0.7em;
+            font-weight: 600;
+            text-align: center;
+            padding-bottom: 0.5em;
+            border-bottom: 1px solid var(--color-border);
+        }
+        
+        .content-section__subtitle { /* H2 */
+            font-family: var(--font-headings);
+            font-size: 1.7em;
+            color: var(--color-heading);
+            margin: 1.8em 0 0.9em;
+            font-weight: 600;
+            padding-bottom: 0.3em;
+            border-bottom: 1px solid #eaecef; /* Lighter border for H2 */
+        }
+
+        .content-section__sub-subtitle { /* H3 */
+            font-family: var(--font-headings);
+            font-size: 1.3em;
+            color: var(--color-accent-dark);
+            margin-top: 1.8em;
+            margin-bottom: 0.8em;
+            font-weight: 600;
+        }
+
+        .content-section p {
+            margin-bottom: 1.2em;
+            text-indent: 2em;
+            text-align: justify;
+            color: var(--color-text-primary);
+        }
+        .content-section ul, .content-section ol {
+            margin-left: 1.8em;
+            margin-bottom: 1em;
+            padding-left: 1.4em;
+        }
+        .content-section li { margin-bottom: 0.5em; }
+
+        strong, .highlight { 
+            color: var(--color-highlight); 
+            font-weight: 600;
+        }
+        .term-highlight { /* For specific terms if needed, styled like code */
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            background-color: rgba(27,31,35,0.05);
+            padding: .2em .4em;
+            margin: 0;
+            font-size: 85%;
+            border-radius: 3px;
+            color: var(--color-text-primary);
+        }
+
+        .formula { /* Not really formulas in this paper, but for consistency */
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            background-color: var(--color-formula-bg);
+            padding: 10px 15px;
+            border-radius: var(--border-radius-small);
+            display: inline-block;
+            margin: 8px 0;
+            color: var(--color-formula-text);
+            border: 1px solid var(--color-border);
+            font-size: 0.95em;
+        }
+
+        .animation-container {
+            margin: 40px auto;
+            padding: 24px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius-medium);
+            background-color: #f9fbfc; 
+            box-shadow: var(--shadow-soft);
+            max-width: 700px; 
+        }
+        .animation-canvas {
+            width: 100%;
+            height: 300px; /* Default height, can be overridden */
+            margin: 16px auto;
+            display: block;
+            border-radius: var(--border-radius-small);
+            background-color: var(--color-surface);
+            border: 1px solid #d1d5da;
+        }
+        
+        .control-buttons {
+            text-align: center;
+            margin-top: 16px;
+        }
+        .control-buttons button {
+            background-color: var(--color-button-bg);
+            color: var(--color-button-text);
+            padding: 10px 18px;
+            border: 1px solid rgba(27,31,35,0.15);
+            border-radius: var(--border-radius-small);
+            cursor: pointer;
+            font-size: 0.95em;
+            font-family: var(--font-primary);
+            font-weight: 500;
+            margin: 6px;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+            box-shadow: 0 1px 0 rgba(27,31,35,0.04), inset 0 1px 0 hsla(0,0%,100%,0.25);
+        }
+        .control-buttons button:hover {
+            background-color: var(--color-button-hover-bg);
+            border-color: rgba(27,31,35,0.25);
+        }
+        .control-buttons button:active { 
+            transform: translateY(1px); 
+            box-shadow: inset 0 1px 0 rgba(27,31,35,0.1);
+        }
+
+        @media print {
+            body {
+                font-size: 12pt; 
+                background-color: #fff; 
+                padding-top: 0; padding-bottom: 0;
+                color: #000;
+            }
+            .page-wrapper {
+                width: 277mm; /* Approx A3 width with normal margins */
+                margin: 15mm auto; /* Normal A3 margins */
+                padding: 0;
+            }
+            .content-section {
+                padding: 10mm;
+                margin: 0 0 5mm 0;
+                box-shadow: none;
+                border: 1px solid #ccc;
+                border-radius: 0;
+            }
+            .page-break { page-break-after: always; }
+            .no-print { display: none !important; }
+            canvas { max-width: 100% !important; height: auto !important; border: 1px solid #bbb !important; }
+            .animation-container { page-break-inside: avoid; border: 1px dashed #ddd; padding:15px;}
+            .content-section__title, .content-section__subtitle, .content-section__sub-subtitle { page-break-after: avoid; page-break-inside: avoid; color: #000; border-color: #ccc;}
+            p, ul, ol { page-break-inside: avoid; }
+            .control-buttons button { background-color: #eee; color: #333; border: 1px solid #ccc;}
+            .highlight { color: #c00; }
+            .term-highlight { background-color: transparent; color: #333; padding:0; border-radius:0; border: 1px dotted #777;}
+        }
+
+        @font-face {
+            font-family: 'LXGW WenKai Lite';
+            src: url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-lite-webfont@1.7.0/lxgwwenkailite-regular.woff2') format('woff2');
+            font-weight: normal; /* 400 */
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'LXGW WenKai Lite';
+            src: url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-lite-webfont@1.7.0/lxgwwenkailite-bold.woff2') format('woff2');
+            font-weight: bold; /* 700 */
+            font-style: normal;
+        }
+
+        .text-center { text-align: center; }
+        .text-gray-600 { color: var(--color-text-secondary); }
+        .mb-12 { margin-bottom: 3rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .text-sm { font-size: 0.9em; }
+
+        .page-footer {
+            text-align: center;
+            padding: 25px 0;
+            margin-top: 40px;
+            font-size: 0.9em;
+            color: var(--color-text-secondary);
+            border-top: 1px solid var(--color-border);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <section class="content-section" id="title-slide">
+            <h1 class="content-section__title">ROBIN系统：科学发现的自动化引擎</h1>
+            <p class="text-center text-gray-600 mb-12 text-sm" style="text-indent:0;">—— 从物理逻辑视角解读《ROBIN: A MULTI-AGENT SYSTEM FOR AUTOMATING SCIENTIFIC DISCOVERY》</p>
+        </section>
+
+        <section class="content-section" id="intro">
+            <h2 class="content-section__subtitle">引言：当AI化身“物理学家”探索科学未知</h2>
+            <p>科学发现的征途，向来是一场充满未知与挑战的远航。传统的科研模式，如同手工作坊，依赖科学家的灵感火花与辛勤耕耘。然而，在信息爆炸的时代，面对浩如烟海的文献和日益复杂的实验数据，人类的认知和处理能力逐渐显得力不从心。此时，一篇名为《ROBIN: A MULTI-AGENT SYSTEM FOR AUTOMATING SCIENTIFIC DISCOVERY》的论文，为我们描绘了一幅激动人心的蓝图：一个名为<strong class="highlight">ROBIN</strong>的多智能体系统，它像一台精密调校的物理仪器，试图将科学发现的关键环节——背景研究、假设生成、实验设计、数据分析——整合进一个自动化的流程中。这不仅仅是AI在科研领域的又一次炫技，更像是一次对科学发现过程本身的“物理建模”与“逻辑重构”。</p>
+            <p>本文将尝试从<strong class="highlight">物理逻辑</strong>的视角，解读ROBIN系统。所谓“物理逻辑”，并非指ROBIN运用了量子力学或相对论，而是指它内部组件的<strong class="highlight">协同运作机制</strong>、信息的<strong class="highlight">有序流动路径</strong>、以及系统整体通过<strong class="highlight">反馈与迭代</strong>不断趋近目标的“动力学”过程。就如同物理学家分析一个复杂系统时，会关注其构成单元、相互作用力、能量转换和演化规律一样，我们将审视ROBIN如何像一个高度集成的“科学探索机器”，系统性地、有逻辑地推进科学问题的解决。</p>
+        </section>
+
+        <section class="content-section" id="robin-overview">
+            <h2 class="content-section__subtitle">ROBIN系统概览：一台自动化的“科学问题解决仪”</h2>
+            <p>想象一下，ROBIN系统是一台高度精密的“科学问题解决仪”。你向它输入一个待攻克的目标（例如，一种疾病的名称），它便启动内部复杂的“齿轮”和“传动装置”，开始系统性地运作。这个过程并非一步到位，而是一个<strong class="highlight">动态的、循环往复的探索过程</strong>，充满了物理系统常见的输入、处理、输出和反馈环节。</p>
+            <p>从物理逻辑上看，ROBIN的核心运作流程可以概括为：接收初始“扰动”（研究目标），通过内部一系列“传感器”和“处理器”（即各个智能体）收集和分析信息，形成初步的“响应”（假设与实验方案），然后将此方案付诸“外部环境交互”（实验室真实实验），再将交互结果作为“反馈信号”输入系统，进行“校准”和“优化”，从而启动新一轮更精确的响应。这个<strong class="highlight">闭环反馈机制</strong>是ROBIN系统能够不断逼近问题最优解的关键，也是其“物理逻辑”魅力的核心体现。</p>
+            
+            <div class="animation-container no-print">
+                <h4 class="content-section__sub-subtitle text-center" style="margin-top:0; margin-bottom: 20px; color: var(--color-heading); border:none; padding-left:0; font-size: 1.2em;">动画1：ROBIN系统整体运作流程</h4>
+                <div id="robinOverviewCanvas" class="animation-canvas" style="height: 350px;"></div>
+                <div class="control-buttons">
+                    <button onclick="playRobinOverviewAnimation()">播放流程</button>
+                    <button onclick="resetRobinOverviewAnimation()">重置</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2 text-center" style="text-indent:0;">交互说明：点击“播放流程”，观察从输入“目标疾病”开始，ROBIN系统如何依次经历假设生成、实验设计、实验执行（模拟）、数据分析，并最终形成反馈闭环，迭代优化治疗方案的过程。</p>
+            </div>
+        </section>
+
+        <section class="content-section" id="agent-collaboration">
+            <h2 class="content-section__subtitle">智能体协同：ROBIN内部的“功能模块”与“信息通路”</h2>
+            <p>ROBIN系统的强大之处，在于其内部集成了多个各司其职的“智能体”——<strong class="highlight">Crow、Falcon和Finch</strong>。这些智能体如同物理仪器中的不同功能模块，每个模块负责特定的信息处理任务，并通过清晰的“信息通路”相互协作，共同完成复杂的科学探索任务。</p>
+            <ul>
+                <li><strong>Crow (乌鸦)</strong>: 扮演着“快速侦察兵”和“初步信息筛选器”的角色。它负责对海量文献进行快速扫描和摘要，为系统提供初步的背景知识、潜在的疾病机制和实验策略。如同一个宽频带的传感器，迅速捕捉相关信号。</li>
+                <li><strong>Falcon (猎隼)</strong>: 则是“深度分析师”。当Crow筛选出有潜力的候选目标（如药物靶点）后，Falcon会进行更深入、更全面的文献挖掘和评估，提供详尽的报告。它像一个高精度的分析仪器，对特定信号进行精细解读。</li>
+                <li><strong>Finch (雀鸟)</strong>: 担当“数据处理核心”的重任。当实验室实验完成后，Finch负责对原始实验数据（如RNA测序、流式细胞术数据）进行专业的生物信息学分析，提取关键洞见，并生成可解释的结果和可视化图表。它好比系统中的“中央处理器”或“信号解码器”，将原始的“物理信号”（实验数据）转化为有意义的“科学信息”。</li>
+            </ul>
+            <p>这些智能体之间的协作并非简单的线性叠加，而是一种<strong class="highlight">动态的、按需调度的网络化工作模式</strong>。ROBIN主系统如同一个“中央控制器”，根据当前任务阶段和已获取的信息，精准地激活相应的智能体，并将处理结果在它们之间高效传递。这种模块化设计和清晰的信息流，保证了系统整体运作的有序性和高效性，是其“物理逻辑”合理性的重要体现。</p>
+
+            <div class="animation-container no-print">
+                <h4 class="content-section__sub-subtitle text-center" style="margin-top:0; margin-bottom: 20px; color: var(--color-heading); border:none; padding-left:0; font-size: 1.2em;">动画2：ROBIN智能体协作网络</h4>
+                <div id="agentCollaborationCanvas" class="animation-canvas" style="height: 350px;"></div>
+                <div class="control-buttons">
+                    <button onclick="playAgentCollaborationAnimation()">演示协作</button>
+                    <button onclick="resetAgentCollaborationAnimation()">重置</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2 text-center" style="text-indent:0;">交互说明：点击“演示协作”，观察ROBIN主控模块如何向Crow、Falcon、Finch三个智能体发送指令（信息流），以及各智能体如何处理信息并返回结果，形成一个动态的协作网络。</p>
+            </div>
+        </section>
+        
+        <div class="page-break"></div>
+
+        <section class="content-section" id="iterative-discovery">
+            <h2 class="content-section__subtitle">迭代发现之旅：以dAMD为例看ROBIN的“学习进化”</h2>
+            <p>ROBIN系统最引人注目的“物理特性”之一，是其<strong class="highlight">迭代式的学习与进化能力</strong>。它并非一次性给出最终答案，而是通过一轮轮“假设-实验-分析-修正”的循环，逐步逼近科学真相。论文中关于<strong class="highlight">干性年龄相关性黄斑变性（dAMD）</strong>的治疗药物发现过程，生动地展示了ROBIN如何像一个自适应的物理系统一样，在与“真实世界”（实验数据）的互动中不断调整自身“参数”，优化“输出行为”。</p>
+            <p>初始阶段，ROBIN基于文献分析，提出增强视网膜色素上皮（RPE）细胞的吞噬作用可能是一个治疗dAMD的有效策略。在第一轮候选药物筛选和实验验证后，ROBIN（通过Finch）分析了实验数据，发现ROCK抑制剂Y-27632表现出积极效果。这构成了一个关键的“反馈信号”。</p>
+            <p>接收到这个反馈后，ROBIN并没有止步于此。它展现了其“学习”能力：首先，它提议进行RNA测序来深入探究Y-27632的作用机制，Finch的分析揭示了ABCA1（一个关键的脂质外排泵）的上调，这为理解药物效果提供了新的分子视角。更重要的是，基于第一轮的实验成果和机制洞察，ROBIN在<strong class="highlight">第二轮假设生成中，提出了更为精准的候选药物</strong>——Ripasudil，这是另一种ROCK抑制剂，已在日本批准用于治疗青光眼。随后的实验惊人地证实，Ripasudil在增强RPE细胞吞噬作用方面比Y-27632更为有效！</p>
+            <p>这个过程完美诠释了物理系统中常见的<strong class="highlight">“试错-校正-优化”的迭代逻辑</strong>。每一次实验结果，都像一个“校准信号”，帮助ROBIN调整其内部的“知识模型”和“推理路径”，使其在下一轮的探索中更加聚焦和高效。这种通过与真实数据交互而不断自我完善的特性，是ROBIN系统超越简单信息检索，迈向真正“智能发现”的核心。</p>
+
+            <div class="animation-container no-print">
+                <h4 class="content-section__sub-subtitle text-center" style="margin-top:0; margin-bottom: 20px; color: var(--color-heading); border:none; padding-left:0; font-size: 1.2em;">动画3：dAMD药物发现的迭代优化过程</h4>
+                <div id="iterativeDiscoveryCanvas" class="animation-canvas" style="height: 400px;"></div>
+                <div class="control-buttons">
+                    <button onclick="playIterativeDiscoveryAnimation()">播放迭代</button>
+                    <button onclick="resetIterativeDiscoveryAnimation()">重置</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2 text-center" style="text-indent:0;">交互说明：点击“播放迭代”，动画将展示ROBIN针对dAMD的药物发现过程。从初步候选（Y-27632）到实验验证，再到机制分析（RNA-seq），最终迭代到更优效的药物（Ripasudil）。通过条形图动态展示药物效能的提升。</p>
+            </div>
+        </section>
+
+        <section class="content-section" id="finch-analysis">
+            <h2 class="content-section__subtitle">Finch的数据洞察：从“原始信号”到“科学结论”的转换器</h2>
+            <p>在ROBIN这台精密的“科学仪器”中，Finch智能体扮演着至关重要的角色——它是一个高效的“数据到洞察转换器”。物理实验产生了大量的原始数据，这些数据如同未经处理的“物理信号”，包含了丰富的信息，但也混杂着噪声和冗余。Finch的任务就是从这些原始信号中<strong class="highlight">提取出有价值的科学模式，并将其转化为可理解的结论</strong>。</p>
+            <p>Finch的一个独特之处在于其处理生物数据（如流式细胞术、RNA测序数据）的<strong class="highlight">多轨迹分析能力</strong>。由于生物数据解读本身具有一定的模糊性和分析方法的多样性（例如，流式细胞术中的圈门选择，RNA测序中的过滤标准），单一的分析路径可能带有偏见或偶然性。Finch可以启动多个独立的分析流程（轨迹），每个流程都可能采用略微不同的参数或方法来解读同一份数据。这就像在物理实验中，为了减少系统误差和随机误差，我们会进行多次测量并采用不同的数据处理方法一样。</p>
+            <p>完成多轨迹分析后，Finch会进行<strong class="highlight">元分析（meta-analysis）</strong>，将所有轨迹的输出综合起来，形成一个基于共识的、更稳健的结论。这种策略不仅探索了分析方法的多样性，还通过共识机制确保了最终结果的高度一致性和可靠性。从物理逻辑的角度看，这是一种<strong class="highlight">增强系统鲁棒性和信噪比</strong>的有效手段，确保从“嘈杂”的实验数据中提炼出的“科学信号”是真实可信的。</p>
+
+            <div class="animation-container no-print">
+                <h4 class="content-section__sub-subtitle text-center" style="margin-top:0; margin-bottom: 20px; color: var(--color-heading); border:none; padding-left:0; font-size: 1.2em;">动画4：Finch的多轨迹共识分析</h4>
+                <div id="finchAnalysisCanvas" class="animation-canvas" style="height: 350px;"></div>
+                <div class="control-buttons">
+                    <button onclick="playFinchAnalysisAnimation()">演示分析</button>
+                    <button onclick="resetFinchAnalysisAnimation()">重置</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2 text-center" style="text-indent:0;">交互说明：点击“演示分析”，动画将模拟Finch接收原始数据后，启动多个（例如3-5个）并行的分析轨迹。每个轨迹可能产生略微不同的中间结果（用晃动的小点或曲线表示），最终这些轨迹的结果汇聚到一个“共识区域”，形成一个稳定、可靠的最终结论（例如一个清晰的条形图或数据点）。</p>
+            </div>
+        </section>
+        
+        <section class="content-section" id="llm-judge">
+            <h2 class="content-section__subtitle">LLM裁判的“选择门”：系统内部的决策与筛选机制</h2>
+            <p>在ROBIN系统的复杂信息流中，除了数据的生成和分析，<strong class="highlight">决策与筛选</strong>也是不可或缺的关键环节。当系统面临多个潜在的实验方案或候选药物时，如何选出最优的进行下一步探索？这里，论文中提到的“LLM Judge”（大语言模型裁判）扮演了一个重要的“选择门”或“滤波器”角色。</p>
+            <p>例如，在确定实验策略时，ROBIN会利用Crow生成多个关于疾病机制和相应体外模型的报告。随后，LLM裁判会对这些报告进行<strong class="highlight">成对比较</strong>，并根据预设的标准（如科学合理性、可行性、与疾病的相关性等）对它们进行排序。最终，排名最高的体外模型会被选中，用于后续的治疗候选物筛选。类似地，在生成了众多潜在的治疗候选药物后，LLM裁判也会根据药物的科学原理、药理特性和文献支持强度等因素，对它们进行排序，从而帮助人类科学家聚焦于最有希望的选项。</p>
+            <p>从物理逻辑的角度看，LLM裁判的功能类似于一个<strong class="highlight">可配置的滤波器或决策阈值单元</strong>。它根据当前阶段的目标和一系列评价函数（由其提示词和训练数据隐含定义），从众多可能性中筛选出最符合要求的“信号”，引导系统的探索方向。这种机制确保了系统在每一步都能做出相对明智的选择，避免了在无尽的可能性中盲目搜索，从而提高了整体的效率和命中率。虽然这个“裁判”本身也是一个复杂的AI模型，但在ROBIN这个更大的系统中，它承担了一个清晰的、逻辑化的决策功能。</p>
+
+            <div class="animation-container no-print">
+                <h4 class="content-section__sub-subtitle text-center" style="margin-top:0; margin-bottom: 20px; color: var(--color-heading); border:none; padding-left:0; font-size: 1.2em;">动画5：LLM裁判的筛选与排序过程</h4>
+                <div id="llmJudgeCanvas" class="animation-canvas" style="height: 350px;"></div>
+                <div class="control-buttons">
+                    <button onclick="playLLMJudgeAnimation()">演示筛选</button>
+                    <button onclick="resetLLMJudgeAnimation()">重置</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2 text-center" style="text-indent:0;">交互说明：点击“演示筛选”，动画将展示一系列候选方案（如不同颜色的小球）进入“LLM裁判”模块。裁判模块内部通过模拟的“比较”和“打分”过程（例如小球两两碰撞，胜者晋级或颜色变化代表得分），最终输出一个有序排列的候选序列，其中最优的方案（例如颜色最亮或位置最靠前的小球）被突出显示。</p>
+            </div>
+        </section>
+
+        <section class="content-section" id="conclusion">
+            <h2 class="content-section__subtitle">结语：ROBIN——科学发现的“智能物理系统”</h2>
+            <p>ROBIN系统的出现，不仅仅是AI技术在科研应用上的又一里程碑，更是对科学发现过程本身的一次深刻的<strong class="highlight">系统化、逻辑化重塑</strong>。从物理逻辑的视角审视，ROBIN展现了高度有序的内部结构、清晰的信息流动路径、以及至关重要的<strong class="highlight">反馈迭代机制</strong>。它像一台能够自我学习、自我校准的精密仪器，将人类科学家的智慧与AI的强大计算分析能力巧妙融合，共同驱动科学探索的车轮。</p>
+            <p>当然，ROBIN目前仍处于发展初期，正如论文所指出的，它在实验方案的具体化、Finch分析的自主性、以及假设评估与人类专家判断的对齐等方面还有提升空间。但这并不妨碍我们畅想其未来的巨大潜力。如果说传统的科学发现依赖于科学家的“个体智慧”，那么ROBIN则开启了一种<strong class="highlight">“集体智能”与“系统智能”相结合</strong>的新范式。它所体现的模块化设计、自动化流程、以及数据驱动的迭代优化思想，与现代复杂物理系统工程的理念不谋而合。</p>
+            <p>未来，随着类似ROBIN这样的“智能物理系统”不断进化，我们有理由相信，科学发现的效率和边界将被极大地拓展。它们或许无法完全取代人类科学家的创造力和直觉，但无疑将成为我们探索未知世界、攻克复杂难题的<strong class="highlight">强大“智能工具”和“灵感伙伴”</strong>。这场由AI驱动的科研“新物理学”革命，正悄然拉开序幕。</p>
+        </section>
+
+        <footer class="page-footer no-print">
+            <p>&copy; 2024 ROBIN系统物理逻辑解读与动画演示页面。基于公开论文分析。</p>
+        </footer>
+    </div>
+
+<script>
+    // Global control variables for animations
+    let animInstances = {};
+    // Store fetched CSS color values
+    let cssColors = {};
+
+    // Function to get CSS custom property values
+    function fetchCssColors() {
+        const styles = getComputedStyle(document.documentElement);
+        cssColors.accent = styles.getPropertyValue('--color-accent').trim();
+        cssColors.accentDark = styles.getPropertyValue('--color-accent-dark').trim();
+        cssColors.heading = styles.getPropertyValue('--color-heading').trim();
+    }
+
+    // --- Animation 1: ROBIN System Overview ---
+    const robinOverviewSketch = (p) => {
+        let nodes = [];
+        let edges = [];
+        let currentStage = 0;
+        let playing = false;
+        let progress = 0; // For animating edges
+
+        p.setup = () => {
+            let canvasContainer = p.select('#robinOverviewCanvas');
+            let canvas = p.createCanvas(canvasContainer.width, canvasContainer.height);
+            canvas.parent('robinOverviewCanvas');
+            // Ensure CSS colors are fetched before first use
+            if (Object.keys(cssColors).length === 0) fetchCssColors();
+            p.resetSim();
+            p.noLoop();
+            p.drawScene();
+        };
+
+        p.resetSim = () => {
+            nodes = [
+                { id: 0, label: "输入\n目标疾病", x: p.width * 0.15, y: p.height / 2, active: false, color: p.color(100, 150, 255) },
+                { id: 1, label: "ROBIN 系统\n(假设生成)", x: p.width * 0.35, y: p.height * 0.3, active: false, color: p.color(255, 150, 100) },
+                { id: 2, label: "实验设计\n与执行", x: p.width * 0.55, y: p.height / 2, active: false, color: p.color(150, 255, 100) },
+                { id: 3, label: "ROBIN 系统\n(数据分析)", x: p.width * 0.35, y: p.height * 0.7, active: false, color: p.color(255, 100, 150) },
+                { id: 4, label: "输出\n治疗方案", x: p.width * 0.85, y: p.height / 2, active: false, color: p.color(100, 200, 200) }
+            ];
+            edges = [
+                { from: 0, to: 1, active: false }, { from: 1, to: 2, active: false },
+                { from: 2, to: 3, active: false }, { from: 3, to: 1, active: false, feedback: true }, // Feedback loop
+                { from: 3, to: 4, active: false } 
+            ];
+            currentStage = 0;
+            progress = 0;
+            nodes[0].active = true; 
+        };
+        
+        p.drawScene = () => {
+            p.background(250, 252, 254); 
+            p.strokeWeight(2.5);
+            for (let edge of edges) {
+                let n1 = nodes.find(n => n.id === edge.from);
+                let n2 = nodes.find(n => n.id === edge.to);
+                if (edge.active) {
+                    p.stroke(cssColors.accent || '#0366d6'); // Fallback color
+                    let drawX = p.lerp(n1.x, n2.x, progress);
+                    let drawY = p.lerp(n1.y, n2.y, progress);
+                    p.line(n1.x, n1.y, drawX, drawY);
+                    if (progress >= 1) {
+                        p.push();
+                        p.translate(n2.x, n2.y);
+                        p.rotate(p.atan2(n2.y - n1.y, n2.x - n1.x));
+                        p.fill(cssColors.accent || '#0366d6');
+                        p.triangle(-8, -4, -8, 4, 0, 0);
+                        p.pop();
+                    }
+                } else {
+                    p.stroke(200, 200, 200, 150); 
+                     p.line(n1.x, n1.y, n2.x, n2.y);
+                }
+                if (edge.feedback) { 
+                    p.drawingContext.setLineDash([5, 5]);
+                    p.line(n1.x, n1.y, n2.x, n2.y);
+                    p.drawingContext.setLineDash([]);
+                }
+            }
+
+            for (let node of nodes) {
+                p.fill(node.active ? node.color : p.color(220, 225, 230));
+                p.stroke(node.active ? p.color(50,80,120) : p.color(180,185,190));
+                p.strokeWeight(1.5);
+                p.ellipse(node.x, node.y, p.width*0.18, p.height*0.22);
+                p.fill(node.active ? 0 : 100);
+                p.noStroke();
+                p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(12);
+                p.text(node.label, node.x, node.y);
+            }
+        };
+
+        p.draw = () => {
+            if (!playing) return;
+            progress += 0.05; 
+            if (progress >= 1) {
+                progress = 0;
+                nodes.forEach(n => n.active = false);
+                edges.forEach(e => e.active = false);
+                currentStage++;
+                if (currentStage === 1) { nodes[0].active = true; nodes[1].active = true; edges[0].active = true; } 
+                else if (currentStage === 2) { nodes[1].active = true; nodes[2].active = true; edges[1].active = true; } 
+                else if (currentStage === 3) { nodes[2].active = true; nodes[3].active = true; edges[2].active = true; } 
+                else if (currentStage === 4) { 
+                    nodes[3].active = true; nodes[4].active = true; edges[4].active = true; 
+                    nodes[1].active = true; edges[3].active = true; 
+                } else if (currentStage > 4) { 
+                    p.pause();
+                    nodes.forEach(n => n.active = true); 
+                    edges.forEach(e => e.active = true);
+                }
+            }
+            p.drawScene();
+        };
+        
+        p.play = () => { if (!playing) { playing = true; p.loop(); }};
+        p.pause = () => { playing = false; p.noLoop(); };
+        p.reset = () => {
+            playing = false;
+            p.noLoop();
+            p.resetSim();
+            p.clear(); 
+            p.drawScene();
+        };
+    };
+
+    // --- Animation 2: Agent Collaboration ---
+    const agentCollaborationSketch = (p) => {
+        let robinNode, crowNode, falconNode, finchNode;
+        let particles = []; 
+        let playing = false;
+
+        class InfoParticle {
+            constructor(startX, startY, targetNode, type) {
+                this.x = startX; this.y = startY; this.target = targetNode; this.type = type; 
+                this.speed = 2;
+                this.color = type === 'query' ? p.color(0, 150, 255, 180) : p.color(0, 200, 100, 180);
+                this.radius = 5; this.reached = false;
+            }
+            update() {
+                if (this.reached) return;
+                let angle = p.atan2(this.target.y - this.y, this.target.x - this.x);
+                this.x += p.cos(angle) * this.speed; this.y += p.sin(angle) * this.speed;
+                if (p.dist(this.x, this.y, this.target.x, this.target.y) < this.speed) {
+                    this.reached = true; this.target.pulse = 10; 
+                    if (this.type === 'query' && this.target !== robinNode) {
+                        particles.push(new InfoParticle(this.target.x, this.target.y, robinNode, 'result'));
+                    }
+                }
+            }
+            display() { p.fill(this.color); p.noStroke(); p.ellipse(this.x, this.y, this.radius * 2); }
+        }
+        
+        p.setup = () => {
+            let canvasContainer = p.select('#agentCollaborationCanvas');
+            let canvas = p.createCanvas(canvasContainer.width, canvasContainer.height);
+            canvas.parent('agentCollaborationCanvas');
+            p.resetSim(); p.noLoop(); p.drawScene();
+        };
+
+        p.resetSim = () => {
+            robinNode = { x: p.width / 2, y: p.height * 0.2, label: "ROBIN\n(主控)", size: 60, pulse: 0, color: p.color(200,100,100) };
+            crowNode = { x: p.width * 0.25, y: p.height * 0.65, label: "Crow\n(文献速览)", size: 50, pulse: 0, color: p.color(100,200,100) };
+            falconNode = { x: p.width / 2, y: p.height * 0.75, label: "Falcon\n(深度评估)", size: 50, pulse: 0, color: p.color(100,100,200) };
+            finchNode = { x: p.width * 0.75, y: p.height * 0.65, label: "Finch\n(数据分析)", size: 50, pulse: 0, color: p.color(200,200,100) };
+            particles = []; playing = false;
+        };
+
+        p.drawNode = (node) => {
+            p.fill(node.color); p.stroke(50); p.strokeWeight(1);
+            let currentSize = node.size + node.pulse; if (node.pulse > 0) node.pulse -= 0.5;
+            p.ellipse(node.x, node.y, currentSize, currentSize);
+            p.fill(0); p.noStroke(); p.textAlign(p.CENTER, p.CENTER); p.textSize(11); p.text(node.label, node.x, node.y);
+        };
+        
+        p.drawScene = () => {
+            p.background(252, 250, 255);
+            p.stroke(180, 180, 200, 100); p.strokeWeight(1.5);
+            p.line(robinNode.x, robinNode.y, crowNode.x, crowNode.y);
+            p.line(robinNode.x, robinNode.y, falconNode.x, falconNode.y);
+            p.line(robinNode.x, robinNode.y, finchNode.x, finchNode.y);
+            p.drawNode(robinNode); p.drawNode(crowNode); p.drawNode(falconNode); p.drawNode(finchNode);
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update(); particles[i].display();
+                if (particles[i].reached && particles[i].target === robinNode && particles[i].type === 'result') {
+                     particles.splice(i, 1); 
+                } else if (particles[i].reached && particles[i].type === 'query' && particles[i].target !== robinNode) {
+                    particles.splice(i,1);
+                }
+            }
+        };
+
+        p.draw = () => {
+            if (!playing) return;
+            if (p.frameCount % 90 === 0) { 
+                let targetAgent = p.random([crowNode, falconNode, finchNode]);
+                particles.push(new InfoParticle(robinNode.x, robinNode.y, targetAgent, 'query'));
+                robinNode.pulse = 10;
+            }
+            p.drawScene();
+        };
+        
+        p.play = () => { if(!playing) {playing = true; p.loop(); }};
+        p.pause = () => { playing = false; p.noLoop(); };
+        p.reset = () => { playing = false; p.noLoop(); p.resetSim(); p.clear(); p.drawScene(); };
+    };
+
+    // --- Animation 3: Iterative Discovery (dAMD) ---
+    const iterativeDiscoverySketch = (p) => {
+        let stages = ["初始候选", "实验验证 1\n(Y-27632)", "机制分析\n(RNA-seq)", "迭代候选", "实验验证 2\n(Ripasudil)", "更优结果"];
+        let currentStageIndex = 0;
+        let barData = [0, 0, 0, 0, 0, 0]; 
+        let targetBarData = [30, 60, 60, 70, 90, 90]; 
+        let playing = false;
+        let progress = 0; 
+
+        p.setup = () => {
+            let canvasContainer = p.select('#iterativeDiscoveryCanvas');
+            let canvas = p.createCanvas(canvasContainer.width, canvasContainer.height);
+            canvas.parent('iterativeDiscoveryCanvas');
+            if (Object.keys(cssColors).length === 0) fetchCssColors();
+            p.resetSim(); p.noLoop(); p.drawScene();
+        };
+
+        p.resetSim = () => { currentStageIndex = 0; barData = [0, 0, 0, 0, 0, 0]; progress = 0; playing = false; };
+        
+        p.drawScene = () => {
+            p.background(240, 250, 245);
+            let timelineY = p.height * 0.3;
+            let barChartY = p.height * 0.75;
+            let barChartHeight = p.height * 0.3; // Max height for bars
+            let barWidth = p.width / (stages.length * 1.5);
+            
+            p.stroke(150); p.strokeWeight(2);
+            p.line(p.width * 0.1, timelineY, p.width * 0.9, timelineY);
+
+            for (let i = 0; i < stages.length; i++) {
+                let x = p.map(i, 0, stages.length - 1, p.width * 0.15, p.width * 0.85);
+                p.fill(i <= currentStageIndex ? (cssColors.accent || '#0366d6') : p.color(200));
+                p.stroke(i <= currentStageIndex ? (cssColors.accentDark || '#005cc5') : p.color(150));
+                p.ellipse(x, timelineY, 20, 20);
+                p.fill(50); p.noStroke(); p.textAlign(p.CENTER, p.TOP); p.textSize(10);
+                p.text(stages[i], x, timelineY + 15);
+
+                let currentBarHeight = p.map(barData[i], 0, 100, 0, barChartHeight); // Scale barData to fit chart
+                p.fill(i <= currentStageIndex ? p.color(100,180,255) : p.color(200));
+                p.stroke(i <= currentStageIndex ? p.color(50,100,200) : p.color(150));
+                p.rect(x - barWidth/2, barChartY, barWidth, -currentBarHeight);
+                if (i <= currentStageIndex && barData[i] > 0) {
+                    p.fill(0); p.noStroke();
+                    p.text(p.int(barData[i]), x, barChartY - currentBarHeight - 5);
+                }
+            }
+            
+            p.stroke(50); p.line(p.width*0.1, barChartY, p.width*0.9, barChartY);
+            p.fill(50); p.noStroke(); p.textAlign(p.RIGHT, p.CENTER);
+            p.text("效能", p.width*0.1 - 5, barChartY - barChartHeight/2);
+
+            p.fill(cssColors.heading || '#0366d6'); p.textSize(14); p.textAlign(p.CENTER, p.TOP);
+            p.text("dAMD药物发现迭代优化 (模拟效能)", p.width/2, 15);
+        };
+
+        p.draw = () => {
+            if (!playing) return;
+            if (barData[currentStageIndex] < targetBarData[currentStageIndex]) {
+                barData[currentStageIndex] = p.lerp(barData[currentStageIndex], targetBarData[currentStageIndex], 0.1);
+                 if (p.abs(barData[currentStageIndex] - targetBarData[currentStageIndex]) < 0.1) {
+                    barData[currentStageIndex] = targetBarData[currentStageIndex];
+                }
+            } else { 
+                 progress += 0.02; 
+                 if (progress >= 1) {
+                    progress = 0;
+                    if (currentStageIndex < stages.length - 1) {
+                        currentStageIndex++;
+                        for(let i=0; i < currentStageIndex; i++) barData[i] = targetBarData[i];
+                    } else { p.pause(); }
+                }
+            }
+            p.drawScene();
+        };
+        
+        p.play = () => { if(!playing) {playing = true; p.loop(); }};
+        p.pause = () => { playing = false; p.noLoop(); };
+        p.reset = () => { playing = false; p.noLoop(); p.resetSim(); p.clear(); p.drawScene(); };
+    };
+
+    // --- Animation 4: Finch's Multi-Trajectory Consensus Analysis ---
+    const finchAnalysisSketch = (p) => {
+        let trajectories = []; let numTrajectories = 5;
+        let consensusValue = 0; let targetConsensus = 75; 
+        let playing = false; let time = 0;
+
+        p.setup = () => {
+            let canvasContainer = p.select('#finchAnalysisCanvas');
+            let canvas = p.createCanvas(canvasContainer.width, canvasContainer.height);
+            canvas.parent('finchAnalysisCanvas');
+            if (Object.keys(cssColors).length === 0) fetchCssColors();
+            p.resetSim(); p.noLoop(); p.drawScene();
+        };
+
+        p.resetSim = () => {
+            trajectories = [];
+            for (let i = 0; i < numTrajectories; i++) {
+                trajectories.push({
+                    points: [], currentY: p.height * 0.8, 
+                    targetY: p.random(p.height * 0.2, p.height * 0.4), 
+                    color: p.color(p.random(100, 200), p.random(100, 200), 255, 150),
+                    done: false
+                });
+            }
+            consensusValue = 0; time = 0; playing = false;
+        };
+        
+        p.drawScene = () => {
+            p.background(255, 250, 250);
+            let dataAreaX = p.width * 0.1, dataAreaW = p.width * 0.8;
+            let consensusAreaY = p.height * 0.15, consensusAreaH = p.height * 0.1;
+
+            p.strokeWeight(2);
+            for (let i = 0; i < numTrajectories; i++) {
+                let traj = trajectories[i]; p.stroke(traj.color); p.noFill(); p.beginShape();
+                let startX = dataAreaX + (dataAreaW / (numTrajectories + 1)) * (i + 1);
+                p.vertex(startX, p.height * 0.8); 
+                for (let pt of traj.points) p.vertex(pt.x, pt.y);
+                if (traj.points.length > 0) p.vertex(traj.points[traj.points.length-1].x, traj.currentY);
+                else p.vertex(startX, traj.currentY);
+                p.endShape();
+            }
+
+            p.fill(220, 220, 200, 100); p.noStroke();
+            p.rect(dataAreaX, consensusAreaY, dataAreaW, consensusAreaH);
+            p.fill(100, 200, 100); 
+            let barH = p.map(consensusValue, 0, 100, 0, consensusAreaH * 0.8);
+            p.rect(dataAreaX + dataAreaW * 0.1, consensusAreaY + consensusAreaH * 0.9 - barH, dataAreaW * 0.8, barH);
+            
+            p.fill(0); p.textAlign(p.CENTER, p.CENTER); p.textSize(12);
+            p.text(`共识结果: ${p.int(consensusValue)}`, p.width/2, consensusAreaY + consensusAreaH / 2);
+            p.textSize(10); p.text("多轨迹分析", p.width/2, p.height * 0.9);
+
+            p.fill(cssColors.heading || '#0366d6'); p.textSize(14); p.textAlign(p.CENTER, p.TOP);
+            p.text("Finch: 多轨迹分析与共识形成", p.width/2, 15);
+        };
+
+        p.draw = () => {
+            if (!playing) return; time++;
+            let allTrajectoriesDone = true;
+            for (let i = 0; i < numTrajectories; i++) {
+                let traj = trajectories[i]; if (traj.done) continue; allTrajectoriesDone = false;
+                let startX = p.width * 0.1 + (p.width * 0.8 / (numTrajectories + 1)) * (i + 1);
+                let noise = (p.noise(time * 0.05 + i * 10) - 0.5) * 30; 
+                if (traj.currentY > traj.targetY) {
+                    traj.currentY = p.lerp(traj.currentY, traj.targetY, 0.05);
+                    if (traj.points.length === 0 || p.dist(startX + noise, traj.currentY, traj.points[traj.points.length-1].x, traj.points[traj.points.length-1].y) > 5) {
+                       traj.points.push({x: startX + noise, y: traj.currentY});
+                    }
+                } else { traj.done = true; }
+            }
+            if (allTrajectoriesDone) {
+                if (consensusValue < targetConsensus) {
+                    consensusValue = p.lerp(consensusValue, targetConsensus, 0.1);
+                     if (p.abs(consensusValue - targetConsensus) < 0.1) {
+                        consensusValue = targetConsensus; p.pause(); 
+                    }
+                }
+            }
+            p.drawScene();
+        };
+        
+        p.play = () => { if(!playing) {playing = true; p.loop(); }};
+        p.pause = () => { playing = false; p.noLoop(); };
+        p.reset = () => { playing = false; p.noLoop(); p.resetSim(); p.clear(); p.drawScene(); };
+    };
+    
+    // --- Animation 5: LLM Judge ---
+    const llmJudgeSketch = (p) => {
+        let candidates = []; let numCandidates = 7;
+        let rankedCandidates = []; let playing = false;
+        let sortProgress = 0; let judgeBox;
+
+        p.setup = () => {
+            let canvasContainer = p.select('#llmJudgeCanvas');
+            let canvas = p.createCanvas(canvasContainer.width, canvasContainer.height);
+            canvas.parent('llmJudgeCanvas');
+            if (Object.keys(cssColors).length === 0) fetchCssColors();
+            p.resetSim(); p.noLoop();p.drawScene();
+        };
+
+        p.resetSim = () => {
+            candidates = []; rankedCandidates = [];
+            judgeBox = { x: p.width/2, y: p.height * 0.4, w: p.width*0.3, h: p.height*0.2, label: "LLM 裁判" };
+            let startY = p.height * 0.15;
+            for (let i = 0; i < numCandidates; i++) {
+                candidates.push({
+                    id: i, x: p.width * 0.15 + (p.width * 0.7 / numCandidates) * i, y: startY,
+                    targetX: 0, targetY: p.height * 0.75,
+                    color: p.color(p.random(100,255), p.random(100,200), p.random(100,200), 200),
+                    value: p.random(100), 
+                    currentX: p.width * 0.15 + (p.width * 0.7 / numCandidates) * i, currentY: startY,
+                    label: `候选项 ${String.fromCharCode(65+i)}`
+                });
+            }
+            rankedCandidates = [...candidates].sort((a, b) => b.value - a.value);
+            for(let i=0; i < rankedCandidates.length; i++){
+                let originalCand = candidates.find(c => c.id === rankedCandidates[i].id);
+                originalCand.targetX = p.width * 0.15 + (p.width * 0.7 / numCandidates) * i;
+            }
+            sortProgress = 0; playing = false;
+        };
+        
+        p.drawScene = () => {
+            p.background(250, 250, 255);
+            p.fill(220, 230, 240, 150); p.stroke(180, 190, 200);
+            p.rectMode(p.CENTER);
+            p.rect(judgeBox.x, judgeBox.y, judgeBox.w, judgeBox.h, 5);
+            p.fill(50); p.noStroke(); p.textAlign(p.CENTER, p.CENTER); p.textSize(14);
+            p.text(judgeBox.label, judgeBox.x, judgeBox.y);
+            p.rectMode(p.CORNER); 
+
+            p.strokeWeight(1.5);
+            for (let cand of candidates) {
+                cand.currentX = p.lerp(cand.x, cand.targetX, sortProgress);
+                cand.currentY = p.lerp(cand.y, cand.targetY, sortProgress);
+                p.fill(cand.color);
+                p.stroke(p.red(cand.color)-50, p.green(cand.color)-50, p.blue(cand.color)-50);
+                p.ellipse(cand.currentX, cand.currentY, 35, 35);
+                p.fill(0); p.noStroke(); p.textSize(9);
+                p.text(cand.label, cand.currentX, cand.currentY);
+                if (playing && sortProgress > 0.05 && sortProgress < 0.95) {
+                    p.stroke(200,200,200, 80);
+                    p.line(cand.currentX, cand.currentY, judgeBox.x, judgeBox.y);
+                }
+            }
+            
+            p.fill(80); p.textSize(12); p.textAlign(p.LEFT);
+            p.text("输入候选:", p.width * 0.05, candidates[0].y - 25);
+            p.text("排序输出:", p.width * 0.05, candidates[0].targetY - 25);
+
+            p.fill(cssColors.heading || '#0366d6'); p.textSize(14); p.textAlign(p.CENTER, p.TOP);
+            p.text("LLM裁判：候选方案筛选与排序", p.width/2, 15);
+        };
+
+        p.draw = () => {
+            if (!playing) return;
+            if (sortProgress < 1) sortProgress += 0.01; 
+            else { sortProgress = 1; p.pause(); }
+            p.drawScene();
+        };
+        
+        p.play = () => { if(!playing) {playing = true; p.loop(); }};
+        p.pause = () => { playing = false; p.noLoop(); };
+        p.reset = () => { playing = false; p.noLoop(); p.resetSim(); p.clear(); p.drawScene(); };
+    };
+
+
+    // --- Global Animation Control Functions ---
+    function playRobinOverviewAnimation() { if (animInstances.robinOverview) animInstances.robinOverview.play(); }
+    function resetRobinOverviewAnimation() { if (animInstances.robinOverview) animInstances.robinOverview.reset(); }
+    function playAgentCollaborationAnimation() { if (animInstances.agentCollaboration) animInstances.agentCollaboration.play(); }
+    function resetAgentCollaborationAnimation() { if (animInstances.agentCollaboration) animInstances.agentCollaboration.reset(); }
+    function playIterativeDiscoveryAnimation() { if (animInstances.iterativeDiscovery) animInstances.iterativeDiscovery.play(); }
+    function resetIterativeDiscoveryAnimation() { if (animInstances.iterativeDiscovery) animInstances.iterativeDiscovery.reset(); }
+    function playFinchAnalysisAnimation() { if (animInstances.finchAnalysis) animInstances.finchAnalysis.play(); }
+    function resetFinchAnalysisAnimation() { if (animInstances.finchAnalysis) animInstances.finchAnalysis.reset(); }
+    function playLLMJudgeAnimation() { if (animInstances.llmJudge) animInstances.llmJudge.play(); }
+    function resetLLMJudgeAnimation() { if (animInstances.llmJudge) animInstances.llmJudge.reset(); }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchCssColors(); // Fetch colors once DOM is loaded
+        setTimeout(() => { 
+            if (typeof robinOverviewSketch === 'function' && document.getElementById('robinOverviewCanvas')) {
+                animInstances.robinOverview = new p5(robinOverviewSketch, 'robinOverviewCanvas');
+            }
+            if (typeof agentCollaborationSketch === 'function' && document.getElementById('agentCollaborationCanvas')) {
+                animInstances.agentCollaboration = new p5(agentCollaborationSketch, 'agentCollaborationCanvas');
+            }
+            if (typeof iterativeDiscoverySketch === 'function' && document.getElementById('iterativeDiscoveryCanvas')) {
+                animInstances.iterativeDiscovery = new p5(iterativeDiscoverySketch, 'iterativeDiscoveryCanvas');
+            }
+            if (typeof finchAnalysisSketch === 'function' && document.getElementById('finchAnalysisCanvas')) {
+                animInstances.finchAnalysis = new p5(finchAnalysisSketch, 'finchAnalysisCanvas');
+            }
+            if (typeof llmJudgeSketch === 'function' && document.getElementById('llmJudgeCanvas')) {
+                animInstances.llmJudge = new p5(llmJudgeSketch, 'llmJudgeCanvas');
+            }
+        }, 150); 
+    });
+</script>
+</body>
+</html>
