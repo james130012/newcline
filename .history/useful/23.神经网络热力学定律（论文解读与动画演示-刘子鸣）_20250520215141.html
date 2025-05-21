@@ -1,0 +1,950 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神经网络热力学定律（论文解读与动画演示）</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        /* A3 and custom styles */
+        body {
+            font-family: 'LXGW WenKai Lite', 'KaiTi', 'SimSun', sans-serif; /* 活泼的字体 */
+            font-size: 16pt; /* 三号字 (16pt) */
+            line-height: 1.8;
+            background-color: #f8f9fa; /* 干净的背景色 */
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Styling for A3 printing */
+        @media print {
+            html, body {
+                width: 297mm;
+                /* height: 420mm; /* Avoid fixed height to allow content to flow across pages */
+                margin: 0;
+                padding: 0;
+                font-size: 12pt; /* Adjust font size for print if 16pt is too large */
+            }
+            .content-wrapper {
+                width: 277mm; /* 297mm - 10mm margin on each side */
+                margin: 10mm auto; /* Standard A3 margins */
+                box-shadow: none;
+                border: none;
+            }
+            .page-break {
+                page-break-after: always;
+            }
+            .no-print { display: none !important; }
+            canvas { 
+                max-width: 100% !important; 
+                height: auto !important; 
+                border: 1px solid #ccc !important; /* Add border for print clarity */
+            }
+            .animation-container {
+                page-break-inside: avoid; /* Try to keep animation and its text together */
+            }
+            h1,h2,h3,h4 { page-break-after: avoid; page-break-inside: avoid; }
+            p, ul, ol { page-break-inside: avoid; }
+        }
+
+        .content-wrapper {
+            max-width: 1000px; /* Readable width on screen */
+            margin: 20px auto;
+            padding: 20px 40px; /* More padding for better look */
+            background-color: #ffffff;
+            border-radius: 12px; /* Softer corners */
+            box-shadow: 0 8px 16px rgba(0,0,0,0.08); /* More pronounced shadow */
+        }
+        h1, h2, h3 {
+            color: #1a237e; /* Darker, more academic blue */
+            margin-top: 1.8em;
+            margin-bottom: 1em;
+            font-weight: 600; /* Bolder headings */
+        }
+        h1 { 
+            font-size: 2.2em; /* Slightly smaller H1 for balance */
+            text-align: center; 
+            border-bottom: 3px solid #3f51b5; /* Indigo border */
+            padding-bottom: 0.4em; 
+            margin-bottom: 1.2em;
+        }
+        h2 { font-size: 1.7em; color: #3f51b5; /* Indigo sub-headings */ border-left: 5px solid #3f51b5; padding-left: 10px;}
+        h3 { font-size: 1.3em; color: #ad1457; /* Pinkish-red for H3 */ margin-top: 1.5em;}
+        
+        strong, .highlight { 
+            color: #c62828; /* Stronger red for highlight */ 
+            font-weight: 600; /* Ensure highlighted text is bold */
+        }
+        .text-content p { 
+            margin-bottom: 1.2em; 
+            text-indent: 2em; 
+            text-align: justify; /* Justified text for a more formal look */
+        }
+        .text-content ul, .text-content ol {
+            margin-left: 2em;
+            margin-bottom: 1em;
+            padding-left: 1.5em; /* Indent list items */
+        }
+        .text-content li { margin-bottom: 0.5em; }
+
+        .animation-container {
+            margin: 40px 0;
+            padding: 25px;
+            border: 1px solid #ced4da; /* Lighter border */
+            border-radius: 10px; /* Softer corners for containers */
+            background-color: #fdfdff; /* Slightly off-white for animation background */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.04);
+        }
+        .animation-canvas {
+            width: 100%;
+            /* height: 300px; /* Default height, can be overridden by specific canvas needs */
+            margin: 15px auto;
+            display: block;
+            border-radius: 6px;
+            background-color: #fff; /* Ensure canvas background is distinct */
+            border: 1px solid #e0e0e0;
+        }
+        
+        .control-buttons button {
+            background-color: #3f51b5; /* Indigo buttons */
+            color: white;
+            padding: 12px 20px; /* Larger buttons */
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em; /* Slightly larger font for buttons */
+            margin-right: 12px;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .control-buttons button:hover {
+            background-color: #303f9f; /* Darker indigo on hover */
+            transform: translateY(-1px);
+        }
+        .control-buttons button:active {
+            transform: translateY(0px);
+        }
+
+        .formula {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; /* Better mono font stack */
+            background-color: #e8eaf6; /* Lighter indigo background for formulas */
+            padding: 10px 15px;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 8px 0;
+            color: #1a237e; /* Dark blue formula text */
+            border: 1px solid #c5cae9; /* Indigo border */
+            font-size: 0.95em; /* Slightly smaller formula font */
+        }
+        /* Add LXGW WenKai Lite font from CDN */
+        @font-face {
+            font-family: 'LXGW WenKai Lite';
+            src: url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-lite-webfont@1.7.0/lxgwwenkailite-regular.woff2') format('woff2');
+            font-weight: normal; /* 400 */
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'LXGW WenKai Lite';
+            src: url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-lite-webfont@1.7.0/lxgwwenkailite-bold.woff2') format('woff2');
+            font-weight: bold; /* 700 */
+            font-style: normal;
+        }
+
+        .text-center { text-align: center; }
+        .text-gray-600 { color: #5f6368; } /* Google-like gray */
+        .mb-12 { margin-bottom: 3rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .text-sm { font-size: 0.875rem; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="content-wrapper">
+        <h1>神经网络热力学定律：物理逻辑视角解读</h1>
+        <p class="text-center text-gray-600 mb-12 text-sm">基于论文 "Neural Thermodynamic Laws for Large Language Model Training" (Ziming Liu, Yizhou Liu, Jeff Gore, Max Tegmark)</p>
+
+        <section id="intro" class="text-content">
+            <h2>引言：当大型语言模型遇见热力学</h2>
+            <p>在人工智能飞速发展的今天，<strong class="highlight">大型语言模型（LLMs）</strong>已经展现出惊人的能力，但其内部的训练动态和学习机制在很大程度上仍是一个“黑箱”。近期，一篇引人注目的论文《神经网络热力学定律》（Neural Thermodynamic Laws for Large Language Model Training）尝试从一个全新的视角——<strong class="highlight">热力学</strong>——来揭开LLM训练的神秘面纱。这不仅仅是一个新奇的类比，更是一次深刻的理论探索，旨在为理解和优化LLM训练提供一套基于物理原理的指导框架。本文将结合论文的核心思想，特别是其首页信息丰富的概览图，从物理和逻辑的视角，对这一开创性工作进行解读，并通过一系列动画演示来直观呈现其核心概念。</p>
+        </section>
+
+        <section id="interpretation" class="text-content">
+            <h2>核心洞见：从训练动态到热力学法则的物理画卷</h2>
+            <p>论文的核心贡献在于构建了一座桥梁，将看似不相关的<strong class="highlight">大型语言模型（LLM）训练过程</strong>与经典的<strong class="highlight">热力学理论</strong>联系起来。这并非简单的概念挪用，而是揭示了在特定假设下（如“<strong class="highlight">河谷式损失地貌</strong>”）LLM训练动态中自然涌现出的深刻物理规律。让我们从物理和逻辑的视角，深入解读论文首页那张信息量丰富的概览图，它如同一幅浓缩的画卷，描绘了从微观的参数更新到宏观的热力学行为的演进路径。</p>
+            
+            <h3>第一幕：训练的舞台——河谷式损失地貌 (River-Valley Loss Landscape)</h3>
+            <p>想象一下LLM的训练过程，如同登山者在一个极其复杂、亿万维度的高山峡谷中寻找最低点（即最小损失函数值）。论文首先引入了一个关键假设：LLM的损失地貌（Loss Landscape）呈现出一种特殊的“<strong class="highlight">河谷 (River-Valley)</strong>”结构。这种结构具有以下特征：</p>
+            <ul>
+                <li><strong>多数狭窄且陡峭的“快方向”（Fast Directions, $\psi$）</strong>：在这些方向上，损失函数变化剧烈，参数的微小调整可能导致损失值的大幅波动。这对应了模型中大量对局部细节敏感、易于调整但又容易陷入震荡的参数。</li>
+                <li><strong>少数宽阔且平缓的“慢方向”（Slow Directions, $x$）</strong>：这些方向对应模型中更全局、更本质的特征。参数在这些方向上的调整对模型性能影响深远，但损失函数的变化相对平缓，如同宽阔的河谷底部。</li>
+            </ul>
+            <p>在这种设定下，损失函数可以近似地被数学化描述为：<span class="formula">Loss = c0($\psi$) + 0.5 * a($\psi$) * x^2</span>。其中，<code class="highlight">c0($\psi$)</code> 代表了在快方向上的复杂基底结构，而 <code class="highlight">0.5 * a($\psi$) * x^2</code> 则描绘了在慢方向上的二次型峡谷轮廓。这一地形假设是整个神经热力学理论的基石，它极大地简化了对高维优化问题的分析，使得研究者能够区分并独立考察不同时间尺度的训练动态。</p>
+            
+            <div class="animation-container no-print">
+                <h3>动画1：探索河谷式损失地貌</h3>
+                <div id="riverValleyCanvas" class="animation-canvas" style="height: 300px;"></div>
+                <div class="control-buttons">
+                    <button onclick="playRiverValleyAnimation()">播放动画</button>
+                    <button onclick="resetRiverValleyAnimation()">重置</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">交互说明：点击播放按钮，观察粒子（代表模型参数）在模拟的损失地貌中如何沿慢速河谷（主路径）前进，同时在快速方向上（垂直于主路径的振荡）进行探索。</p>
+            </div>
+
+            <h3>第二幕：微观的骚动——快速动态与“神经温度”的诞生 (Fast Dynamics & Temperature)</h3>
+            <p>在LLM训练的“<strong class="highlight">稳定期 (Stable Phase)</strong>”，模型参数主要在损失地貌的快方向上进行迅速的探索和调整。此时，两个关键因素共同作用，为系统引入了类似微观粒子热运动的随机性：</p>
+            <ol>
+                <li><strong>梯度噪声（Gradient Noise）</strong>：尤其在使用小批量随机梯度下降（mini-batch SGD）等优化算法时，梯度的估算本身就带有统计噪声，使得参数更新方向并非总是指向全局最优。</li>
+                <li><strong>有限学习率（Finite Learning Rate）</strong>：学习率的存在使得参数更新不会完美地一步到达损失函数的局部最低点，而是在其附近进行持续的“探索性”徘徊和调整。</li>
+            </ol>
+            <p>这些因素的共同作用，使得模型参数在快方向上表现出类似<strong class="highlight">布朗运动</strong>的特征——一种无规则的、持续的抖动。论文巧妙地将这种微观层面、快速变化的“抖动能量”与一个宏观的物理量联系起来，定义了“<strong class="highlight">神经温度 (Neural Temperature, T)</strong>”。值得强调的是，这里的“温度”并非指物理世界中真实的热量，而是衡量模型在参数空间中探索活跃程度的一个<strong class="highlight">有效指标 (effective measure)</strong>。神经温度越高，意味着模型在快方向上的“平均动能”越大，探索范围更广，但也可能伴随着更大的不稳定性。</p>
+            
+            <div class="animation-container no-print">
+                <h3>动画2：从训练动态到神经温度</h3>
+                <div id="dynamicsToThermoCanvas" class="animation-canvas" style="height: 300px;"></div>
+                <div class="control-buttons">
+                    <button onclick="playDynamicsToThermoAnimation()">播放动画</button>
+                    <button onclick="resetDynamicsToThermoAnimation()">重置</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">交互说明：观察左侧代表训练步骤的粒子运动轨迹如何逐渐积累，并影响右侧“神经温度计”的读数上升，以及粒子群（代表参数微观状态）的“活跃度”增加。</p>
+            </div>
+
+            <h3>第三幕：宏观的演化——慢速动态与热力学定律的浮现 (Slow Dynamics & Thermodynamic Laws)</h3>
+            <p>当我们将分析的目光转向慢方向，即模型在“<strong class="highlight">退火期 (Annealing Phase)</strong>”或更长时间尺度上的行为时，一幅真正的热力学画卷便徐徐展开。论文指出，在河谷式损失地貌的假设和神经温度的概念基础上，一系列经典的热力学概念和定律能够被自然地引入、类比并推导出来，用以描述LLM的宏观训练行为：</p>
+            <ul>
+                <li><strong>神经内能 (Neural Internal Energy, U)</strong>：代表模型在当前参数配置和神经温度下所蕴含的总“能量”。它与模型参数的整体状态和微观“动能”相关。</li>
+                <li><strong>神经功 (Neural Work, W) 与神经热 (Neural Heat, Q)</strong>：参数的确定性更新部分（如梯度下降引导的移动）可以看作是外界对系统“做功”；而由梯度噪声、学习率等因素引起的随机能量交换和耗散，则类似于系统与环境间的“热交换”。</li>
+                <li><strong>神经热力学第一定律 (The 1st Law of NTL)</strong>：其核心思想表述为 <span class="formula">Delta_U = W + Q</span>。这一定律指出，神经内能的变化量等于外界对模型所做的神经功与模型从“环境”（如数据批次、优化器动态）吸收的神经热之和。它为理解训练过程中的能量守恒与转换提供了基本的数学框架。</li>
+                <li><strong>神经熵 (Neural Entropy, S)</strong>：借鉴统计力学中的熵概念，神经熵用以衡量模型在参数空间中可能状态的“<strong class="highlight">多样性</strong>”或“<strong class="highlight">不确定性</strong>”程度。熵的概念与模型的复杂度、表示能力以及最终的泛化性能可能存在深刻联系。</li>
+                <li><strong>神经热力学第二定律 (The 2nd Law of NTL)</strong>：在一个孤立的（或特定条件下近似孤立的）训练系统中，神经熵倾向于随时间增加（<span class="formula">Delta_S >= 0</span>）。这暗示着模型在探索过程中，会自然地趋向于更“广阔”或“多样化”的参数区域（即探索更多可能性），直到受到损失函数的强大约束或达到某种平衡。</li>
+                <li><strong>神经热容 (Neural Heat Capacity, C<sub>V</sub>)</strong>：定义为神经内能随神经温度的变化率，即模型“储存”神经热量能力的物理量。通俗地说，它反映了使模型神经温度升高一度所需要吸收的神经热量。神经热容的大小可能反映了模型对学习率变化、噪声水平等训练超参数的敏感程度。</li>
+                <li><strong>神经热导率 (Neural Thermal Conduction, k)</strong>：用于描述神经“能量”或“信息”在模型不同部分或不同参数子空间之间的传递速率。</li>
+                <li><strong>能量均分定理 (Equipartition Theorem)</strong>：在达到某种“热力学平衡态”时，神经能量倾向于平均分配到模型中各个活跃的“自由度”（degrees of freedom）上。每个这样的自由度大约贡献 <span class="formula">0.5 * k_B * T</span> 的能量（其中 <code class="highlight">k_B</code> 是一个类比于物理学中玻尔兹曼常数的“神经常数”）。这为理解模型不同部分的学习活跃度及其能量分布提供了一个理论视角。</li>
+                <li><strong>神经热力学第三定律 (The 3rd Law of NTL)</strong>：当神经温度趋近于绝对零度时（例如，学习率极小，梯度噪声被有效抑制），神经熵也趋于一个最小值（<span class="formula">T -> 0 implies S -> S0</span>）。这表明在极“冷”的条件下，模型会收敛到一个高度有序、低不确定性的稳定状态。</li>
+            </ul>
+            <p>这些定律共同构成了一个初步但富有洞察力的“<strong class="highlight">神经热力学 (NTL)</strong>”框架，使得我们能够运用一套全新的、基于物理直觉的语言和工具来描述、分析乃至预测LLM的复杂训练过程。</p>
+            
+            <div class="animation-container no-print">
+                <h3>动画3：神经第一定律 ($\Delta U = W + Q$)</h3>
+                <div id="firstLawCanvas" class="animation-canvas" style="height: 250px;"></div>
+                <div class="control-buttons">
+                    <button onclick="playFirstLawAnimation()">播放动画</button>
+                    <button onclick="resetFirstLawAnimation()">重置</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">交互说明：观察代表神经功 (W) 和神经热 (Q) 的条形如何增长，并共同构成神经内能变化 ($\Delta U$) 的条形图示。</p>
+            </div>
+
+            <div class="animation-container no-print">
+                <h3>动画4：能量均分定理</h3>
+                <div id="equipartitionCanvas" class="animation-canvas" style="height: 300px;"></div>
+                <div class="control-buttons">
+                    <button onclick="playEquipartitionAnimation()">播放动画</button>
+                    <button onclick="resetEquipartitionAnimation()">重置</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">交互说明：初始时能量（粒子）集中在少数隔间（自由度）。点击播放后，观察能量如何在不同隔间中扩散，并逐渐趋于均匀分布。</p>
+            </div>
+            
+            <h3>第四幕：实践的启示——优化学习率策略 (Practical Applications)</h3>
+            <p>神经热力学框架最直接且重要的应用之一，就是为设计和理解<strong class="highlight">学习率调度 (Learning Rate Schedules)</strong>策略提供了深刻的物理洞见。传统的学习率调度方法多依赖于经验法则或启发式搜索，而NTL则提供了一种更具理论依据和物理解释性的指导。</p>
+            <ul>
+                <li><strong>稳定期 (Stable Phase)</strong>：在此阶段，目标是维持一个相对较高的“神经温度”，以鼓励模型充分探索参数空间，跳出局部最优解。这意味着学习率不宜设置过小，以允许足够的梯度噪声影响和参数更新幅度。论文通过实验（如图9所示）指出，采用较大的峰值学习率 <code class="highlight">$\eta_{max}$</code> 通常能够帮助模型达到更低的验证集损失，前提是该学习率不至于过大而引起训练过程的数值不稳定或“爆炸”。</li>
+                <li><strong>退火期 (Annealing Phase)</strong>：在参数空间得到较为充分的探索之后，需要逐渐降低“神经温度”，使模型能够稳定地收敛到损失地貌中的某个优质区域（即损失函数的较低点）。这在实践中对应于学习率的逐步衰减。NTL可以帮助理解衰减过程的理想速率以及目标最低“温度”（即最小学习率 <code class="highlight">$\eta_{min}$</code>）的选择依据。</li>
+            </ul>
+            <p>论文通过实验验证了其基于NTL思考提出的学习率调度策略的有效性，表明这种物理视角能够指导设计出更高效、更鲁棒的训练方案。例如，清晰地区分和理解“稳定相”和“退火相”各自的热力学特性，可以帮助从业者更好地平衡训练过程中的“<strong class="highlight">探索与利用 (exploration vs. exploitation)</strong>”的矛盾，避免模型过早陷入次优解，或在训练后期由于学习率过大而产生持续的参数震荡，难以收敛。</p>
+            
+            <div class="animation-container no-print">
+                <h3>动画5：学习率调度策略</h3>
+                <div id="learningRateCanvas" class="animation-canvas" style="height: 350px;"></div>
+                <div class="control-buttons">
+                    <button onclick="playLearningRateAnimation('cosine')">演示余弦退火</button>
+                    <button onclick="playLearningRateAnimation('linear')">演示线性退火</button>
+                    <button onclick="resetLearningRateAnimation()">重置</button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">交互说明：选择不同的退火策略（如余弦退火、线性退火），观察学习率随训练步数（时间）的变化曲线。动画将突出显示初始的稳定期（高学习率）和后续的退火期（学习率衰减）。</p>
+            </div>
+
+            <h3>总结：物理之眼看“炼丹”</h3>
+            <p>综上所述，论文《神经网络热力学定律》为我们打开了一扇全新的窗户，让我们得以运用物理学中成熟而深刻的热力学理论体系来审视、理解和驾驭大型语言模型这个复杂巨兽的训练过程。从微观参数的随机抖动类比于分子热运动，到宏观层面涌现出的能量转换、熵增原理和相变行为，NTL不仅为长期以来被称为“炼金术”的深度学习调参工作提供了富有启发性的理论解释，也为实际的工程实践（如学习率设计、训练稳定性分析）带来了新的思路和潜在工具。这无疑是<strong class="highlight">人工智能与物理学交叉学科</strong>领域一次激动人心且意义深远的探索，预示着未来我们可能以更加科学和系统的方式来理解和构建智能系统。</p>
+        </section>
+
+        <div class="page-break"></div> <section id="conclusion" class="text-content">
+            <h2>结语与展望</h2>
+            <p>神经网络热力学定律（NTL）为理解大型语言模型训练提供了一个富有前景的新范式。通过将训练动态与热力学原理相联系，该框架不仅深化了我们对LLM行为的理论认知，也为优化训练策略提供了实用指导。例如，对“神经温度”的调控可以指导学习率的设计，平衡模型的探索和利用能力。对“神经熵”和“热容”等概念的引入，则可能帮助我们更好地理解模型的泛化能力、鲁棒性以及对超参数的敏感性。</p>
+            <p>当然，NTL框架目前尚处于初步发展阶段。未来的研究方向可能包括：</p>
+            <ul>
+                <li><strong>更精细的理论模型</strong>：进一步完善河谷损失地貌假设，考虑更复杂的相互作用和非平衡态过程。</li>
+                <li><strong>实验验证与扩展</strong>：在更多不同架构的LLM和多样化的任务上检验NTL的普适性，并探索其对其他类型深度学习模型的适用性。</li>
+                <li><strong>新的优化算法启示</strong>：基于NTL原理，设计全新的、具有物理意义的优化算法或正则化方法。</li>
+                <li><strong>与其他理论的联系</strong>：探索NTL与信息论、统计学习理论、动态系统理论等其他相关理论框架的深层联系。</li>
+            </ul>
+            <p>总而言之，神经网络热力学定律的提出，标志着我们向着更深层次理解智能系统迈出了重要一步。它鼓励我们跳出传统的计算机科学和数学视角，从物理学的广阔天地中汲取智慧，以期最终揭开智能涌现的奥秘。这场<strong class="highlight">“AI炼丹”与基础物理的对话</strong>，无疑将为未来的科技发展注入新的活力和想象空间。</p>
+        </section>
+    </div>
+
+<script>
+    // Global control variables for animations
+    let animInstances = {};
+
+    // --- Animation 1: River-Valley Loss Landscape ---
+    const riverValleySketch = (p) => {
+        let particleX, particleY;
+        let valleyWidth = 400; // Conceptual width
+        let valleyDepth = 100; // Conceptual depth of main valley
+        let time = 0;
+        let playing = false;
+
+        p.setup = () => {
+            let canvasContainer = p.select('#riverValleyCanvas');
+            let canvas = p.createCanvas(canvasContainer.width, canvasContainer.height);
+            canvas.parent('riverValleyCanvas'); 
+            p.resetSim();
+            p.noLoop(); 
+            p.drawScene(); 
+        };
+
+        p.resetSim = () => {
+            time = 0;
+            particleX = p.width * 0.1; // Start from left
+            // Initial Y based on valley shape at start X
+            particleY = p.height / 2 + valleyDepth / 2 * p.cos(p.map(particleX, 0, p.width, -p.PI/2, p.PI/2)) + 
+                        10 * p.sin(time * 8); // Initial fast oscillation
+        };
+        
+        p.drawScene = () => {
+            p.background(240, 248, 255); 
+
+            // Draw valley (wider, gentler cosine curve)
+            p.noFill();
+            p.stroke(150, 180, 220);
+            p.strokeWeight(3); // Thicker valley lines
+            p.beginShape();
+            for (let x_coord = 0; x_coord <= p.width; x_coord += 5) {
+                // Main valley shape (slow direction)
+                let y_coord = p.height / 2 + valleyDepth / 2 * p.cos(p.map(x_coord, 0, p.width, -p.PI/2, p.PI/2));
+                // Add some undulation to the valley itself to represent c0(psi) complexity
+                y_coord += 8 * p.sin(x_coord * 0.05); 
+                p.vertex(x_coord, y_coord);
+            }
+            p.endShape();
+            
+            // Draw particle
+            p.fill(220, 50, 50); 
+            p.noStroke();
+            p.ellipse(particleX, particleY, 18, 18); // Slightly smaller particle
+
+            // Draw labels
+            p.fill(30, 70, 120);
+            p.textSize(13);
+            p.textAlign(p.CENTER);
+            p.text("慢方向 (Slow Direction - Valley Floor)", p.width/2, p.height - 15);
+            p.text("快方向 (Fast Directions - Oscillations)", p.width/2, 20);
+        };
+
+        p.draw = () => {
+            if (!playing) return;
+            
+            // Move along slow direction (valley floor)
+            particleX += 0.8; // Slightly faster progression
+            if (particleX > p.width * 0.9) particleX = p.width * 0.1; // Loop back
+
+            // Y-coordinate based on valley shape (slow direction)
+            let baseValleyY = p.height / 2 + valleyDepth / 2 * p.cos(p.map(particleX, 0, p.width, -p.PI/2, p.PI/2));
+            baseValleyY += 8 * p.sin(particleX * 0.05); // Consistent undulation
+
+            // Fast oscillations around the valley floor
+            particleY = baseValleyY + 12 * p.sin(time * 8); // More pronounced fast oscillation
+
+            time += 0.05;
+            p.drawScene();
+        };
+        
+        p.play = () => { if (!playing) { playing = true; p.loop(); }};
+        p.pause = () => { playing = false; p.noLoop(); }; // For potential future use
+        p.reset = () => {
+            playing = false;
+            p.noLoop();
+            p.resetSim();
+            p.clear();
+            p.drawScene();
+        };
+    };
+    // animInstances.riverValley = new p5(riverValleySketch, 'riverValleyCanvas'); // Instantiated in DOMContentLoaded
+
+    // --- Animation 2: Dynamics to Thermodynamics ---
+    const dynamicsToThermoSketch = (p) => {
+        let trainingSteps = [];
+        let maxSteps = 60;
+        let currentStep = 0;
+        let temperature = 0;
+        let particles = [];
+        let numThermoParticles = 25;
+        let playing = false;
+
+        p.setup = () => {
+            let canvasContainer = p.select('#dynamicsToThermoCanvas');
+            let canvas = p.createCanvas(canvasContainer.width, canvasContainer.height);
+            canvas.parent('dynamicsToThermoCanvas');
+            p.resetSim();
+            p.noLoop();
+            p.drawScene();
+        };
+
+        p.resetSim = () => {
+            trainingSteps = [];
+            currentStep = 0;
+            temperature = 0;
+            particles = [];
+            let boxX = p.width * 0.55; // Thermo box start X
+            let boxY = p.height * 0.15;
+            let boxW = p.width * 0.4;
+            let boxH = p.height * 0.45;
+            for (let i = 0; i < numThermoParticles; i++) {
+                particles.push({
+                    x: p.random(boxX + 10, boxX + boxW - 10),
+                    y: p.random(boxY + 10, boxY + boxH - 10),
+                    vx: p.random(-0.6, 0.6),
+                    vy: p.random(-0.6, 0.6),
+                    color: p.color(p.random(50,150), p.random(100,200), 255, 180)
+                });
+            }
+        };
+        
+        p.drawScene = () => {
+            p.background(250, 245, 255); 
+
+            // Left side: Training Dynamics
+            p.fill(60, 100, 180);
+            p.noStroke();
+            p.textSize(14);
+            p.textAlign(p.CENTER);
+            p.text("训练动态", p.width * 0.25, 25);
+            // Path
+            if (trainingSteps.length > 0) {
+                p.stroke(60, 100, 180, 120);
+                p.strokeWeight(2);
+                p.noFill();
+                p.beginShape();
+                for (let step of trainingSteps) {
+                    p.vertex(step.x, step.y);
+                }
+                p.endShape();
+                // Current position marker
+                p.fill(200, 60, 60);
+                p.noStroke();
+                p.ellipse(trainingSteps[trainingSteps.length-1].x, trainingSteps[trainingSteps.length-1].y, 10, 10);
+            }
+
+
+            // Right side: Thermodynamics
+            p.fill(180, 60, 60);
+            p.noStroke();
+            p.text("神经温度", p.width * 0.75, 25);
+            
+            // Thermometer
+            let thermoX = p.width * 0.75;
+            let thermoYBase = p.height * 0.85;
+            let thermoHeightMax = p.height * 0.35;
+            p.fill(200, 200, 220); // Bulb color
+            p.ellipse(thermoX, thermoYBase, 30, 30); // Bulb
+            p.rect(thermoX - 8, thermoYBase - thermoHeightMax - 5, 16, thermoHeightMax + 5); // Stem
+            
+            p.fill(255,30,30); // Mercury color
+            let tempHeight = p.map(temperature, 0, 100, 0, thermoHeightMax);
+            p.ellipse(thermoX, thermoYBase, 26, 26); // Mercury in bulb
+            if (tempHeight > 0) {
+                 p.rect(thermoX - 6, thermoYBase - tempHeight, 12, tempHeight);
+            }
+
+
+            // Particles in a box
+            let boxX = p.width * 0.55;
+            let boxY = p.height * 0.15;
+            let boxW = p.width * 0.4;
+            let boxH = p.height * 0.45;
+            p.stroke(120, 120, 150);
+            p.strokeWeight(1.5);
+            p.noFill();
+            p.rect(boxX, boxY, boxW, boxH);
+
+            p.noStroke();
+            for (let pt of particles) {
+                p.fill(pt.color);
+                p.ellipse(pt.x, pt.y, 9, 9);
+            }
+        };
+
+        p.draw = () => {
+            if (!playing) return;
+
+            if (currentStep < maxSteps) {
+                let newX = p.width * 0.05 + (currentStep / maxSteps) * p.width * 0.4;
+                let newY = p.height * 0.65 + p.sin(currentStep * 0.2) * p.height * 0.15 - p.cos(currentStep*0.1) * p.height*0.05 ;
+                trainingSteps.push({ x: newX, y: newY });
+                currentStep++;
+                temperature = p.map(currentStep, 0, maxSteps, 0, 100);
+            }
+
+            // Update thermo particles
+            let speedFactor = p.map(temperature, 0, 100, 0.3, 3.5);
+            let boxX = p.width * 0.55;
+            let boxY = p.height * 0.15;
+            let boxW = p.width * 0.4;
+            let boxH = p.height * 0.45;
+
+            for (let pt of particles) {
+                pt.x += pt.vx * speedFactor;
+                pt.y += pt.vy * speedFactor;
+
+                if (pt.x < boxX + 5 || pt.x > boxX + boxW - 5) {pt.vx *= -1; pt.x = p.constrain(pt.x, boxX + 5.1, boxX + boxW - 5.1);}
+                if (pt.y < boxY + 5 || pt.y > boxY + boxH - 5) {pt.vy *= -1; pt.y = p.constrain(pt.y, boxY + 5.1, boxY + boxH - 5.1);}
+            }
+            
+            p.drawScene();
+        };
+        
+        p.play = () => { if(!playing) {playing = true; p.loop(); }};
+        p.pause = () => { playing = false; p.noLoop(); };
+        p.reset = () => {
+            playing = false;
+            p.noLoop();
+            p.resetSim();
+            p.clear();
+            p.drawScene();
+        };
+    };
+    // animInstances.dynamicsToThermo = new p5(dynamicsToThermoSketch, 'dynamicsToThermoCanvas');
+
+    // --- Animation 3: Learning Rate Schedule ---
+    const learningRateSketch = (p) => {
+        let totalSteps = 100; // Number of points to plot for the curve
+        let currentPlotStep = 0; // How many points of the curve are currently plotted
+        let etaMax = 0.01;
+        let etaMin = 0.0001;
+        let lrCurvePoints = []; // Stores {x,y} screen coordinates
+        let scheduleType = 'cosine'; 
+        let playing = false;
+        let stablePhaseRatio = 0.2; // 20% of steps are stable phase
+
+        p.setup = () => {
+            let canvasContainer = p.select('#learningRateCanvas');
+            let canvas = p.createCanvas(canvasContainer.width, canvasContainer.height);
+            canvas.parent('learningRateCanvas');
+            p.frameRate(30); // Control animation speed
+            p.resetSim(); // This will also call drawScene
+            p.noLoop();
+        };
+        
+        p.calculateCurvePoints = () => {
+            lrCurvePoints = [];
+            let padding = 50;
+            for (let i = 0; i <= totalSteps; i++) {
+                let lr;
+                let stableSteps = totalSteps * stablePhaseRatio;
+
+                if (i < stableSteps) { 
+                    lr = etaMax;
+                } else { 
+                    let progressInAnneal = (i - stableSteps) / (totalSteps - stableSteps);
+                    if (scheduleType === 'cosine') {
+                        lr = etaMin + 0.5 * (etaMax - etaMin) * (1 + p.cos(p.PI * progressInAnneal));
+                    } else { // linear
+                        lr = etaMax - (etaMax - etaMin) * progressInAnneal;
+                    }
+                }
+                lr = p.max(lr, etaMin); 
+                
+                let x_coord = p.map(i, 0, totalSteps, padding, p.width - padding);
+                let y_coord = p.map(lr, etaMin, etaMax, p.height - padding, padding); // Inverted Y for screen
+                lrCurvePoints.push({x: x_coord, y: y_coord, val: lr});
+            }
+        };
+
+        p.resetSim = () => {
+            currentPlotStep = 0;
+            p.calculateCurvePoints(); // Calculate all points based on current scheduleType
+            p.drawScene(); // Draw initial static frame
+        };
+
+        p.setSchedule = (type) => {
+            scheduleType = type;
+            p.resetSim(); // Recalculate and redraw for new schedule
+        };
+        
+        p.drawScene = () => {
+            p.background(255, 250, 240); 
+
+            let padding = 50;
+            // Draw axes
+            p.stroke(80, 80, 100);
+            p.strokeWeight(1.5);
+            p.line(padding, padding, padding, p.height - padding); 
+            p.line(padding, p.height - padding, p.width - padding, p.height - padding); 
+
+            // Labels
+            p.fill(50, 50, 70);
+            p.noStroke();
+            p.textSize(13);
+            p.textAlign(p.CENTER, p.CENTER);
+            
+            // Y-axis label (rotated)
+            p.push();
+            p.translate(padding / 2.5, p.height / 2);
+            p.rotate(-p.HALF_PI);
+            p.text("学习率 (LR)", 0, 0);
+            p.pop();
+
+            p.text("训练步数 (Training Steps)", p.width / 2, p.height - padding / 2.5);
+            
+            p.textAlign(p.RIGHT, p.CENTER);
+            p.text(etaMax.toFixed(4), padding - 8, padding);
+            p.text(etaMin.toFixed(4), padding - 8, p.height - padding);
+            
+            p.textAlign(p.CENTER, p.TOP);
+            p.text("0", padding, p.height - padding + 8);
+            p.text(totalSteps, p.width - padding, p.height - padding + 8);
+            
+            p.textSize(16);
+            p.fill(scheduleType === 'cosine' ? '#00695c' : '#ad1457'); // Teal for cosine, Pink for linear
+            p.textAlign(p.CENTER, p.CENTER);
+            p.text(`学习率调度: ${scheduleType === 'cosine' ? '余弦退火' : '线性退火'}`, p.width/2, 25);
+
+
+            // Plot LR curve up to currentPlotStep
+            p.stroke(scheduleType === 'cosine' ? '#009688' : '#d81b60'); // Colors for curve
+            p.strokeWeight(2.5);
+            p.noFill();
+            p.beginShape();
+            for (let i = 0; i < currentPlotStep && i < lrCurvePoints.length; i++) {
+                p.vertex(lrCurvePoints[i].x, lrCurvePoints[i].y);
+            }
+            p.endShape();
+
+            // Current LR value display
+            if (currentPlotStep > 0 && currentPlotStep <= lrCurvePoints.length) {
+                let lastPoint = lrCurvePoints[currentPlotStep-1];
+                p.fill(scheduleType === 'cosine' ? '#00695c' : '#ad1457');
+                p.noStroke();
+                p.ellipse(lastPoint.x, lastPoint.y, 8, 8);
+                p.textSize(12);
+                p.textAlign(p.LEFT, p.BOTTOM);
+                p.text(`LR: ${lastPoint.val.toFixed(5)}`, lastPoint.x + 10, lastPoint.y - 5);
+            }
+
+
+            // Highlight stable/annealing phases (conceptual)
+            let stableEndStep = totalSteps * stablePhaseRatio; 
+            let stableEndX = p.map(stableEndStep, 0, totalSteps, padding, p.width - padding);
+            p.stroke(0,150,0, 60); 
+            p.strokeWeight(1);
+            p.line(stableEndX, padding, stableEndX, p.height - padding);
+            p.fill(0,120,0, 40);
+            p.noStroke();
+            p.textAlign(p.CENTER);
+            p.textSize(12);
+            p.text("稳定期", p.map(stableEndStep/2, 0, totalSteps, padding, p.width - padding), padding + 12);
+            p.text("退火期", p.map(stableEndStep + (totalSteps-stableEndStep)/2, 0, totalSteps, padding, p.width - padding), padding + 12);
+        };
+
+        p.draw = () => {
+            if (!playing) return;
+
+            if (currentPlotStep <= totalSteps) {
+                currentPlotStep++;
+            } else {
+                p.pause(); // Stop when done plotting
+            }
+            p.drawScene();
+        };
+        
+        p.play = (type) => {
+            if (type) p.setSchedule(type); 
+            else if (currentPlotStep > totalSteps) p.resetSim(); // If already finished, reset before playing again
+            
+            if (!playing) {
+                playing = true; 
+                p.loop();
+            }
+        };
+        p.pause = () => { playing = false; p.noLoop(); };
+        p.reset = () => {
+            playing = false;
+            p.noLoop();
+            p.resetSim(); // This calls drawScene
+        };
+    };
+    // animInstances.learningRate = new p5(learningRateSketch, 'learningRateCanvas');
+
+    // --- Animation 4: First Law (Delta_U = W + Q) ---
+    const firstLawSketch = (p) => {
+        let w = 0, q = 0, deltaU = 0;
+        let maxIndividualVal = 100; // Max for W or Q
+        let currentAnimStep = 0;
+        let totalAnimSteps = 120; // Duration of animation
+        let playing = false;
+
+        p.setup = () => {
+            let canvasContainer = p.select('#firstLawCanvas');
+            let canvas = p.createCanvas(canvasContainer.width, canvasContainer.height);
+            canvas.parent('firstLawCanvas');
+            p.resetSim();
+            p.noLoop();
+            p.drawScene();
+        };
+        
+        p.resetSim = () => {
+            w = 0; q = 0; deltaU = 0; currentAnimStep = 0;
+        };
+
+        p.drawScene = () => {
+            p.background(245, 245, 220); 
+
+            let barWidth = p.width / 6;
+            let barSpacing = p.width / 18; // Reduced spacing
+            let baseY = p.height - 40;
+            let maxHeight = p.height - 70;
+
+            // W bar
+            p.fill(100, 150, 255, 220); 
+            let hW = p.map(w, 0, maxIndividualVal, 0, maxHeight);
+            p.rect(barSpacing * 2, baseY - hW, barWidth, hW, 5); // Added corner radius
+            p.fill(20,20,50); p.textSize(14); p.textAlign(p.CENTER);
+            p.text("神经功 (W)", barSpacing * 2 + barWidth / 2, baseY + 18);
+            p.text(w.toFixed(0), barSpacing * 2 + barWidth / 2, baseY - hW - 8);
+
+
+            // Q bar
+            p.fill(255, 150, 100, 220); 
+            let hQ = p.map(q, 0, maxIndividualVal, 0, maxHeight);
+            p.rect(barSpacing * 4 + barWidth, baseY - hQ, barWidth, hQ, 5);
+            p.fill(20,20,50);
+            p.text("神经热 (Q)", barSpacing * 4 + barWidth * 1.5, baseY + 18);
+            p.text(q.toFixed(0), barSpacing * 4 + barWidth * 1.5, baseY - hQ - 8);
+
+            // Delta_U bar
+            p.fill(100, 200, 100, 220); 
+            let hU = p.map(deltaU, 0, maxIndividualVal * 2, 0, maxHeight); 
+            p.rect(barSpacing * 7 + barWidth * 2.5, baseY - hU, barWidth, hU, 5); 
+            p.fill(20,20,50);
+            p.text("ΔU (内能变化)", barSpacing * 7 + barWidth * 3, baseY + 18);
+            p.text(deltaU.toFixed(0), barSpacing * 7 + barWidth * 3, baseY - hU - 8);
+            
+            // Plus and Equals signs
+            p.textSize(28);
+            p.fill(50,50,80);
+            p.text("+", barSpacing * 3 + barWidth * 0.75, baseY - maxHeight/2 - 10);
+            p.text("=", barSpacing * 5.5 + barWidth * 1.75, baseY - maxHeight/2 - 10);
+
+            // Title
+            p.textSize(16);
+            p.fill(30,30,60);
+            p.text("神经第一定律: ΔU = W + Q", p.width/2, 25);
+        };
+
+        p.draw = () => {
+            if (!playing) return;
+
+            if (currentAnimStep < totalAnimSteps) {
+                // Smooth growth using easing function (e.g., quadratic ease-out)
+                let t = currentAnimStep / totalAnimSteps;
+                let eased_t = t * (2 - t); // Quadratic ease-out
+
+                w = p.min(eased_t * maxIndividualVal * 0.8, maxIndividualVal); // W grows to 80% of max
+                q = p.min(eased_t * maxIndividualVal * 0.6, maxIndividualVal); // Q grows to 60% of max
+                deltaU = w + q;
+                currentAnimStep++;
+            } else {
+                p.pause();
+            }
+            p.drawScene();
+        };
+        
+        p.play = () => { if(!playing || currentAnimStep >= totalAnimSteps) {p.resetSim();} playing = true; p.loop(); };
+        p.pause = () => { playing = false; p.noLoop(); };
+        p.reset = () => {
+            playing = false;
+            p.noLoop();
+            p.resetSim();
+            p.clear();
+            p.drawScene();
+        };
+    };
+    // animInstances.firstLaw = new p5(firstLawSketch, 'firstLawCanvas');
+
+    // --- Animation 5: Equipartition Theorem ---
+    const equipartitionSketch = (p) => {
+        let compartments = [];
+        let numCompartments = 4;
+        let particles = [];
+        let numParticles = 60; // Increased particles
+        let playing = false;
+        let particleRadius = 4;
+
+        p.setup = () => {
+            let canvasContainer = p.select('#equipartitionCanvas');
+            let canvas = p.createCanvas(canvasContainer.width, canvasContainer.height);
+            canvas.parent('equipartitionCanvas');
+            p.resetSim();
+            p.noLoop();
+            p.drawScene();
+        };
+
+        p.resetSim = () => {
+            compartments = [];
+            particles = [];
+            let compWidth = (p.width - (numCompartments + 1) * 5) / numCompartments; // Add spacing between compartments
+            let compStartX = 5;
+
+            for (let i = 0; i < numCompartments; i++) {
+                compartments.push({
+                    x: compStartX + i * (compWidth + 5),
+                    y: p.height * 0.25,
+                    w: compWidth,
+                    h: p.height * 0.5,
+                    particleCount: 0,
+                    color: p.color(p.random(180,220), p.random(180,220), p.random(200,255), 100) // Light bg for each compartment
+                });
+            }
+
+            // Initially, all particles in the first compartment
+            for (let i = 0; i < numParticles; i++) {
+                let compIndex = 0; 
+                particles.push({
+                    x: p.random(compartments[compIndex].x + particleRadius, compartments[compIndex].x + compartments[compIndex].w - particleRadius),
+                    y: p.random(compartments[compIndex].y + particleRadius, compartments[compIndex].y + compartments[compIndex].h - particleRadius),
+                    vx: p.random(-1.5, 1.5), // Slightly faster
+                    vy: p.random(-1.5, 1.5),
+                    targetComp: compIndex, // Not really used here, currentComp is key
+                    currentComp: compIndex,
+                    color: p.color(p.random(200,255), p.random(80,150), p.random(50,100), 220)
+                });
+                compartments[compIndex].particleCount++;
+            }
+        };
+        
+        p.drawScene = () => {
+            p.background(235, 245, 235); 
+
+            // Draw compartments
+            p.stroke(80, 100, 80);
+            p.strokeWeight(1.5);
+            for (let i = 0; i < numCompartments; i++) {
+                p.fill(compartments[i].color); // Fill compartment with its color
+                p.rect(compartments[i].x, compartments[i].y, compartments[i].w, compartments[i].h, 3); // Rounded corners
+                p.fill(30, 50, 30);
+                p.noStroke();
+                p.textAlign(p.CENTER);
+                p.textSize(12);
+                p.text(`自由度 ${i+1}`, compartments[i].x + compartments[i].w / 2, compartments[i].y + compartments[i].h + 18);
+                p.textSize(11);
+                p.text(`能量: ${compartments[i].particleCount}`, compartments[i].x + compartments[i].w / 2, compartments[i].y - 12);
+            }
+
+            // Draw particles
+            p.noStroke();
+            for (let particle of particles) {
+                p.fill(particle.color);
+                p.ellipse(particle.x, particle.y, particleRadius * 2, particleRadius * 2);
+            }
+            
+            p.fill(20, 60, 20);
+            p.textSize(16);
+            p.textAlign(p.CENTER);
+            p.text("能量均分定理演示", p.width/2, 30);
+        };
+
+        p.draw = () => {
+            if (!playing) return;
+
+            for (let comp of compartments) comp.particleCount = 0; // Reset counts each frame
+
+            for (let particle of particles) {
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+
+                let currentComp = compartments[particle.currentComp];
+
+                // Bounce off compartment walls
+                if (particle.x < currentComp.x + particleRadius || particle.x > currentComp.x + currentComp.w - particleRadius) {
+                    particle.vx *= -1;
+                    particle.x = p.constrain(particle.x, currentComp.x + particleRadius, currentComp.x + currentComp.w - particleRadius);
+                }
+                if (particle.y < currentComp.y + particleRadius || particle.y > currentComp.y + currentComp.h - particleRadius) {
+                    particle.vy *= -1;
+                    particle.y = p.constrain(particle.y, currentComp.y + particleRadius, currentComp.y + currentComp.h - particleRadius);
+                }
+
+                // Chance to move to an adjacent compartment
+                if (p.random(1) < 0.01) { // Slightly higher chance to jump
+                    let newCompIndex = particle.currentComp;
+                    let dir = p.random(1) < 0.5 ? -1 : 1; // -1 for left, 1 for right
+                    
+                    if (dir === -1 && particle.currentComp > 0) { 
+                        newCompIndex = particle.currentComp - 1;
+                    } else if (dir === 1 && particle.currentComp < numCompartments - 1) { 
+                        newCompIndex = particle.currentComp + 1;
+                    }
+                    
+                    if (newCompIndex !== particle.currentComp) {
+                        particle.currentComp = newCompIndex;
+                        // Move particle towards center of new compartment to avoid immediate wall collision
+                        particle.x = compartments[newCompIndex].x + compartments[newCompIndex].w / 2 + p.random(-5,5);
+                        particle.y = compartments[newCompIndex].y + compartments[newCompIndex].h / 2 + p.random(-5,5);
+                    }
+                }
+                compartments[particle.currentComp].particleCount++;
+            }
+            p.drawScene();
+        };
+        
+        p.play = () => { if(!playing) {playing = true; p.loop();} };
+        p.pause = () => { playing = false; p.noLoop(); };
+        p.reset = () => {
+            playing = false;
+            p.noLoop();
+            p.resetSim();
+            p.clear();
+            p.drawScene();
+        };
+    };
+    // animInstances.equipartition = new p5(equipartitionSketch, 'equipartitionCanvas');
+
+
+    // --- Global Animation Control Functions ---
+    function playRiverValleyAnimation() { if (animInstances.riverValley) animInstances.riverValley.play(); }
+    function resetRiverValleyAnimation() { if (animInstances.riverValley) animInstances.riverValley.reset(); }
+    function playDynamicsToThermoAnimation() { if (animInstances.dynamicsToThermo) animInstances.dynamicsToThermo.play(); }
+    function resetDynamicsToThermoAnimation() { if (animInstances.dynamicsToThermo) animInstances.dynamicsToThermo.reset(); }
+    function playLearningRateAnimation(type) { if (animInstances.learningRate) animInstances.learningRate.play(type); }
+    function resetLearningRateAnimation() { if (animInstances.learningRate) animInstances.learningRate.reset(); }
+    function playFirstLawAnimation() { if (animInstances.firstLaw) animInstances.firstLaw.play(); }
+    function resetFirstLawAnimation() { if (animInstances.firstLaw) animInstances.firstLaw.reset(); }
+    function playEquipartitionAnimation() { if (animInstances.equipartition) animInstances.equipartition.play(); }
+    function resetEquipartitionAnimation() { if (animInstances.equipartition) animInstances.equipartition.reset(); }
+
+
+    // Ensure P5 canvases are properly sized and initialized after DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+        // Timeout to ensure divs have rendered and have dimensions, especially in complex layouts or iframes
+        setTimeout(() => { 
+            // Instantiate and reset each animation
+            if (typeof riverValleySketch === 'function' && document.getElementById('riverValleyCanvas')) {
+                animInstances.riverValley = new p5(riverValleySketch, 'riverValleyCanvas');
+            }
+            if (typeof dynamicsToThermoSketch === 'function' && document.getElementById('dynamicsToThermoCanvas')) {
+                animInstances.dynamicsToThermo = new p5(dynamicsToThermoSketch, 'dynamicsToThermoCanvas');
+            }
+            if (typeof learningRateSketch === 'function' && document.getElementById('learningRateCanvas')) {
+                animInstances.learningRate = new p5(learningRateSketch, 'learningRateCanvas');
+            }
+            if (typeof firstLawSketch === 'function' && document.getElementById('firstLawCanvas')) {
+                animInstances.firstLaw = new p5(firstLawSketch, 'firstLawCanvas');
+            }
+            if (typeof equipartitionSketch === 'function' && document.getElementById('equipartitionCanvas')) {
+                animInstances.equipartition = new p5(equipartitionSketch, 'equipartitionCanvas');
+            }
+        }, 150); // Increased timeout slightly for safety
+    });
+
+</script>
+</body>
+</html>
