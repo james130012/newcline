@@ -1,0 +1,1371 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIAL-MPC 代码库物理逻辑分析</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;700&display=swap');
+
+        body {
+            font-family: 'Nunito', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+            font-size: 16pt; /* 模拟三号字体大小 */
+        }
+
+        .container {
+            max-width: 1200px; /* A3纸张宽度约为297mm，这里用一个合适的网页宽度 */
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            background-color: #4A90E2; /* 活泼的蓝色 */
+            color: white;
+            border-radius: 8px 8px 0 0;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5em; /* 相对单位，便于缩放 */
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+
+        h2 {
+            color: #2c3e50; /* 深蓝灰色 */
+            border-bottom: 3px solid #4A90E2;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            font-size: 1.8em;
+        }
+
+        h3 {
+            color: #34495e; /* 稍浅的蓝灰色 */
+            font-size: 1.4em;
+            margin-top: 30px;
+        }
+
+        p, li {
+            text-align: justify;
+            font-size: 1em; /* 基础字体大小 */
+        }
+
+        strong, .highlight {
+            color: #e74c3c; /* 突出强调的红色 */
+            font-weight: bold;
+        }
+
+        code {
+            background-color: #ecf0f1;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+        }
+
+        .animation-container {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fdfdfd;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .animation-canvas {
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
+            /* 强制宽高，防止P5.js canvas为0x0 */
+            /* 具体宽高将在JS中设置，这里给个最小参考 */
+            min-width: 300px;
+            min-height: 200px;
+            width: 100%; /* 默认为容器宽度 */
+            max-width: 600px; /* 限制最大宽度 */
+            height: 300px; /* 固定高度 */
+        }
+
+        .controls button {
+            background-color: #5cb85c; /* 绿色按钮 */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+
+        .controls button:hover {
+            background-color: #4cae4c;
+        }
+
+        .controls button.secondary {
+            background-color: #f0ad4e; /* 橙色按钮 */
+        }
+        .controls button.secondary:hover {
+            background-color: #eea236;
+        }
+
+        ul {
+            list-style-type: disc;
+            padding-left: 30px;
+        }
+
+        /* 手机适配 */
+        @media (max-width: 768px) {
+            body {
+                font-size: 14pt; /* 手机上稍小一点 */
+            }
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+            header h1 {
+                font-size: 2em;
+            }
+            header p {
+                font-size: 1em;
+            }
+            h2 {
+                font-size: 1.5em;
+            }
+            h3 {
+                font-size: 1.2em;
+            }
+            .animation-canvas {
+                height: 250px; /* 手机上画布高度调整 */
+            }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            font-size: 0.9em;
+            color: #777;
+            border-top: 1px solid #eee;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 DIAL-MPC 代码库深度探索之旅 🚀</h1>
+            <p>从物理与逻辑视角，揭秘敏捷机器人控制的奥秘</p>
+        </header>
+
+        <article>
+            <h2>👋 引言：欢迎来到 DIAL-MPC 的世界！</h2>
+            <p>
+                大家好呀！今天我们要一起探索一个非常酷的开源项目——<strong class="highlight">DIAL-MPC</strong>。这个名字听起来就很高大上，对不对？“DIAL” 其实是 <strong class="highlight">Differentiable Augmented Lagrangian MPC (可微分增强拉格朗日模型预测控制)</strong> 的缩写。简单来说，它是一种为机器人，尤其是那些需要<strong>高度敏捷性</strong>的机器人（比如四足机器人、人形机器人）设计的先进运动控制器。
+            </p>
+            <p>
+                想象一下，我们希望机器人不仅能稳稳地走路，还能灵活地奔跑、跳跃、甚至在复杂的地形中穿梭。传统的控制方法可能就有点力不从心了。DIAL-MPC 的出现，就是为了解决这些富有挑战性的问题。它巧妙地融合了<strong class="highlight">模型预测控制 (MPC)</strong> 的深思熟虑、<strong class="highlight">可微分编程</strong>的强大威力 (主要通过 JAX 实现) 以及高效的<strong class="highlight">物理引擎 (MuJoCo XLA - MJX)</strong>。这使得整个控制系统可以实现端到端的优化，让机器人变得更加“聪明”和“灵活”。
+            </p>
+            <p>
+                本篇解读将从代码库的<strong>物理结构</strong>（文件和目录是如何组织的）和<strong>逻辑结构</strong>（各个模块如何协同工作）两个主要视角出发，带你一步步理解 DIAL-MPC 的核心思想和实现机制。我们还会穿插一些有趣的<strong class="highlight">动画演示</strong>，让你更直观地感受它的魅力。准备好了吗？让我们开始这场激动人心的探索之旅吧！🎉
+            </p>
+
+            <hr>
+
+            <h2>🏛️ 架构概览：DIAL-MPC 的蓝图</h2>
+            <p>
+                一个优秀的软件项目，其代码结构往往清晰明了，DIAL-MPC 也不例外。我们可以从物理文件组织和逻辑模块交互两方面来理解它的整体架构。
+            </p>
+
+            <h3>🧱 物理结构：井然有序的代码世界</h3>
+            <p>
+                DIAL-MPC 的代码库就像一座精心设计的建筑，每个房间（目录）都有其特定的功能：
+            </p>
+            <ul>
+                <li><code>dial_mpc/</code>: 这是最核心的 Python 包目录，包含了所有的“秘密武器”！
+                    <ul>
+                        <li><code>config/</code>: 存放各种配置信息，比如环境参数 (<code>base_env_config.py</code>)。你可以把它看作是机器人的“说明书”和“参数表”。</li>
+                        <li><code>core/</code>: <strong class="highlight">核心中的核心！</strong>这里定义了 DIAL-MPC 算法的主要逻辑 (<code>dial_core.py</code>)、相关配置 (<code>dial_config.py</code>) 以及一些高级功能，如 Sim2Sim 传输 (<code>dial_sim2sim.py</code>)。</li>
+                        <li><code>deploy/</code>: 负责将训练好的控制器部署到模拟环境 (<code>dial_sim.py</code>) 或真实机器人 (<code>dial_real.py</code>) 上。还包括了定位相关的插件 (<code>localization/</code>)，比如使用 ROS2 或者 Vicon 系统获取机器人位姿。</li>
+                        <li><code>envs/</code>: 定义了机器人所处的环境，比如宇树科技的 Go2 (<code>unitree_go2_env.py</code>) 和 H1 (<code>unitree_h1_env.py</code>) 机器人环境，以及通用的操作环境 (<code>manipulation.py</code>)。这些环境通常基于物理模拟器。</li>
+                        <li><code>examples/</code>: 提供了一系列 YAML 配置文件，展示了如何针对不同机器人和任务（如 Go2 小跑、H1 定位行走）配置和运行 DIAL-MPC。这些是上手实践的绝佳起点！</li>
+                        <li><code>models/</code>: 存放机器人和场景的物理模型文件，通常是 <code>.xml</code> 格式 (MJCF - MuJoCo Physics XML Format)。这些模型精确描述了机器人的结构、关节、质量、碰撞等物理属性，是 MPC 进行预测的基石。</li>
+                        <li><code>utils/</code>: 一些实用的工具函数，比如输入输出处理 (<code>io_utils.py</code>) 和通用函数 (<code>function_utils.py</code>)。</li>
+                    </ul>
+                </li>
+                <li><code>.github/workflows/</code>: 定义了项目的持续集成/持续部署 (CI/CD) 流程，例如自动化测试和打包。</li>
+                <li><code>README.md</code>: 项目的“门面”，提供了概览、安装指南和基本用法。</li>
+                <li><code>setup.py</code>: Python 项目的安装配置文件。</li>
+            </ul>
+            <p>
+                这种模块化的组织方式使得代码更易于理解、维护和扩展。每个部分各司其职，协同工作。
+            </p>
+
+            <h3>🧠 逻辑结构：模块间的智慧协作</h3>
+            <p>
+                从逻辑上看，DIAL-MPC 的工作流程可以概括为：<strong class="highlight">感知 -> 配置 -> 预测与优化 -> 执行</strong>。
+            </p>
+            <ol>
+                <li><strong>配置加载 (Configuration)</strong>: 首先，系统会加载指定任务的配置文件 (YAML) 和机器人模型 (XML)。这些配置定义了任务目标（比如跟踪特定轨迹）、代价函数中的权重、MPC 的参数（如预测范围、控制频率）等。<code>dial_mpc.core.dial_config</code> 模块负责解析这些配置。</li>
+                <li><strong>状态感知 (State Estimation)</strong>: 控制器需要知道机器人当前的状态（如位置、姿态、速度）。在模拟中，这可以直接从模拟器获取；在真实机器人上，则依赖于 <code>dial_mpc.deploy.localization</code> 中的插件，通过传感器数据（如IMU、编码器、外部动捕系统）来估计。</li>
+                <li><strong>核心优化 (DIAL-MPC Core)</strong>: 这是魔法发生的地方！<code>dial_mpc.core.dial_core</code> 中的 <code>DialCore</code> 类是主角。
+                    <ul>
+                        <li>它接收当前机器人状态和期望目标。</li>
+                        <li>利用机器人模型 (来自 <code>dial_mpc.models</code>) 和 <strong class="highlight">MJX 物理引擎</strong>，它向前预测在未来一段时间内 (预测时域) 如果采取不同的控制序列，机器人的状态会如何演变。</li>
+                        <li>通过一个精心设计的<strong class="highlight">代价函数</strong> (Objective Function) 来评估这些预测轨迹的好坏。代价函数通常包括：跟踪误差、控制平滑度、能量消耗、避免碰撞、满足物理约束等。</li>
+                        <li>关键在于，整个预测和评估过程是<strong class="highlight">可微分的 (Differentiable)</strong>，这得益于 JAX。这意味着可以高效计算代价函数相对于控制序列的梯度。</li>
+                        <li>然后，采用<strong class="highlight">增强拉格朗日 (Augmented Lagrangian)</strong> 方法结合梯度信息来优化控制序列，找到使总代价最小的“最优”控制指令。</li>
+                    </ul>
+                </li>
+                <li><strong>动作执行 (Action Execution)</strong>: MPC 通常只执行计算出的最优控制序列中的第一个控制指令，然后进入下一个控制周期，重新感知、预测和优化。这种“滚动优化”的方式使得控制器能够持续适应变化的环境和扰动。控制指令通过 <code>dial_mpc.deploy</code> 中的模块发送给机器人。</li>
+            </ol>
+            <p>
+                下面这个动画概念性地展示了 DIAL-MPC 的核心组件是如何协同工作的：
+            </p>
+            <div class="animation-container">
+                <h4>动画1: DIAL-MPC 协作流程图</h4>
+                <div id="animCanvasArch" class="animation-canvas"></div>
+                <div class="controls">
+                    <button onclick="animArch.play()">播放</button>
+                    <button onclick="animArch.pause()" class="secondary">暂停</button>
+                    <button onclick="animArch.reset()">重置</button>
+                </div>
+                <p>这个动画展示了从配置加载、状态输入，到核心优化模块（包含JAX和MJX），再到控制输出的简化流程。</p>
+            </div>
+
+            <hr>
+
+            <h2>🤖 模型预测控制 (MPC) 核心探秘</h2>
+            <p>
+                模型预测控制 (Model Predictive Control, MPC) 是 DIAL-MPC 的“大脑中枢”。它是一种先进的控制策略，核心思想是<strong class="highlight">“向前看，再行动”</strong>。
+            </p>
+            <p>
+                想象你在开车，你不会只看车头正前方一点点，而是会观察前方一段距离的路况，预测可能的转弯、障碍，并据此规划你的方向盘和油门操作。MPC 对机器人做的事情与此类似：
+            </p>
+            <ol>
+                <li><strong>预测 (Predict)</strong>: 基于机器人当前的<strong class="highlight">状态</strong> (如位置、速度、关节角度) 和一个<strong class="highlight">动态模型</strong> (描述机器人如何运动的数学方程，由 <code>dial_mpc/models/</code> 中的 XML 文件定义，并由 MJX 引擎在内部使用)，MPC 会预测未来一小段时间内 (称为<strong class="highlight">预测时域 H</strong>) 机器人的一系列可能状态序列。</li>
+                <li><strong>优化 (Optimize)</strong>: MPC 会尝试找到在预测时域内一系列“最佳”的<strong class="highlight">控制输入</strong> (如关节力矩或目标姿态)，使得一个预定义的<strong class="highlight">代价函数 J</strong> (Cost Function / Objective Function) 最小。这个代价函数是关键，它量化了控制的好坏，例如：
+                    <ul>
+                        <li><code>J_tracking</code>: 机器人实际轨迹与期望轨迹的偏差，越小越好。</li>
+                        <li><code>J_control_effort</code>: 控制输入的大小，希望尽可能小以节省能源和保护电机。</li>
+                        <li><code>J_smoothness</code>: 控制输入的变化率，希望平滑以减少机械磨损。</li>
+                        <li><code>J_constraints</code>: 是否满足物理约束，如关节限位、摩擦力限制、足端不打滑等。DIAL-MPC 通过增强拉格朗日法巧妙处理这些约束。</li>
+                        <li>公式可以简单表示为: <code>TotalCost = w1*J_tracking + w2*J_control_effort + ... + Penalty_for_constraints</code>，其中 <code>w_i</code> 是各项的权重。</li>
+                    </ul>
+                </li>
+                <li><strong>执行 (Act)</strong>: 在找到最优的控制序列后 (比如包含 H 步的控制指令 `u_0, u_1, ..., u_{H-1}` )，MPC 通常只将<strong class="highlight">第一个控制指令 `u_0`</strong> 应用到机器人上。</li>
+                <li><strong>重复 (Repeat)</strong>: 在下一个时间点，MPC 会获取机器人新的状态，然后重复上述预测、优化、执行的循环。这种不断重新规划的特性使得 MPC 对扰动和模型不确定性具有良好的鲁棒性。</li>
+            </ol>
+            <p>
+                在 DIAL-MPC 中，<code>dial_mpc/core/dial_core.py</code> 中的 <code>DialCore._optimize()</code> 方法体现了这一优化过程。它利用 MJX 进行快速的、可微分的物理模拟来进行预测，并依赖 JAX 计算梯度以高效求解优化问题。
+            </p>
+
+            <div class="animation-container">
+                <h4>动画2: MPC 工作循环</h4>
+                <div id="animCanvasMPC" class="animation-canvas"></div>
+                <div class="controls">
+                    <button onclick="animMPC.play()">播放</button>
+                    <button onclick="animMPC.pause()" class="secondary">暂停</button>
+                    <button onclick="animMPC.reset()">重置</button>
+                </div>
+                <p>此动画演示了一个简化的MPC循环：机器人感知状态，预测未来轨迹，优化控制，执行第一步，然后重复该过程。</p>
+            </div>
+
+            <hr>
+
+            <h2>✨ "DIAL" 的魔力：可微分增强拉格朗日</h2>
+            <p>
+                DIAL-MPC 中的 "DIAL" 指的是 <strong class="highlight">Differentiable Augmented Lagrangian (可微分增强拉格朗日)</strong>。这听起来很数学，但别担心，我们可以用比较直观的方式来理解它。
+            </p>
+            <p>
+                在 MPC 的优化问题中，除了要最小化代价函数，我们还需要考虑各种<strong class="highlight">约束 (Constraints)</strong>。比如，机器人的关节转动不能超过物理极限，脚底接触地面时摩擦力不能超过最大静摩擦力，机器人不能穿墙等。处理这些约束是 MPC 中的一个核心挑战。
+            </p>
+            <p>
+                传统的处理约束的方法有很多，比如罚函数法（简单但可能导致数值问题或无法严格满足约束）或内点法（复杂且可能计算量大）。<strong class="highlight">增强拉格朗日法</strong>是一种非常强大且在实践中效果良好的约束优化方法。它大致的工作原理是：
+            </p>
+            <ol>
+                <li>将约束项（比如 <code>g(x) <= 0</code>）通过拉格朗日乘子 (Lagrange Multipliers, <code>lambda</code>) 和惩罚项 (Penalty Terms, <code>rho</code>) 引入到原始的代价函数中，形成一个“增强的”代价函数。
+                    公式概念: <code>L_aug(x, lambda, rho) = OriginalCost(x) + lambda * g(x) + (rho/2) * (max(0, g(x)))^2</code>
+                </li>
+                <li>然后通过迭代的方式同时优化原始变量 (<code>x</code>，即控制序列) 和拉格朗日乘子 (<code>lambda</code>)。乘子会根据约束的违反程度进行调整，引导解朝向满足约束的方向。惩罚项则确保即使在约束边界附近，优化过程也能稳定进行。</li>
+            </ol>
+            <p>
+                而 DIAL-MPC 的精妙之处在于，整个基于增强拉格朗日法的优化过程是<strong class="highlight">可微分的</strong>！这意味着什么呢？
+            </p>
+            <ul>
+                <li><strong>梯度信息的高效利用</strong>: 借助 JAX 提供的自动微分能力，可以轻松计算增强拉格朗日函数相对于控制变量的梯度。这些梯度信息是进行高效数值优化（如梯度下降及其变种）的关键，能让优化器更快地找到最优解。</li>
+                <li><strong>端到端学习的可能性</strong>: 因为整个控制器（包括物理模拟和优化过程）是可微分的，理论上可以将 DIAL-MPC 嵌入到一个更大的学习框架中。例如，可以通过梯度下降来学习代价函数的权重，甚至学习模型参数，以更好地适应特定任务或弥补模型误差，这对于实现更高级的 Sim-to-Real 转换和自适应控制非常有价值。</li>
+            </ul>
+            <p>
+                在 <code>dial_mpc/core/dial_core.py</code> 中，可以看到如 <code>_al_objective</code> (计算增强拉格朗日目标函数)、<code>_update_multipliers</code> (更新拉格朗日乘子) 和 <code>_update_penalty_weights</code> (更新惩罚权重) 等函数，这些都是实现增强拉格朗日算法的关键部分。
+            </p>
+
+            <div class="animation-container">
+                <h4>动画3: 增强拉格朗日约束处理 (概念)</h4>
+                <div id="animCanvasALM" class="animation-canvas"></div>
+                <div class="controls">
+                    <button onclick="animALM.play()">播放</button>
+                    <button onclick="animALM.pause()" class="secondary">暂停</button>
+                    <button onclick="animALM.reset()">重置</button>
+                </div>
+                <p>此动画概念性地展示了一个优化点如何在代价函数（等高线）和一个约束边界（红线）的共同作用下，通过增强拉格朗日方法逐步逼近最优且满足约束的解。</p>
+            </div>
+
+            <hr>
+
+            <h2>🚀 模拟、部署与真实世界</h2>
+            <p>
+                DIAL-MPC 不仅是一个理论框架，更是一个可以在模拟和真实机器人上运行的实用系统。代码库在<code>dial_mpc/deploy/</code>目录下提供了相应的支持。
+            </p>
+
+            <h3>🎮 模拟环境 (Simulation)</h3>
+            <p>
+                在将控制器部署到昂贵且易损坏的真实机器人之前，模拟是必不可少的环节。DIAL-MPC 深度集成了 <strong class="highlight">MuJoCo XLA (MJX)</strong> 物理引擎。
+            </p>
+            <ul>
+                <li><strong>环境定义</strong>: <code>dial_mpc/envs/</code> 目录下定义了各种机器人环境，如 <code>unitree_go2_env.py</code> 和 <code>unitree_h1_env.py</code>。这些环境类通常继承自 <code>base_env.py</code>，并负责与 MJX 交互，设置场景、应用控制、获取状态和奖励等。</li>
+                <li><strong>模型文件</strong>: <code>dial_mpc/models/</code> 存放了机器人的 MJCF (XML) 模型。这些模型是模拟的基础。MJX 会加载这些模型来计算机器人的动力学。</li>
+                <li><strong>运行模拟</strong>: <code>dial_mpc/deploy/dial_sim.py</code> 脚本用于启动和运行模拟实验。它会加载配置、初始化 DIAL-MPC 控制器和模拟环境，然后进入控制循环。</li>
+                <li><strong>可微分模拟</strong>: MJX 的一个巨大优势是它是<strong class="highlight">可微分的</strong>，并且与 JAX 完美配合。这意味着物理模拟本身也融入了梯度计算的链条，这对于 DIAL-MPC 的优化至关重要。</li>
+            </ul>
+
+            <h3>🤖 真实机器人部署 (Real-World Deployment)</h3>
+            <p>
+                当控制器在模拟中表现良好后，下一步就是将其部署到真实机器人上。<code>dial_mpc/deploy/dial_real.py</code> 负责这项任务。与模拟相比，真实世界带来了新的挑战：
+            </p>
+            <ul>
+                <li><strong>状态估计 (Localization)</strong>: 真实机器人没有“上帝视角”来直接获取其精确状态。因此，需要传感器和估计算法。<code>dial_mpc/deploy/localization/</code> 提供了插件接口 (<code>base_plugin.py</code>) 和具体实现：
+                    <ul>
+                        <li><code>ros2_odometry_plugin.py</code>: 通过 ROS2 (机器人操作系统) 订阅里程计信息。</li>
+                        <li><code>vicon_shm_plugin.py</code>: 通过共享内存 (SHM) 从 Vicon 等外部运动捕捉系统获取高精度位姿。</li>
+                    </ul>
+                </li>
+                <li><strong>通信接口</strong>: 需要与机器人的底层控制器或驱动器进行通信，发送控制指令（如关节力矩、目标角度）并接收传感器数据。这部分通常是机器人特定的。DIAL-MPC 的设计允许集成不同的机器人接口。</li>
+                <li><strong>Sim-to-Real Gap</strong>: 模拟与现实之间总会存在差异（模型不完美、未建模的延迟、传感器噪声等）。DIAL-MPC 的可微分特性和基于梯度的优化，为缩小这一差距提供了潜力，例如通过学习来调整模型参数或策略。</li>
+            </ul>
+
+            <h3>🔄 Sim2Sim 与迁移</h3>
+            <p>
+                <code>dial_mpc/core/dial_sim2sim.py</code> 文件揭示了 DIAL-MPC 在不同模拟环境间进行适配或知识迁移的能力。<code>DialSim2Sim</code> 类可以同时管理两个 <code>DialCore</code> 实例（一个源，一个目标），并定义了一个目标函数来比较它们在各自模拟中的行为。这可以用于：
+            </p>
+            <ul>
+                <li><strong>系统辨识</strong>: 通过调整一个模拟器（例如，目标模拟器）的参数，使其行为尽可能匹配另一个模拟器（例如，源模拟器，可能更接近真实世界），从而改进模型。</li>
+                <li><strong>策略迁移</strong>: 如果源模拟器中的策略表现良好，可以尝试将其迁移到行为略有不同的目标模拟器，并微调。</li>
+            </ul>
+            <p>
+                这种能力同样得益于整个系统的<strong class="highlight">端到端可微分性</strong>。
+            </p>
+            <div class="animation-container">
+                <h4>动画4: Sim-to-Real / Sim-to-Sim 概念</h4>
+                <div id="animCanvasSim2Real" class="animation-canvas"></div>
+                <div class="controls">
+                    <button onclick="animSim2Real.play()">播放</button>
+                    <button onclick="animSim2Real.pause()" class="secondary">暂停</button>
+                    <button onclick="animSim2Real.reset()">重置</button>
+                </div>
+                <p>此动画展示了模拟环境（左）和真实环境（或另一个模拟环境，右）之间的差异。可微分物理和优化有助于通过梯度调整参数，缩小两者之间的行为差距。</p>
+            </div>
+
+            <hr>
+
+            <h2>💡 关键算法与数据流</h2>
+            <p>
+                DIAL-MPC 的高效运作依赖于一系列关键算法和清晰的数据流。
+            </p>
+            <h3>📈 主要算法组件：</h3>
+            <ul>
+                <li><strong>模型预测控制 (MPC)</strong>: 如前所述，这是核心的控制框架，通过滚动优化实现前瞻性控制。</li>
+                <li><strong>增强拉格朗日方法 (ALM)</strong>: 用于处理优化问题中的等式和不等式约束，是确保机器人行为物理可行性的关键。</li>
+                <li><strong>自动微分 (Automatic Differentiation - AD)</strong>: 通过 JAX 实现。AD 自动计算复杂函数（如整个MPC优化目标）的梯度，无需手动推导，极大简化了梯度下降等优化算法的应用。这是 DIAL-MPC “可微分”特性的基石。</li>
+                <li><strong>梯度下降类优化器 (Gradient-based Optimizers)</strong>: 利用 JAX 计算得到的梯度，DIAL-MPC 内部会使用如 L-BFGS (通过 JAXopt 间接使用) 或其他梯度下降变体来求解每一步的优化问题，寻找最优控制序列。</li>
+                <li><strong>可微分物理引擎 (Differentiable Physics Engine - MJX)</strong>: MuJoCo XLA (MJX) 提供了机器人动力学的前向模拟，并且这些模拟步骤是可微分的。这意味着代价函数中的项如果依赖于模拟结果（例如，预测的未来状态），那么这些项对于控制输入的梯度可以一直“反向传播”通过物理模拟本身。</li>
+            </ul>
+
+            <h3>🌊 数据流动图：</h3>
+            <p>
+                在一个典型的 DIAL-MPC 控制周期中，数据流大致如下：
+            </p>
+            <ol>
+                <li><strong>传感器数据/状态估计</strong>: 从机器人（真实或模拟）获取当前状态 <code>q_current</code> (关节位置), <code>v_current</code> (关节速度), base_pose (基座姿态和位置) 等。</li>
+                <li><strong>参考轨迹/目标</strong>: 从任务定义 (YAML 文件或更高级别的规划器) 获取期望的机器人行为，如目标速度 <code>v_ref</code>, 目标姿态 <code>pose_ref</code>, 或未来一段时间的参考轨迹。</li>
+                <li><strong>输入到 DIAL-MPC Core</strong>: 当前状态和参考目标被送入 <code>DialCore</code>。</li>
+                <li><strong>内部优化循环 (多次迭代)</strong>:
+                    <ul>
+                        <li><strong>a. 预测 (Prediction)</strong>: 使用 MJX 和当前控制序列的候选值，从 <code>q_current</code> 开始，向前模拟未来 H 步的状态。</li>
+                        <li><strong>b. 代价计算 (Cost Evaluation)</strong>: 根据预测的状态序列和控制序列，计算总代价 (包括跟踪误差、控制成本、约束违反等)。</li>
+                        <li><strong>c. 梯度计算 (Gradient Computation)</strong>: JAX 计算总代价相对于控制序列的梯度。</li>
+                        <li><strong>d. 控制更新 (Control Update)</strong>: 使用梯度信息和增强拉格朗日法更新控制序列的候选值，使其更优。</li>
+                        <li>重复 a-d 直到收敛或达到最大迭代次数。</li>
+                    </ul>
+                </li>
+                <li><strong>最优控制输出</strong>: 优化完成后，得到未来 H 步的最优控制序列 <code>U* = [u_0*, u_1*, ..., u_{H-1}*]</code>。</li>
+                <li><strong>执行第一步控制</strong>: 将 <code>u_0*</code> 发送给机器人的执行器（如电机）。</li>
+                <li><strong>进入下一周期</strong>: 机器人执行 <code>u_0*</code>，状态发生改变，控制器等待下一个时间步，重复整个流程。</li>
+            </ol>
+
+            <div class="animation-container">
+                <h4>动画5: DIAL-MPC 数据流与核心优化循环</h4>
+                <div id="animCanvasDataflow" class="animation-canvas"></div>
+                <div class="controls">
+                    <button onclick="animDataflow.play()">播放</button>
+                    <button onclick="animDataflow.pause()" class="secondary">暂停</button>
+                    <button onclick="animDataflow.reset()">重置</button>
+                </div>
+                <p>此动画概念性地展示了数据（状态、参考）如何流入DIAL-MPC核心，经过内部的预测、代价计算、梯度求取和控制更新的迭代优化过程，最终输出控制指令。</p>
+            </div>
+
+            <hr>
+            <h2>🐾 机器人支持与应用实例</h2>
+            <p>
+                DIAL-MPC 设计为一个通用的控制器框架，但其目前提供的示例主要集中在一些流行的敏捷机器人平台上。
+            </p>
+            <h3>🤖 支持的机器人平台（基于示例和模型）：</h3>
+            <ul>
+                <li><strong>宇树科技 Go2 (Unitree Go2)</strong>: 一款灵活的四足机器人。在 <code>dial_mpc/models/unitree_go2/</code> 目录下有其详细的 MJCF 模型。相关的示例包括：
+                    <ul>
+                        <li><code>unitree_go2_trot.yaml</code>: 实现稳定的跑步步态。</li>
+                        <li><code>unitree_go2_seq_jump.yaml</code>: 控制 Go2 完成一系列跳跃动作，展示了其敏捷性。</li>
+                        <li><code>unitree_go2_crate_climb.yaml</code>: 控制 Go2 爬上箱子，涉及更复杂的接触和全身协调。</li>
+                    </ul>
+                </li>
+                <li><strong>宇树科技 H1 (Unitree H1)</strong>: 一款先进的人形机器人。模型位于 <code>dial_mpc/models/unitree_h1/</code>。示例有：
+                    <ul>
+                        <li><code>unitree_h1_loco.yaml</code>: 实现人形机器人的行走。</li>
+                        <li><code>unitree_h1_jog.yaml</code>: 控制 H1 进行慢跑。</li>
+                        <li><code>unitree_h1_push_crate.yaml</code>: 控制 H1 推箱子，这是一个涉及操纵和运动协调的任务。</li>
+                    </ul>
+                </li>
+                <li><strong>Wonik Allegro Hand</strong>: 一款多指灵巧手，常用于机器人抓取和操作研究。模型在 <code>dial_mpc/models/wonik_allegro/</code>。示例 <code>allegro_reorient.yaml</code> 展示了手内物体姿态调整的任务。</li>
+            </ul>
+            <p>
+                这些示例 (<code>dial_mpc/examples/</code>) 不仅展示了 DIAL-MPC 的能力，也为用户如何配置自己的任务提供了模板。通过修改 YAML 文件中的参数，如代价函数权重、目标速度、任务序列等，用户可以定制机器人的行为。
+            </p>
+
+            <h3>🎯 应用场景与潜力：</h3>
+            <p>
+                凭借其强大的优化能力和对敏捷运动的支持，DIAL-MPC 具有广泛的应用潜力：
+            </p>
+            <ul>
+                <li><strong>复杂地形运动</strong>: 控制机器人在不平坦、有障碍物的环境中稳定、快速地移动。</li>
+                <li><strong>动态操纵</strong>: 实现机器人（如人形机器人或带灵巧手的移动平台）进行复杂的物体操纵任务，如推、拉、举、抛等。</li>
+                <li><strong>人机协作</strong>: 在与人共享的空间中安全、高效地工作。</li>
+                <li><strong>极限运动</strong>: 实现机器人的跑酷、跳跃等高难度敏捷动作。</li>
+                <li><strong>Sim-to-Real 快速迭代</strong>: 利用可微分特性，更快地将在模拟中验证的策略迁移到真实机器人，并进行微调。</li>
+            </ul>
+
+            <div class="animation-container">
+                <h4>动画6: 机器人敏捷性展示 (概念)</h4>
+                <div id="animCanvasAgility" class="animation-canvas"></div>
+                <div class="controls">
+                    <button onclick="animAgility.play()">播放</button>
+                    <button onclick="animAgility.pause()" class="secondary">暂停</button>
+                    <button onclick="animAgility.reset()">重置</button>
+                </div>
+                <p>概念动画：展示一个四足机器人（如Go2）在DIAL-MPC控制下，灵活避障或完成跳跃动作，对比传统控制器可能出现的笨拙或失败。</p>
+            </div>
+
+            <hr>
+
+            <h2>🏁 总结与展望</h2>
+            <p>
+                通过这次对 DIAL-MPC 代码库的物理和逻辑视角的探索，我们可以看到它是一个设计精良、功能强大的机器人运动控制框架。它成功地将<strong class="highlight">模型预测控制的预见性</strong>、<strong class="highlight">增强拉格朗日法的约束处理能力</strong>以及<strong class="highlight">JAX 和 MJX 带来的端到端可微分性</strong>完美地结合在一起。
+            </p>
+            <p>
+                <strong>DIAL-MPC 的核心优势在于：</strong>
+            </p>
+            <ul>
+                <li><strong>高性能</strong>: 能够为复杂机器人（如足式和人形机器人）生成高度动态和敏捷的运动。</li>
+                <li><strong>强大的约束处理</strong>: 有效处理机器人运动中遇到的各种物理约束。</li>
+                <li><strong>端到端可微分</strong>: 为基于梯度的优化（包括控制器参数调整、系统辨识甚至策略学习）打开了大门，极大地促进了 Sim-to-Real 的研究和应用。</li>
+                <li><strong>模块化设计</strong>: 代码结构清晰，易于理解、扩展和集成到不同的机器人平台与任务中。</li>
+            </ul>
+            <p>
+                当然，DIAL-MPC 作为一个前沿的研究项目，也在不断发展。未来可能的方向包括：集成更高级别的任务规划器、进一步提升计算效率以支持更高频率的控制、增强对模型不确定性和外部扰动的鲁棒性、以及在更广泛的机器人和任务上验证其能力。
+            </p>
+            <p>
+                对于机器人学研究者和开发者来说，DIAL-MPC 无疑是一个宝贵的资源和强大的工具。它不仅展示了现代控制理论与机器学习技术融合的巨大潜力，也为我们开发下一代智能机器人提供了坚实的基础。希望这次的解读能帮助你更好地理解 DIAL-MPC，并激发你对敏捷机器人控制的兴趣！一起期待它在未来创造更多惊喜吧！🌟
+            </p>
+        </article>
+
+        <footer class="footer">
+            <p>&copy; 2024 AI 助手深度解读。内容仅供学习参考。</p>
+        </footer>
+    </div>
+
+    <script>
+        // P5.js Animation Sketches
+        // Helper to ensure canvas fills parent (call in setup)
+        function setupCanvas(p, parentId) {
+            const parent = document.getElementById(parentId);
+            const canvas = p.createCanvas(parent.offsetWidth, parent.offsetHeight);
+            canvas.parent(parentId);
+            // Ensure canvas resizes if window does (simple version)
+            // More robust would involve a resize observer on the parent
+            p.windowResized = () => {
+                // Check if parent exists and has dimensions
+                if (parent && parent.offsetWidth > 0 && parent.offsetHeight > 0) {
+                     p.resizeCanvas(parent.offsetWidth, parent.offsetHeight);
+                }
+            };
+        }
+
+
+        // Animation 1: DIAL-MPC Architecture/Collaboration Flow
+        const sketchArch = (p) => {
+            let playing = false;
+            let phase = 0;
+            const phases = [
+                { name: "Config (YAML, XML)", x: 50, y: 150, w: 180, h: 50, color: [100, 150, 250] },
+                { name: "State Input (Sensors/Sim)", x: 300, y: 50, w: 200, h: 50, color: [150, 200, 100] },
+                { name: "DIAL-MPC Core", x: 300, y: 150, w: 200, h: 100, color: [250, 100, 100] },
+                { name: "  - JAX (Grads)", x: 320, y: 180, w: 160, h: 20, sub: true, color: [255,150,150]},
+                { name: "  - MJX (Physics)", x: 320, y: 210, w: 160, h: 20, sub: true, color: [255,150,150]},
+                { name: "Control Output (Actuators)", x: 300, y: 280, w: 200, h: 50, color: [150, 100, 200] }
+            ];
+            let arrows = [
+                { from: 0, to: 2, type: "data" }, // Config to Core
+                { from: 1, to: 2, type: "data" }, // State to Core
+                { from: 2, to: 5, type: "control" } // Core to Output
+            ];
+            let progress = 0; // 0 to 1 for animation progress
+
+            p.setup = () => {
+                setupCanvas(p, 'animCanvasArch');
+                p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(12);
+                p.noLoop(); // Start paused
+                animArch.redrawOnce(); // Initial draw
+            };
+
+            p.draw = () => {
+                p.background(240);
+                
+                // Draw components
+                for (let i = 0; i < phases.length; i++) {
+                    const item = phases[i];
+                    p.fill(item.color[0],item.color[1],item.color[2], item.sub ? 150:255);
+                    p.stroke(0);
+                    p.rect(item.x, item.y, item.w, item.h, 5);
+                    p.fill(0);
+                    p.noStroke();
+                    p.text(item.name, item.x + item.w / 2, item.y + item.h / 2);
+                }
+
+                // Draw arrows
+                 p.strokeWeight(2);
+                arrows.forEach(arrow => {
+                    const start = phases[arrow.from];
+                    const end = phases[arrow.to];
+                    let sx, sy, ex, ey;
+
+                    if (arrow.from === 0 && arrow.to === 2) { // Config to Core
+                        sx = start.x + start.w; sy = start.y + start.h / 2;
+                        ex = end.x; ey = end.y + end.h / 4;
+                    } else if (arrow.from === 1 && arrow.to === 2) { // State to Core
+                        sx = start.x + start.w / 2; sy = start.y + start.h;
+                        ex = end.x + end.w / 2; ey = end.y;
+                    } else { // Core to Output
+                        sx = start.x + start.w/2; sy = start.y + start.h;
+                        ex = end.x + end.w/2; ey = end.y;
+                    }
+                    
+                    p.stroke(50, 150, 50);
+                    p.line(sx, sy, ex, ey);
+                    p.push();
+                    p.translate(ex, ey);
+                    p.rotate(p.atan2(ey - sy, ex - sx));
+                    p.fill(50,150,50);
+                    p.triangle(0, 0, -8, -4, -8, 4);
+                    p.pop();
+                });
+
+
+                if (playing) {
+                    progress += 0.01;
+                    if (progress >= 1) {
+                        progress = 0;
+                        phase = (phase + 1) % (arrows.length +1) ; // Cycle through arrows + initial
+                    }
+                    
+                    // Highlight current phase (simple flow simulation)
+                    if(phase > 0 && phase <= arrows.length){
+                        const currentArrow = arrows[phase-1];
+                        p.noFill();
+                        p.strokeWeight(3);
+                        p.stroke(255,0,0, 150 * (1-progress) + 100); // Fading highlight
+                        const fromNode = phases[currentArrow.from];
+                        const toNode = phases[currentArrow.to];
+                        // Highlight nodes involved in current arrow
+                        p.rect(fromNode.x-2, fromNode.y-2, fromNode.w+4, fromNode.h+4, 7);
+                        p.rect(toNode.x-2, toNode.y-2, toNode.w+4, toNode.h+4, 7);
+
+                        // Animate a small packet along the current arrow
+                        let sx, sy, ex, ey;
+                         if (currentArrow.from === 0 && currentArrow.to === 2) { 
+                            sx = fromNode.x + fromNode.w; sy = fromNode.y + fromNode.h / 2;
+                            ex = toNode.x; ey = toNode.y + toNode.h / 4;
+                        } else if (currentArrow.from === 1 && currentArrow.to === 2) { 
+                            sx = fromNode.x + fromNode.w / 2; sy = fromNode.y + fromNode.h;
+                            ex = toNode.x + toNode.w / 2; ey = toNode.y;
+                        } else { 
+                            sx = fromNode.x + fromNode.w/2; sy = fromNode.y + fromNode.h;
+                            ex = toNode.x + toNode.w/2; ey = toNode.y;
+                        }
+                        let packetX = p.lerp(sx, ex, progress);
+                        let packetY = p.lerp(sy, ey, progress);
+                        p.fill(255,0,0);
+                        p.noStroke();
+                        p.ellipse(packetX, packetY, 10, 10);
+                    }
+                }
+                 p.strokeWeight(1); // Reset stroke weight
+            };
+            
+            p.play = () => { playing = true; p.loop(); };
+            p.pause = () => { playing = false; p.noLoop(); };
+            p.reset = () => { playing = false; phase = 0; progress = 0; p.redraw(); };
+            p.redrawOnce = () => { p.redraw();}; // For initial display
+            animArch = p; // Expose p for global control
+        };
+        let animArch;
+        new p5(sketchArch, 'animCanvasArch');
+
+        // Animation 2: MPC Loop
+        const sketchMPC = (p) => {
+            let robotX, robotY, targetX, targetY;
+            let horizonPoints = [];
+            let optimalPath = [];
+            let step = 0;
+            const maxSteps = 4; // Predict, Optimize, Act, (Repeat implicitly)
+            let playing = false;
+            let time = 0;
+
+            p.setup = () => {
+                setupCanvas(p, 'animCanvasMPC');
+                robotX = 50; robotY = p.height / 2;
+                targetX = p.width - 50; targetY = p.height / 2;
+                p.textAlign(p.CENTER, p.CENTER);
+                p.noLoop();
+                animMPC.redrawOnce();
+            };
+
+            p.draw = () => {
+                p.background(240);
+                time += 0.02;
+
+                // Draw target
+                p.fill(0, 200, 0); p.noStroke();
+                p.ellipse(targetX, targetY, 20, 20);
+                p.text("Target", targetX, targetY - 20);
+
+                // Draw robot
+                p.fill(0, 0, 200);
+                p.rect(robotX - 10, robotY - 10, 20, 20);
+                p.text("Robot", robotX, robotY + 20);
+
+                // Animate MPC steps
+                if (playing) {
+                    if (step === 0) { // Predict
+                        horizonPoints = [];
+                        for (let i = 1; i <= 5; i++) {
+                            let predX = robotX + i * 30 + p.sin(time + i*0.5) * 20; // Simulated noisy prediction
+                            let predY = robotY + p.cos(time + i*0.5) * 20 - (robotY - targetY) * (i/10);
+                            horizonPoints.push({ x: predX, y: predY });
+                        }
+                    } else if (step === 1) { // Optimize
+                        optimalPath = [];
+                         for (let i = 0; i < horizonPoints.length; i++) {
+                            // Simple optimization: move towards target, smoother than raw prediction
+                            let optX = p.lerp(horizonPoints[i].x, targetX, 0.2 + i*0.05);
+                            let optY = p.lerp(horizonPoints[i].y, targetY, 0.2 + i*0.05);
+                            optimalPath.push({x: optX, y: optY});
+                        }
+                        if (optimalPath.length === 0 && horizonPoints.length > 0) { // Fallback if something is wrong
+                             optimalPath.push({x: p.lerp(robotX, targetX, 0.1), y: p.lerp(robotY, targetY, 0.1)});
+                        }
+                    } else if (step === 2) { // Act
+                        if (optimalPath.length > 0) {
+                            robotX = optimalPath[0].x; // Move to the first point of optimal path
+                            robotY = optimalPath[0].y;
+                        } else if (horizonPoints.length > 0) { // Fallback if optimal path was empty
+                            robotX = horizonPoints[0].x;
+                            robotY = horizonPoints[0].y;
+                        } else { // Further fallback
+                             robotX = p.lerp(robotX, targetX, 0.05);
+                             robotY = p.lerp(robotY, targetY, 0.05);
+                        }
+                        // Clear paths for next cycle
+                        horizonPoints = []; 
+                        optimalPath = [];
+                    }
+                }
+                
+                // Display prediction horizon
+                p.stroke(255, 150, 0, 150); p.strokeWeight(2); p.noFill();
+                p.beginShape();
+                p.vertex(robotX, robotY);
+                horizonPoints.forEach(pt => p.vertex(pt.x, pt.y));
+                p.endShape();
+                horizonPoints.forEach(pt => { p.ellipse(pt.x, pt.y, 5, 5); });
+
+
+                // Display optimal path
+                if (optimalPath.length > 0) {
+                    p.stroke(0, 200, 0, 200); p.strokeWeight(3); p.noFill();
+                    p.beginShape();
+                    p.vertex(robotX, robotY);
+                    optimalPath.forEach(pt => p.vertex(pt.x, pt.y));
+                    p.endShape();
+                     optimalPath.forEach(pt => {p.fill(0,100,0); p.noStroke(); p.ellipse(pt.x, pt.y, 6, 6); });
+                }
+                
+                // Display step text
+                p.fill(0); p.noStroke(); p.textSize(16);
+                let stepText = "";
+                if (step === 0) stepText = "1. Predict Future States";
+                else if (step === 1) stepText = "2. Optimize Control";
+                else if (step === 2) stepText = "3. Apply First Control";
+                else if (step === 3) stepText = "Repeat Cycle...";
+                p.text(stepText, p.width / 2, 30);
+
+                if (playing) {
+                    // Simple timing for steps - advance every ~1 second if frameRate is ~60
+                    if (p.frameCount % 60 === 0) { 
+                        step = (step + 1) % maxSteps;
+                         if (p.dist(robotX, robotY, targetX, targetY) < 20) { // Reached target
+                            playing = false; p.noLoop();
+                            robotX = 50; robotY = p.height / 2; // Reset
+                            step = 0;
+                        }
+                    }
+                }
+                 p.strokeWeight(1); // Reset
+            };
+
+            p.play = () => { if (!playing) { step = 0; } playing = true; p.loop(); };
+            p.pause = () => { playing = false; p.noLoop(); };
+            p.reset = () => {
+                playing = false; step = 0; time = 0;
+                robotX = 50; robotY = p.height / 2;
+                horizonPoints = []; optimalPath = [];
+                p.redraw();
+            };
+            p.redrawOnce = () => {p.redraw();};
+            animMPC = p;
+        };
+        let animMPC;
+        new p5(sketchMPC, 'animCanvasMPC');
+
+        // Animation 3: Augmented Lagrangian Concept
+        const sketchALM = (p) => {
+            let x, y; // Optimization point
+            let targetX, targetY; // Optimum of unconstrained cost
+            let constraintCenterX, constraintCenterY, constraintRadius;
+            let lambda = 0; // Lagrange multiplier (scalar for simplicity)
+            let rho = 1;   // Penalty parameter
+            let playing = false;
+            let iter = 0;
+
+            p.setup = () => {
+                setupCanvas(p, 'animCanvasALM');
+                targetX = p.width * 0.7; targetY = p.height * 0.3;
+                constraintCenterX = p.width / 2; constraintCenterY = p.height / 2;
+                constraintRadius = p.min(p.width, p.height) * 0.25;
+                x = p.width * 0.2; y = p.height * 0.8; // Start far
+                p.textAlign(p.LEFT, p.TOP);
+                p.noLoop();
+                animALM.redrawOnce();
+            };
+
+            function cost(px, py) {
+                return p.dist(px, py, targetX, targetY);
+            }
+
+            function constraint(px, py) {
+                // Constraint: g(x,y) = dist( (x,y), center ) - radius <= 0
+                // (being inside or on the circle is feasible)
+                return p.dist(px, py, constraintCenterX, constraintCenterY) - constraintRadius;
+            }
+            
+            p.draw = () => {
+                p.background(240);
+
+                // Draw cost function contours (conceptual)
+                p.noFill();
+                for (let i = 20; i < p.width; i += 30) {
+                    p.stroke(200, 200, 200);
+                    p.ellipse(targetX, targetY, i, i * (p.height/p.width) * 0.8);
+                }
+                p.fill(0,100,0); p.noStroke();
+                p.ellipse(targetX, targetY, 10,10);
+                p.text("Unconstrained Min", targetX + 10, targetY);
+
+                // Draw constraint boundary (red circle for g(x,y) = 0)
+                p.stroke(255, 0, 0, 150); p.strokeWeight(2); p.noFill();
+                p.ellipse(constraintCenterX, constraintCenterY, constraintRadius * 2, constraintRadius * 2);
+                p.fill(255,0,0, 20);
+                p.ellipse(constraintCenterX, constraintCenterY, constraintRadius * 2, constraintRadius * 2); // feasible region
+                p.fill(100); p.noStroke();
+                p.text("Constraint Boundary (g(x) <= 0 is inside)", constraintCenterX - constraintRadius, constraintCenterY + constraintRadius + 5);
+
+
+                // Augmented Lagrangian step (simplified gradient descent)
+                if (playing && iter < 100) {
+                    let gx = constraint(x, y);
+                    
+                    // Gradient of original cost (towards targetX, targetY)
+                    let gradCostX = (x - targetX) / (cost(x,y) + 1e-6);
+                    let gradCostY = (y - targetY) / (cost(x,y) + 1e-6);
+
+                    // Gradient of constraint term (radial from constraint center)
+                    let gradConstraintX = (x - constraintCenterX) / (p.dist(x,y,constraintCenterX, constraintCenterY) + 1e-6);
+                    let gradConstraintY = (y - constraintCenterY) / (p.dist(x,y,constraintCenterX, constraintCenterY) + 1e-6);
+                    
+                    // Augmented Lagrangian gradient (conceptual)
+                    // L_aug = f(x) + lambda*g(x) + (rho/2)*max(0,g(x))^2
+                    // dL/dx = df/dx + lambda*dg/dx + rho*max(0,g(x))*dg/dx  (if g(x)>0 for penalty)
+                    // dL/dx = df/dx + (lambda + rho*g(x))*dg/dx (if g(x)>0 for ALM update logic where lambda is also updated)
+                    // Simplified update:
+                    let effective_lambda = lambda;
+                    if (gx > 0) { // If constraint violated
+                       effective_lambda += rho * gx;
+                    }
+                    
+                    let gradX = gradCostX + effective_lambda * gradConstraintX;
+                    let gradY = gradCostY + effective_lambda * gradConstraintY;
+                    
+                    let stepSize = 5;
+                    x -= stepSize * gradX;
+                    y -= stepSize * gradY;
+
+                    // Update lambda (multiplier for constraint violation)
+                    // lambda = max(0, lambda + rho * gx); // Common update for inequality
+                    // For ALM, lambda is updated based on current g(x)
+                    if (iter % 5 == 0) { // Less frequent update for lambda/rho
+                        lambda = lambda + rho * gx; // This is a typical ALM update
+                        if (gx > 0.1 * constraintRadius) rho = p.min(rho * 1.1, 100); // Increase penalty if far outside
+                    }
+                    iter++;
+                }
+                
+                // Draw current point
+                p.fill(0, 0, 255); p.noStroke();
+                p.ellipse(x, y, 15, 15);
+                p.text(`Iter: ${iter}\nλ: ${lambda.toFixed(2)}\nρ: ${rho.toFixed(2)}`, 10, 10);
+                let current_g = constraint(x,y);
+                p.text(`g(x): ${current_g.toFixed(2)} ${current_g <= 0 ? "(Feasible)" : "(Infeasible)"}`, 10, 60);
+
+
+                if (iter >= 100 && playing) {
+                    playing = false; p.noLoop();
+                }
+                 p.strokeWeight(1);
+            };
+            p.play = () => { if (!playing || iter >=100) {p.reset();} playing = true; p.loop(); };
+            p.pause = () => { playing = false; p.noLoop(); };
+            p.reset = () => {
+                playing = false; iter = 0;
+                x = p.width * 0.2; y = p.height * 0.8;
+                lambda = 0; rho = 1;
+                p.redraw();
+            };
+            p.redrawOnce = () => {p.redraw();};
+            animALM = p;
+        };
+        let animALM;
+        new p5(sketchALM, 'animCanvasALM');
+
+        // Animation 4: Sim-to-Real / Sim-to-Sim Concept
+        const sketchSim2Real = (p) => {
+            let simRobot = { x: 0, y: 0, angle: 0, path: [] };
+            let realRobot = { x: 0, y: 0, angle: 0, path: [] }; // Or target sim
+            let targetPos = { x: 0, y: 0 };
+            let simMismatch = 0.2; // Factor for how much sim behavior differs initially
+            let adaptationFactor = 0; // 0 to 1, how much sim has adapted
+            let playing = false;
+            let time = 0;
+
+            p.setup = () => {
+                setupCanvas(p, 'animCanvasSim2Real');
+                simRobot.x = p.width * 0.25; simRobot.y = p.height * 0.7;
+                realRobot.x = p.width * 0.75; realRobot.y = p.height * 0.7;
+                targetPos.x = p.width / 2; targetPos.y = p.height * 0.2;
+                p.textAlign(p.CENTER, p.CENTER);
+                p.noLoop();
+                animSim2Real.redrawOnce();
+            };
+
+            function moveRobot(robot, target, mismatchFactor, isSim) {
+                if (robot.path.length > 100) robot.path.shift();
+                robot.path.push({x: robot.x, y: robot.y});
+
+                let angleToTarget = p.atan2(target.y - robot.y, target.x - robot.x);
+                robot.angle = p.lerp(robot.angle, angleToTarget, 0.1);
+                
+                let speed = 2;
+                let dx = speed * p.cos(robot.angle);
+                let dy = speed * p.sin(robot.angle);
+
+                if (isSim) { // Simulate some systematic error or different dynamics
+                    dx *= (1 - mismatchFactor * (1 - adaptationFactor));
+                    dy *= (1 + mismatchFactor * (1 - adaptationFactor) * p.sin(time*2)); // Add some oscillation
+                }
+                
+                robot.x += dx;
+                robot.y += dy;
+            }
+            
+            p.draw = () => {
+                p.background(240);
+                time += 0.01;
+
+                // Draw target
+                p.fill(0, 200, 0); p.noStroke();
+                p.ellipse(targetPos.x, targetPos.y, 20, 20);
+                p.text("Goal", targetPos.x, targetPos.y - 15);
+
+                // Draw Sim Robot (left)
+                p.push();
+                p.translate(simRobot.x, simRobot.y);
+                p.rotate(simRobot.angle);
+                p.fill(100, 100, 255); p.stroke(0);
+                p.rect(-15, -10, 30, 20); // Body
+                p.triangle(15,0, 25, -5, 25, 5); // Nose
+                p.pop();
+                p.noFill(); p.stroke(100,100,255,100);
+                p.beginShape(); simRobot.path.forEach(pt => p.vertex(pt.x, pt.y)); p.endShape();
+                p.fill(0); p.noStroke();
+                p.text("Simulation (Source/Learned)", p.width * 0.25, p.height * 0.9);
+
+                // Draw Real Robot / Target Sim (right)
+                p.push();
+                p.translate(realRobot.x, realRobot.y);
+                p.rotate(realRobot.angle);
+                p.fill(255, 100, 100); p.stroke(0);
+                p.rect(-15, -10, 30, 20);
+                p.triangle(15,0, 25, -5, 25, 5);
+                p.pop();
+                p.noFill(); p.stroke(255,100,100,100);
+                p.beginShape(); realRobot.path.forEach(pt => p.vertex(pt.x, pt.y)); p.endShape();
+                p.fill(0); p.noStroke();
+                p.text("Real Robot (Target/Reference)", p.width * 0.75, p.height * 0.9);
+
+                if (playing) {
+                    moveRobot(simRobot, targetPos, simMismatch, true);
+                    moveRobot(realRobot, targetPos, 0, false); // Real robot has 'true' dynamics
+
+                    if (adaptationFactor < 1) {
+                        adaptationFactor += 0.001; // Slowly adapt the sim
+                    }
+                    
+                    // Stop if both are close to target
+                    if (p.dist(simRobot.x, simRobot.y, targetPos.x, targetPos.y) < 10 &&
+                        p.dist(realRobot.x, realRobot.y, targetPos.x, targetPos.y) < 10) {
+                        //playing = false; p.noLoop();
+                    }
+                }
+                
+                // Adaptation progress bar
+                p.fill(100); p.noStroke();
+                p.rect(p.width * 0.4, p.height * 0.05, p.width * 0.2, 20);
+                p.fill(50, 200, 50);
+                p.rect(p.width * 0.4, p.height * 0.05, p.width * 0.2 * adaptationFactor, 20);
+                p.fill(0); p.textAlign(p.CENTER, p.CENTER);
+                p.text(`Adaptation: ${(adaptationFactor * 100).toFixed(0)}%`, p.width / 2, p.height * 0.05 + 10);
+                
+                // Conceptual "Gradient Flow" arrow if adapting
+                if (playing && adaptationFactor < 0.95) {
+                    p.stroke(255,165,0,150); p.strokeWeight(3 + p.sin(time*10)*1.5);
+                    p.line(realRobot.x - 20, realRobot.y, simRobot.x + 20, simRobot.y);
+                    p.fill(255,165,0); p.noStroke();
+                    let midX = (realRobot.x - 20 + simRobot.x + 20)/2;
+                    let midY = (realRobot.y + simRobot.y)/2;
+                    p.push();
+                    p.translate(midX, midY);
+                    p.rotate(p.atan2(simRobot.y - realRobot.y, simRobot.x + 20 - (realRobot.x-20)));
+                    p.text("Diff. Gradients", 0, -15);
+                    p.pop();
+                }
+                 p.strokeWeight(1);
+
+            };
+            p.play = () => { playing = true; p.loop(); };
+            p.pause = () => { playing = false; p.noLoop(); };
+            p.reset = () => {
+                playing = false; time = 0; adaptationFactor = 0;
+                simRobot = { x: p.width * 0.25, y: p.height * 0.7, angle: -p.PI/2, path: [] };
+                realRobot = { x: p.width * 0.75, y: p.height * 0.7, angle: -p.PI/2, path: [] };
+                targetPos = { x: p.width / 2, y: p.height * 0.2 };
+                p.redraw();
+            };
+            p.redrawOnce = () => {p.redraw();};
+            animSim2Real = p;
+        };
+        let animSim2Real;
+        new p5(sketchSim2Real, 'animCanvasSim2Real');
+
+
+        // Animation 5: Dataflow and Optimization Loop
+        const sketchDataflow = (p) => {
+            let elements = [
+                { name: "Sensors/\nState Est.", x: 100, y: 50, w: 100, h: 60, color: [100,200,100] },
+                { name: "Reference/\nTarget", x: 300, y: 50, w: 100, h: 60, color: [100,150,200] },
+                { name: "DIAL-MPC Core", x: 200, y: 150, w: 150, h: 80, color: [200,100,100] }, // Main block
+                // Inner loop elements, relative to Core
+                { name: "Predict (MJX)", x: 200-60, y: 150+20, w: 80, h: 30, parent:2, type:'sub', color: [220,120,120]},
+                { name: "Cost Eval", x: 200+70, y: 150+20, w: 80, h: 30, parent:2, type:'sub', color: [220,120,120]},
+                { name: "Grad (JAX)", x: 200-60, y: 150+60, w: 80, h: 30, parent:2, type:'sub', color: [220,120,120]},
+                { name: "Update Ctrl", x: 200+70, y: 150+60, w: 80, h: 30, parent:2, type:'sub', color: [220,120,120]},
+                { name: "Optimal\nControl u*", x: 200, y: 270, w: 100, h: 60, color: [150,100,200] },
+                { name: "Actuators/\nRobot Dyn.", x: 200, y: 370, w: 100, h: 60, color: [200,200,100] },
+            ];
+             let connections = [
+                { from: 0, to: 2, type: "data" }, { from: 1, to: 2, type: "data" }, // Inputs to Core
+                { from: 2, to: 7, type: "control" }, // Core to Optimal Control
+                { from: 7, to: 8, type: "control" }, // Optimal Control to Actuators
+                { from: 8, to: 0, type: "feedback", curve: true } // Robot Dynamics back to Sensors (loop)
+            ];
+            // Inner loop connections for Core (indices 3,4,5,6)
+            let innerLoopConnections = [
+                {from:3, to:4}, {from:4, to:5}, {from:5, to:6}, {from:6, to:3, curve:true}
+            ];
+
+            let playing = false;
+            let animPhase = 0;
+            let animProgress = 0;
+            let innerLoopIter = 0;
+            const maxInnerIter = 3;
+
+            p.setup = () => {
+                setupCanvas(p, 'animCanvasDataflow');
+                p.textAlign(p.CENTER, p.CENTER); p.textSize(10);
+                p.noLoop();
+                animDataflow.redrawOnce();
+            };
+
+            p.draw = () => {
+                p.background(240);
+
+                // Draw elements
+                elements.forEach(el => {
+                    p.fill(el.color[0],el.color[1],el.color[2], el.type==='sub'?200:255);
+                    p.stroke(50);
+                    p.rect(el.x - el.w/2, el.y - el.h/2, el.w, el.h, 5);
+                    p.fill(0); p.noStroke();
+                    p.text(el.name, el.x, el.y);
+                });
+                
+                // Draw connections
+                p.strokeWeight(1.5);
+                connections.forEach(conn => {
+                    let e1 = elements[conn.from];
+                    let e2 = elements[conn.to];
+                    p.stroke(conn.type === "data" ? [0,0,200] : (conn.type === "control" ? [0,150,0] : [200,0,0]));
+                    if (conn.curve) { // Feedback loop from Actuators to Sensors
+                        p.noFill();
+                        p.beginShape();
+                        p.vertex(e1.x, e1.y + e1.h/2); // Bottom of Actuators
+                        p.bezierVertex(e1.x + 100, e1.y + e1.h/2 + 50, 
+                                       e2.x - 100, e2.y - e2.h/2 - 50, 
+                                       e2.x, e2.y - e2.h/2); // Top of Sensors
+                        p.endShape();
+                        // Arrow head for bezier
+                        let arrowPt = {x: e2.x, y: e2.y - e2.h/2};
+                        let prevPt = p.bezierPoint(e1.x + 100, e2.x - 100, e2.x, 0.95); // approx point before end
+                        p.push();
+                        p.translate(arrowPt.x, arrowPt.y);
+                        // Need tangent for rotation - simplified: assume it's coming from left-ish
+                        p.rotate(p.PI*0.8); // Rough angle
+                        p.fill(conn.type === "feedback" ? [200,0,0] : 0);
+                        p.triangle(0,0, -6, -3, -6, 3);
+                        p.pop();
+
+                    } else {
+                        p.line(e1.x, e1.y + e1.h/2 * p.sign(e2.y - e1.y), e2.x, e2.y - e2.h/2 * p.sign(e2.y - e1.y));
+                         // Arrow head
+                        p.push();
+                        let endX = e2.x; let endY = e2.y - e2.h/2 * p.sign(e2.y - e1.y);
+                        let startX = e1.x; let startY = e1.y + e1.h/2 * p.sign(e2.y - e1.y);
+                        p.translate(endX, endY);
+                        p.rotate(p.atan2(endY - startY, endX - startX));
+                        p.fill(conn.type === "data" ? [0,0,200] : (conn.type === "control" ? [0,150,0] : [200,0,0]));
+                        p.triangle(0,0, -6, -3, -6, 3);
+                        p.pop();
+                    }
+                });
+
+                // Draw inner loop connections for Core
+                p.strokeWeight(1); p.stroke(100,50,50,150);
+                innerLoopConnections.forEach(conn => {
+                    let e1 = elements[conn.from];
+                    let e2 = elements[conn.to];
+                     if(conn.curve){ // From Update Ctrl back to Predict
+                        p.noFill();
+                        p.beginShape();
+                        p.vertex(e1.x + e1.w/2, e1.y);
+                        p.bezierVertex(e1.x + e1.w/2 + 20, e1.y - 20, 
+                                       e2.x - e2.w/2 - 20, e2.y + 20,
+                                       e2.x - e2.w/2, e2.y);
+                        p.endShape();
+                     } else {
+                        p.line(e1.x + e1.w/2 * (e2.x > e1.x ? 1: -1) * (e1.y==e2.y?1:0) + e1.w/2 * (e2.y > e1.y ? 0: 0) * (e1.x==e2.x?1:0) , 
+                               e1.y + e1.h/2 * (e2.y > e1.y ? 1: -1)* (e1.x==e2.x?1:0) + e1.h/2 * (e2.x > e1.x ? 0: 0) * (e1.y==e2.y?1:0) , 
+                               e2.x - e2.w/2 * (e2.x > e1.x ? 1: -1)* (e1.y==e2.y?1:0) - e2.w/2 * (e2.y > e1.y ? 0: 0) * (e1.x==e2.x?1:0), 
+                               e2.y - e2.h/2 * (e2.y > e1.y ? 1: -1)* (e1.x==e2.x?1:0) - e2.h/2 * (e2.x > e1.x ? 0: 0) * (e1.y==e2.y?1:0));
+                     }
+                });
+                 p.fill(0); p.noStroke();
+                 p.text(`Optimization Iter: ${innerLoopIter}/${maxInnerIter}`, elements[2].x, elements[2].y + elements[2].h/2 -10);
+
+
+                if (playing) {
+                    animProgress += 0.02;
+                    if (animProgress >= 1) {
+                        animProgress = 0;
+                        if (animPhase === 2) { // Inside Core Logic
+                            innerLoopIter++;
+                            if(innerLoopIter > maxInnerIter) {
+                                innerLoopIter = 0;
+                                animPhase = (animPhase + 1) % connections.length;
+                            }
+                        } else {
+                             animPhase = (animPhase + 1) % connections.length;
+                        }
+                    }
+                    
+                    // Highlight current connection and animate packet
+                    let currentConn;
+                    if(animPhase === 2 && innerLoopIter <= maxInnerIter){ // Core's internal loop
+                        p.strokeWeight(2);
+                        p.stroke(255,0,0,150);
+                        p.noFill();
+                        let sub_idx = innerLoopIter % innerLoopConnections.length;
+                        if (innerLoopIter === maxInnerIter && sub_idx === 0) sub_idx = innerLoopConnections.length-1; // last step before exiting
+                        
+                        let el_core = elements[2];
+                        p.rect(el_core.x-el_core.w/2-2, el_core.y-el_core.h/2-2, el_core.w+4, el_core.h+4,7);
+
+                        let active_sub_el_idx = innerLoopConnections[sub_idx % innerLoopConnections.length].from;
+                        let active_sub_el = elements[active_sub_el_idx];
+                        p.fill(active_sub_el.color[0], active_sub_el.color[1], active_sub_el.color[2], 100);
+                        p.noStroke();
+                        p.rect(active_sub_el.x-active_sub_el.w/2, active_sub_el.y-active_sub_el.h/2, active_sub_el.w, active_sub_el.h, 5);
+
+                    } else {
+                        currentConn = connections[animPhase];
+                        let e1 = elements[currentConn.from];
+                        let e2 = elements[currentConn.to];
+                        
+                        p.strokeWeight(3); p.stroke(255,0,0,100); p.noFill();
+                        p.rect(e1.x-e1.w/2-2, e1.y-e1.h/2-2, e1.w+4, e1.h+4,7);
+                        p.rect(e2.x-e2.w/2-2, e2.y-e2.h/2-2, e2.w+4, e2.h+4,7);
+
+                        // Packet animation (simplified for straight lines)
+                        if (!currentConn.curve) {
+                             let packetX = p.lerp(e1.x, e2.x, animProgress);
+                             let packetY = p.lerp(e1.y + e1.h/2 * p.sign(e2.y - e1.y), 
+                                                  e2.y - e2.h/2 * p.sign(e2.y - e1.y), animProgress);
+                             p.fill(255,0,0); p.noStroke();
+                             p.ellipse(packetX, packetY, 8, 8);
+                        }
+                    }
+                }
+                p.strokeWeight(1); // Reset
+            };
+
+            p.play = () => { playing = true; p.loop(); };
+            p.pause = () => { playing = false; p.noLoop(); };
+            p.reset = () => {
+                playing = false; animPhase = 0; animProgress = 0; innerLoopIter = 0;
+                p.redraw();
+            };
+            p.redrawOnce = () => {p.redraw();};
+            animDataflow = p;
+        };
+        let animDataflow;
+        new p5(sketchDataflow, 'animCanvasDataflow');
+
+        // Animation 6: Robot Agility Concept
+        const sketchAgility = (p) => {
+            let robot = {x: 50, y: p.height - 40, w: 30, h: 20, legPhase: 0, vy: 0, onGround: true};
+            let obstacles = [];
+            let targetX;
+            let playing = false;
+            let mode = "DIAL-MPC"; // "DIAL-MPC" or "Simple"
+            let score = 0;
+            let time = 0;
+
+            function createObstacle() {
+                let h = p.random(30, 60);
+                return {x: p.width + 50, y: p.height - h - 20, w: 20, h: h, passed: false};
+            }
+
+            p.setup = () => {
+                setupCanvas(p, 'animCanvasAgility');
+                targetX = p.width - 50;
+                obstacles.push(createObstacle());
+                obstacles.push(createObstacle());
+                obstacles[1].x += p.width/2; // Spread them out
+                p.textAlign(p.CENTER, p.CENTER);
+                p.noLoop();
+                animAgility.redrawOnce();
+            };
+
+            p.draw = () => {
+                p.background(220, 230, 255); // Sky blue
+                time += 0.1;
+
+                // Ground
+                p.fill(100, 180, 100); p.noStroke();
+                p.rect(0, p.height - 20, p.width, 20);
+
+                // Robot
+                p.push();
+                p.translate(robot.x, robot.y);
+                // Legs (simple animation)
+                p.stroke(50); p.strokeWeight(3);
+                let legExt = 15 * p.sin(robot.legPhase);
+                p.line(0, robot.h/2, -5, robot.h/2 + 10 + (robot.onGround ? legExt : 5)); // Back leg
+                p.line(0, robot.h/2,  5, robot.h/2 + 10 + (robot.onGround ? -legExt : 5)); // Front leg
+                // Body
+                p.fill(mode === "DIAL-MPC" ? [50,50,200] : [200,50,50]); p.stroke(0); p.strokeWeight(1);
+                p.ellipse(0, 0, robot.w, robot.h);
+                p.pop();
+
+                // Obstacles
+                p.fill(150, 75, 0); p.stroke(80,40,0);
+                obstacles.forEach(obs => {
+                    p.rect(obs.x, obs.y, obs.w, obs.h);
+                    if (playing) obs.x -= 2; // Move obstacles towards robot
+                    
+                    // Collision & Scoring
+                    if (robot.x + robot.w/2 > obs.x && robot.x - robot.w/2 < obs.x + obs.w &&
+                        robot.y + robot.h/2 > obs.y) {
+                        if (mode === "DIAL-MPC" && robot.y - robot.h/2 < obs.y) { // Successful jump over
+                            if (!obs.passed) { score++; obs.passed = true;}
+                        } else { // Collision
+                            p.fill(255,0,0,100); p.ellipse(robot.x, robot.y, 50,50); // Show collision
+                            playing = false; p.noLoop();
+                        }
+                    }
+                    if (obs.x + obs.w < 0) { // Obstacle moved off screen
+                       if(!obs.passed && robot.y + robot.h/2 < obs.y) {score++; obs.passed = true;} // Passed if jumped
+                       obs.x = p.width + 50 + p.random(-20,20);
+                       obs.h = p.random(30, 60);
+                       obs.y = p.height - obs.h - 20;
+                       obs.passed = false;
+                    }
+                });
+
+
+                if (playing) {
+                    robot.legPhase += 0.3;
+                    // Physics
+                    if (!robot.onGround) {
+                        robot.vy += 0.3; // Gravity
+                        robot.y += robot.vy;
+                        if (robot.y >= p.height - 40) {
+                            robot.y = p.height - 40;
+                            robot.onGround = true;
+                            robot.vy = 0;
+                        }
+                    }
+                    
+                    // Behavior based on mode
+                    let lookAheadDist = (mode === "DIAL-MPC") ? 150 : 50;
+                    let jumpThreshold = (mode === "DIAL-MPC") ? 0.8 : 0.5; // MPC is better at timing
+                    let jumpStrength = (mode === "DIAL-MPC") ? -10 : -8;
+
+                    for (let obs of obstacles) {
+                        if (robot.onGround && obs.x > robot.x && obs.x < robot.x + lookAheadDist) {
+                             // Check if a jump is needed and possible
+                             if ( (robot.x + robot.w/2 + ( (lookAheadDist- (obs.x-robot.x))/lookAheadDist * 20 )) > obs.x && // will hit soon
+                                  (obs.h/60.0) > (1-jumpThreshold) ) { // obstacle is high enough to warrant jump
+                                robot.vy = jumpStrength * (obs.h/40.0) ; // Jump higher for taller obstacles
+                                robot.onGround = false;
+                                break; 
+                             }
+                        }
+                    }
+                     if (robot.x > targetX) { playing = false; p.noLoop(); } // Reached end
+                }
+                
+                p.fill(0); p.noStroke(); p.textSize(14);
+                p.text(`Mode: ${mode}`, p.width/2, 20);
+                p.text(`Score (Obstacles Cleared): ${score}`, p.width/2, 40);
+                if(!playing && robot.x < targetX && score > 0 && obstacles.every(o=>o.passed || o.x > p.width)) p.text("Run Finished!", p.width/2, 60);
+                 if (!playing && robot.x > 50 && obstacles.find(o=> robot.x + robot.w/2 > o.x && robot.x - robot.w/2 < o.x + o.w && robot.y + robot.h/2 > o.y)) p.text("Crashed!",p.width/2, 60);
+
+
+            };
+
+            p.play = () => {
+                if (!playing) { // If restarting or starting fresh
+                    p.resetInternalState();
+                }
+                playing = true; p.loop();
+            };
+            p.pause = () => { playing = false; p.noLoop(); };
+            p.reset = () => {
+                playing = false;
+                p.resetInternalState();
+                p.redraw();
+            };
+            p.resetInternalState = () => {
+                robot = {x: 50, y: p.height - 40, w: 30, h: 20, legPhase: 0, vy: 0, onGround: true};
+                obstacles = [];
+                obstacles.push(createObstacle());
+                obstacles.push(createObstacle());
+                obstacles[1].x += p.width/2 + p.random(-30,30);
+                obstacles[0].x += p.random(-30,30);
+                score = 0; time = 0;
+            }
+            p.toggleMode = () => {
+                mode = (mode === "DIAL-MPC") ? "Simple PID (Conceptual)" : "DIAL-MPC";
+                p.reset();
+            }
+            p.redrawOnce = () => {p.redraw();};
+            animAgility = p; // Expose for global control (like toggleMode)
+        };
+        let animAgility;
+        new p5(sketchAgility, 'animCanvasAgility');
+        // Add button for toggling agility mode
+        const agilityControls = document.querySelector('#animCanvasAgility + .controls');
+        const toggleBtn = document.createElement('button');
+        toggleBtn.textContent = 'Toggle Mode';
+        toggleBtn.classList.add('secondary');
+        toggleBtn.onclick = () => animAgility.toggleMode();
+        agilityControls.appendChild(toggleBtn);
+
+
+        // Ensure all canvases are redrawn once on load after a short delay for layout.
+        window.onload = () => {
+            setTimeout(() => {
+                if (animArch && typeof animArch.redrawOnce === 'function') animArch.redrawOnce();
+                if (animMPC && typeof animMPC.redrawOnce === 'function') animMPC.redrawOnce();
+                if (animALM && typeof animALM.redrawOnce === 'function') animALM.redrawOnce();
+                if (animSim2Real && typeof animSim2Real.redrawOnce === 'function') animSim2Real.redrawOnce();
+                if (animDataflow && typeof animDataflow.redrawOnce === 'function') animDataflow.redrawOnce();
+                if (animAgility && typeof animAgility.redrawOnce === 'function') animAgility.redrawOnce();
+            }, 100); // Small delay to ensure containers have dimensions
+        };
+
+
+    </script>
+</body>
+</html>
